@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/backend.iml" filepath="$PROJECT_DIR$/.idea/backend.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../backoffice/.idea/backoffice.iml" filepath="$PROJECT_DIR$/../backoffice/.idea/backoffice.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../frontend/.idea/frontend.iml" filepath="$PROJECT_DIR$/../frontend/.idea/frontend.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../mobile/.idea/mobile.iml" filepath="$PROJECT_DIR$/../mobile/.idea/mobile.iml" />
+    </modules>
+  </component>
+</project>
