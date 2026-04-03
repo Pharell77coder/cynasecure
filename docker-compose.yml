@@ -20,7 +20,7 @@ services:
     image: mariadb:11
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: cynasecure_db
+      MYSQL_DATABASE: cyna
 
   phpmyadmin:
     image: phpmyadmin
