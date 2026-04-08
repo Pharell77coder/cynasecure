@@ -111,6 +111,19 @@ npx expo start
 
 Scanner le QR code avec l'application **Expo Go** sur iOS ou Android.
 
+Pour la version web, télécharger d'abord avec cette commande.
+
+```bash
+cd mobile
+npx expo install react-dom react-native-web
+```
+
+ensuite pour lancer directement sur le web
+```bash
+cd mobile
+npx expo start --web
+```
+
 ---
 
 ## Développement
