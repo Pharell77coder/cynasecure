@@ -147,3 +147,38 @@ docker compose up -d
 - Le backend attend que MariaDB soit pleinement opérationnel avant de démarrer (healthcheck).
 - Les `node_modules` et `.next` sont exclus des bind-mounts pour éviter les conflits entre l'hôte et le conteneur.
 - En production, remplacer `CMD ["npm", "run", "dev"]` par `CMD ["npm", "run", "build"]` + `CMD ["npm", "start"]` dans les Dockerfiles Next.js.
+
+## Utilisation sans Docker
+
+### Terminal 1 — Backend Symfony
+
+```bash
+cd backend
+symfony serve
+```
+
+### Terminal 2 — Frontend
+
+```bash
+cd frontend
+npm run dev
+```
+
+### Terminal 3 — Backoffice
+
+```bash
+cd backoffice
+npm run dev -- --port 3001
+```
+
+Les URLs seront les mêmes :
+
+- Frontend → http://localhost:3000
+- Backoffice → http://localhost:3001
+- Backend → http://localhost:8000
+
+Pour la base de données, garde juste le conteneur MariaDB + phpMyAdmin actif sans le reste :
+
+```bash
+docker compose up -d db phpmyadmin
+```
