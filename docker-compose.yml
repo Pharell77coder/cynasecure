@@ -1,28 +1,94 @@
+version: "3.9"
+
+networks:
+  cynasecure_net:
+    driver: bridge
+
+volumes:
+  db_data:
+
 services:
+
+  db:
+      image: mariadb:11
+      restart: unless-stopped
+      environment:
+        MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+        MYSQL_DATABASE: cynasecure
+        MYSQL_USER: ${DB_USER}
+        MYSQL_PASSWORD: ${DB_PASSWORD}
+      volumes:
+        - db_data:/var/lib/mysql
+        - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      networks:
+        - cynasecure_net
+      healthcheck:
+        test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD}"]
+        interval: 10s
+        timeout: 5s
+        retries: 10
+        start_period: 30s
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "8080:80"
+    networks:
+      - cynasecure_net
+
   backend:
     build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "mysql://root:${DB_PASSWORD}@db:3306/cynasecure?serverVersion=mariadb-11.0.0"
+      APP_ENV: dev
+      APP_SECRET: changeme_secret_32chars_minimum
     ports:
       - "8000:8000"
-    depends_on:
-      - db
+    volumes:
+      - ./backend:/var/www/backend
+    networks:
+      - cynasecure_net
 
   frontend:
     build: ./frontend
+    restart: unless-stopped
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - cynasecure_net
+    environment:
+      HOSTNAME: "0.0.0.0"
+      TURBOPACK_WATCH_FOR_FS_EVENTS: "0"
+      NEXT_PUBLIC_API_URL: http://localhost:8000
 
   backoffice:
     build: ./backoffice
+    restart: unless-stopped
     ports:
       - "3001:3001"
-
-  db:
-    image: mariadb:11
+    volumes:
+      - ./backoffice:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - cynasecure_net
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: cyna
-
-  phpmyadmin:
-    image: phpmyadmin
-    ports:
-      - "8080:80"
+      HOSTNAME: "0.0.0.0"
+      TURBOPACK_WATCH_FOR_FS_EVENTS: "0"
+      NEXT_PUBLIC_API_URL: http://localhost:8000
