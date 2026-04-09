@@ -15,9 +15,7 @@ import { theme } from "../data/theme";
 import { useCart } from "../data/CartContext";
 import { ProductCard } from "../components/ProductCard";
 
-type Props = {
-  navigation: any;
-};
+type Props = { navigation: any };
 
 export const HomeScreen = ({ navigation }: Props) => {
   const { cartCount } = useCart();
@@ -63,7 +61,7 @@ export const HomeScreen = ({ navigation }: Props) => {
         <Text style={styles.heroTitle}>{"L'élégance\nau quotidien"}</Text>
       </View>
 
-      {/* Search bar */}
+      {/* Search + Sort */}
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
           <Text style={styles.searchIcon}>🔍</Text>
@@ -75,7 +73,6 @@ export const HomeScreen = ({ navigation }: Props) => {
             onChangeText={setSearch}
           />
         </View>
-        {/* Sort toggle */}
         <TouchableOpacity
           style={styles.sortBtn}
           onPress={() => setSortBy((s) => s === "asc" ? "desc" : s === "desc" ? "default" : "asc")}
@@ -87,19 +84,26 @@ export const HomeScreen = ({ navigation }: Props) => {
       </View>
 
       {/* Categories */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll} contentContainerStyle={styles.catContent}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.catScroll}
+        contentContainerStyle={styles.catContent}
+      >
         {CATEGORIES.map((cat) => (
           <TouchableOpacity
             key={cat}
             style={[styles.catChip, category === cat && styles.catChipActive]}
             onPress={() => setCategory(cat)}
           >
-            <Text style={[styles.catChipText, category === cat && styles.catChipTextActive]}>{cat}</Text>
+            <Text style={[styles.catChipText, category === cat && styles.catChipTextActive]}>
+              {cat}
+            </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      {/* Products grid */}
+      {/* Grid */}
       <FlatList
         data={filtered}
         renderItem={renderItem}
@@ -120,6 +124,8 @@ export const HomeScreen = ({ navigation }: Props) => {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.cream },
+
+  // — Header (dark bar, serif logo, letterSpacing)
   header: {
     backgroundColor: theme.colors.ink,
     flexDirection: "row",
@@ -132,8 +138,8 @@ const styles = StyleSheet.create({
     color: theme.colors.cream,
     fontSize: 20,
     fontFamily: theme.fonts.serif,
-    fontWeight: "700",
-    letterSpacing: 4,
+    fontWeight: "600",
+    letterSpacing: 6,  // matches page.tsx letterSpacing: "0.12em"
   },
   cartBtn: { position: "relative" },
   cartIcon: { fontSize: 22 },
@@ -148,19 +154,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  cartBadgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
+  cartBadgeText: { color: "#fff", fontSize: 10, fontFamily: theme.fonts.sansSerif, fontWeight: "700" },
+
+  // — Hero (dark, serif italic)
   hero: {
     backgroundColor: theme.colors.ink,
     paddingHorizontal: 20,
     paddingTop: 4,
-    paddingBottom: 24,
+    paddingBottom: 28,
   },
   heroSub: {
     color: theme.colors.muted,
+    fontFamily: theme.fonts.sansSerif,
     fontSize: 11,
-    letterSpacing: 1.5,
+    letterSpacing: 4,          // "0.15em"
     textTransform: "uppercase",
     marginBottom: 8,
+    fontWeight: "300",
   },
   heroTitle: {
     color: theme.colors.cream,
@@ -169,6 +179,8 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     lineHeight: 38,
   },
+
+  // — Search + Sort
   searchRow: {
     flexDirection: "row",
     gap: 10,
@@ -180,9 +192,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: theme.colors.white,
-    borderRadius: theme.radius.md,
+    borderRadius: theme.radius.sm,          // 2px — sharp
     borderWidth: 1,
-    borderColor: "#e8e4dc",
+    borderColor: theme.colors.border,
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 8,
@@ -191,33 +203,49 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
+    fontFamily: theme.fonts.sansSerif,
     color: theme.colors.ink,
     padding: 0,
   },
   sortBtn: {
     backgroundColor: theme.colors.white,
-    borderRadius: theme.radius.md,
+    borderRadius: theme.radius.sm,          // 2px
     borderWidth: 1,
-    borderColor: "#e8e4dc",
+    borderColor: theme.colors.border,
     paddingHorizontal: 14,
     paddingVertical: 10,
     justifyContent: "center",
   },
-  sortText: { fontSize: 13, color: theme.colors.ink, fontWeight: "500" },
+  sortText: { fontSize: 13, fontFamily: theme.fonts.sansSerif, color: theme.colors.ink, fontWeight: "500" },
+
+  // — Category chips — square (borderRadius: 2) like page.tsx .cat-btn
   catScroll: { paddingVertical: 12 },
   catContent: { paddingHorizontal: 16, gap: 8 },
   catChip: {
     paddingHorizontal: 16,
     paddingVertical: 7,
-    borderRadius: theme.radius.full,
+    borderRadius: theme.radius.sm,          // 2px — matches page.tsx
     borderWidth: 1,
     borderColor: theme.colors.ink,
   },
   catChipActive: { backgroundColor: theme.colors.ink },
-  catChipText: { fontSize: 13, color: theme.colors.ink },
+  catChipText: {
+    fontSize: 12,
+    fontFamily: theme.fonts.sansSerif,
+    color: theme.colors.ink,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
   catChipTextActive: { color: theme.colors.cream },
+
+  // — Grid
   grid: { paddingHorizontal: 16, paddingBottom: 32 },
   row: { justifyContent: "space-between" },
   empty: { flex: 1, alignItems: "center", paddingTop: 48 },
-  emptyText: { fontFamily: theme.fonts.serif, fontSize: 18, fontStyle: "italic", color: theme.colors.muted },
+  emptyText: {
+    fontFamily: theme.fonts.serif,
+    fontSize: 18,
+    fontStyle: "italic",
+    color: theme.colors.muted,
+  },
 });

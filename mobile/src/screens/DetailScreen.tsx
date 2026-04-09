@@ -6,16 +6,12 @@ import {
   ScrollView,
   StyleSheet,
   SafeAreaView,
-  Alert,
 } from "react-native";
 import { BADGE_COLORS } from "../data/products";
 import { theme } from "../data/theme";
 import { useCart } from "../data/CartContext";
 
-type Props = {
-  route: any;
-  navigation: any;
-};
+type Props = { route: any; navigation: any };
 
 export const DetailScreen = ({ route, navigation }: Props) => {
   const { product } = route.params;
@@ -31,7 +27,7 @@ export const DetailScreen = ({ route, navigation }: Props) => {
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Nav bar */}
+      {/* Nav */}
       <View style={styles.nav}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backText}>← Retour</Text>
@@ -47,7 +43,7 @@ export const DetailScreen = ({ route, navigation }: Props) => {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Image area */}
+        {/* Image area — matches page.tsx: background #f0ede6, height ~260, emoji centered */}
         <View style={styles.imageArea}>
           <Text style={styles.emoji}>{product.emoji}</Text>
           {product.badge && (
@@ -62,20 +58,26 @@ export const DetailScreen = ({ route, navigation }: Props) => {
 
         {/* Content */}
         <View style={styles.content}>
+          {/* Category — DM Sans, uppercase, muted, letterSpacing */}
           <Text style={styles.category}>{product.category}</Text>
+
+          {/* Name — Cormorant Garamond, large */}
           <Text style={styles.name}>{product.name}</Text>
 
           {/* Rating */}
           <View style={styles.ratingRow}>
-            {[1,2,3,4,5].map((s) => (
-              <Text key={s} style={[styles.star, { opacity: s <= Math.round(product.rating) ? 1 : 0.25 }]}>★</Text>
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Text key={s} style={[styles.star, { opacity: s <= Math.round(product.rating) ? 1 : 0.25 }]}>
+                ★
+              </Text>
             ))}
             <Text style={styles.ratingLabel}>{product.rating} · {product.reviews} avis</Text>
           </View>
 
+          {/* Description — DM Sans, light weight, dimmed */}
           <Text style={styles.description}>{product.description}</Text>
 
-          {/* Details */}
+          {/* Details card — thin border, sharp corners */}
           <View style={styles.detailsCard}>
             <Text style={styles.detailsTitle}>Composition & détails</Text>
             {product.details.map((d: string, i: number) => (
@@ -86,7 +88,7 @@ export const DetailScreen = ({ route, navigation }: Props) => {
             ))}
           </View>
 
-          {/* Delivery */}
+          {/* Delivery cards */}
           <View style={styles.deliveryRow}>
             <Text style={styles.deliveryIcon}>🚚</Text>
             <View>
@@ -104,7 +106,7 @@ export const DetailScreen = ({ route, navigation }: Props) => {
         </View>
       </ScrollView>
 
-      {/* Bottom bar */}
+      {/* Bottom bar — price (Cormorant) + CTA button */}
       <View style={styles.bottomBar}>
         <View>
           <Text style={styles.bottomLabel}>Prix</Text>
@@ -126,6 +128,8 @@ export const DetailScreen = ({ route, navigation }: Props) => {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.cream },
+
+  // — Nav
   nav: {
     flexDirection: "row",
     alignItems: "center",
@@ -133,10 +137,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#e8e4dc",
+    borderBottomColor: theme.colors.border,
   },
   backBtn: { paddingVertical: 4 },
-  backText: { fontSize: 14, color: theme.colors.ink },
+  backText: { fontSize: 14, fontFamily: theme.fonts.sansSerif, color: theme.colors.ink },
   cartBtn: { position: "relative" },
   cartIcon: { fontSize: 22 },
   cartBadge: {
@@ -150,83 +154,118 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  cartBadgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
+  cartBadgeText: { color: "#fff", fontSize: 10, fontFamily: theme.fonts.sansSerif, fontWeight: "700" },
+
+  // — Image area — matches page.tsx: #f0ede6, 260h
   imageArea: {
-    backgroundColor: theme.colors.sand,
+    backgroundColor: theme.colors.sand,    // #f0ede6
     height: 280,
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
   },
-  emoji: { fontSize: 100 },
+  emoji: { fontSize: 96 },                  // matches "fontSize: 96" in page.tsx detail modal
   badge: {
     position: "absolute",
     top: 16,
     left: 16,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 2,
+    borderRadius: 2,                        // sharp
   },
-  badgeText: { color: "#fff", fontSize: 10, fontWeight: "600", letterSpacing: 0.5, textTransform: "uppercase" },
+  badgeText: {
+    color: "#fff",
+    fontFamily: theme.fonts.sansSerif,
+    fontSize: 10,
+    fontWeight: "600",
+    letterSpacing: 2,
+    textTransform: "uppercase",
+  },
   favBtn: { position: "absolute", top: 16, right: 16 },
   favIcon: { fontSize: 22 },
+
+  // — Content
   content: { padding: 20, paddingBottom: 8 },
+
+  // category — matches page.tsx: DM Sans 11px, uppercase, muted, letterSpacing 0.1em
   category: {
+    fontFamily: theme.fonts.sansSerif,
     fontSize: 11,
     color: theme.colors.muted,
-    letterSpacing: 1,
+    letterSpacing: 3,
     textTransform: "uppercase",
-    marginBottom: 6,
+    marginBottom: 8,
+    fontWeight: "300",
   },
+  // name — Cormorant Garamond 32px like page.tsx detail modal
   name: {
     fontFamily: theme.fonts.serif,
-    fontSize: 28,
-    fontWeight: "700",
+    fontSize: 32,
+    fontWeight: "600",
     color: theme.colors.ink,
     marginBottom: 10,
-    lineHeight: 34,
+    lineHeight: 38,
   },
   ratingRow: { flexDirection: "row", alignItems: "center", marginBottom: 16, gap: 2 },
   star: { fontSize: 16, color: "#d97706" },
-  ratingLabel: { fontSize: 13, color: theme.colors.muted, marginLeft: 6 },
+  ratingLabel: {
+    fontFamily: theme.fonts.sansSerif,
+    fontSize: 13,
+    color: theme.colors.muted,
+    marginLeft: 6,
+  },
+  // description — DM Sans, light, dimmed — matches page.tsx "fontWeight: 300, color: #4a4640"
   description: {
+    fontFamily: theme.fonts.sansSerif,
     fontSize: 15,
     color: theme.colors.dimmed,
-    lineHeight: 24,
+    lineHeight: 26,             // "lineHeight: 1.7" × 15
     marginBottom: 24,
+    fontWeight: "300",
   },
+  // Details card — thin border, sharp corners
   detailsCard: {
     backgroundColor: theme.colors.white,
-    borderRadius: theme.radius.md,
+    borderRadius: theme.radius.sm,           // 2px
     borderWidth: 1,
-    borderColor: "#e8e4dc",
+    borderColor: theme.colors.border,
     padding: 16,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   detailsTitle: {
-    fontSize: 12,
+    fontFamily: theme.fonts.sansSerif,
+    fontSize: 11,
     color: theme.colors.muted,
-    letterSpacing: 0.8,
+    letterSpacing: 2,
     textTransform: "uppercase",
     marginBottom: 12,
   },
   detailRow: { flexDirection: "row", alignItems: "center", marginBottom: 8, gap: 10 },
-  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: theme.colors.stone },
-  detailText: { fontSize: 14, color: theme.colors.ink, flex: 1 },
+  dot: { width: 5, height: 5, borderRadius: 2, backgroundColor: theme.colors.stone },
+  detailText: { fontFamily: theme.fonts.sansSerif, fontSize: 14, color: theme.colors.ink, flex: 1 },
+  // Delivery rows — thin border, sharp
   deliveryRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    marginBottom: 14,
+    marginBottom: 12,
     padding: 14,
     backgroundColor: theme.colors.white,
-    borderRadius: theme.radius.md,
+    borderRadius: theme.radius.sm,           // 2px
     borderWidth: 1,
-    borderColor: "#e8e4dc",
+    borderColor: theme.colors.border,
   },
   deliveryIcon: { fontSize: 20 },
-  deliveryTitle: { fontSize: 14, fontWeight: "600", color: theme.colors.ink, marginBottom: 2 },
-  deliverySubtitle: { fontSize: 12, color: theme.colors.muted },
+  deliveryTitle: {
+    fontFamily: theme.fonts.sansSerif,
+    fontSize: 14,
+    fontWeight: "500",
+    color: theme.colors.ink,
+    marginBottom: 2,
+  },
+  deliverySubtitle: { fontFamily: theme.fonts.sansSerif, fontSize: 12, color: theme.colors.muted },
+
+  // — Bottom bar — matches page.tsx: Cormorant price, uppercase CTA
   bottomBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -234,17 +273,36 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 28,
     borderTopWidth: 1,
-    borderTopColor: "#e8e4dc",
+    borderTopColor: theme.colors.border,
     backgroundColor: theme.colors.cream,
   },
-  bottomLabel: { fontSize: 11, color: theme.colors.muted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 },
-  bottomPrice: { fontFamily: theme.fonts.serif, fontSize: 24, fontWeight: "700", color: theme.colors.ink },
+  bottomLabel: {
+    fontFamily: theme.fonts.sansSerif,
+    fontSize: 11,
+    color: theme.colors.muted,
+    textTransform: "uppercase",
+    letterSpacing: 2,
+    marginBottom: 2,
+  },
+  bottomPrice: {
+    fontFamily: theme.fonts.serif,
+    fontSize: 28,                            // matches page.tsx "fontSize: 28"
+    fontWeight: "600",
+    color: theme.colors.ink,
+  },
   addBtn: {
     backgroundColor: theme.colors.ink,
     paddingHorizontal: 28,
     paddingVertical: 14,
-    borderRadius: theme.radius.sm,
+    borderRadius: theme.radius.sm,           // 2px — matches page.tsx buttons
   },
   addBtnSuccess: { backgroundColor: theme.colors.success },
-  addBtnText: { color: theme.colors.cream, fontSize: 14, fontWeight: "600", letterSpacing: 0.5 },
+  addBtnText: {
+    color: theme.colors.cream,
+    fontFamily: theme.fonts.sansSerif,
+    fontSize: 13,
+    fontWeight: "500",
+    letterSpacing: 2,
+    textTransform: "uppercase",             // matches page.tsx CTA
+  },
 });
