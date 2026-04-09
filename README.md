@@ -116,6 +116,8 @@ Pour la version web, télécharger d'abord avec cette commande.
 ```bash
 cd mobile
 npx expo install react-dom react-native-web
+npm install @react-navigation/native @react-navigation/native-stack
+npx expo install react-native-screens react-native-safe-area-context
 ```
 
 ensuite pour lancer directement sur le web
