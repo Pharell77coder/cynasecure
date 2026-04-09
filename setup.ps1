@@ -18,6 +18,7 @@ Pop-Location
 
 Write-F "frontend/Dockerfile" "FROM node:20-alpine`nWORKDIR /app`nCOPY package*.json ./`nRUN npm install`nCOPY . .`nENV HOSTNAME=0.0.0.0`nENV PORT=3000`nEXPOSE 3000`nCMD [""npm"", ""run"", ""dev""]"
 Write-F "frontend/.dockerignore" "node_modules`n.next`n.git"
+Write-F "frontend/next.config.ts" "const nextConfig = { turbopack: {} };`nexport default nextConfig;"
 
 if (-not (Test-Path "mobile")) {
     npx create-expo-app@latest mobile --template blank-typescript
@@ -46,13 +47,12 @@ Pop-Location
 
 Write-F "backoffice/Dockerfile" "FROM node:20-alpine`nWORKDIR /app`nCOPY package*.json ./`nRUN npm install`nCOPY . .`nENV HOSTNAME=0.0.0.0`nENV PORT=3001`nEXPOSE 3001`nCMD [""npm"", ""run"", ""dev""]"
 Write-F "backoffice/.dockerignore" "node_modules`n.next`n.git"
+Write-F "backoffice/next.config.ts" "const nextConfig = { turbopack: {} };`nexport default nextConfig;"
 
 if (-not (Test-Path "database")) { New-Item -ItemType Directory -Path "database" | Out-Null }
 Write-F "database/init.sql" "CREATE DATABASE IF NOT EXISTS cynasecure CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`nUSE cynasecure;"
 
-$compose = 'version: "3.9"
-
-networks:
+$compose = 'networks:
   cynasecure_net:
     driver: bridge
 
@@ -62,24 +62,26 @@ volumes:
 services:
 
   db:
-      image: mariadb:11
-      restart: unless-stopped
-      environment:
-        MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-        MYSQL_DATABASE: cynasecure
-        MYSQL_USER: ${DB_USER}
-        MYSQL_PASSWORD: ${DB_PASSWORD}
-      volumes:
-        - db_data:/var/lib/mysql
-        - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-      networks:
-        - cynasecure_net
-      healthcheck:
-        test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD}"]
-        interval: 10s
-        timeout: 5s
-        retries: 10
-        start_period: 30s
+    image: mariadb:11
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: cynasecure
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - cynasecure_net
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   phpmyadmin:
     image: phpmyadmin:latest
@@ -103,7 +105,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: "mysql://root:${DB_PASSWORD}@db:3306/cynasecure?serverVersion=mariadb-11.0.0"
+      DATABASE_URL: "mysql://root:root@127.0.0.1:3307/cynasecure?serverVersion=mariadb-11.0.0&charset=utf8mb4"
       APP_ENV: dev
       APP_SECRET: changeme_secret_32chars_minimum
     ports:

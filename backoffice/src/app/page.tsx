@@ -1,20 +1,9 @@
 "use client";
 
-import { Admin, Resource, ListGuesser, EditGuesser, ShowGuesser } from "react-admin";
-import simpleRestProvider from "ra-data-simple-rest";
+import dynamic from "next/dynamic";
 
-const dataProvider = simpleRestProvider("http://localhost:8000/api");
+const AdminApp = dynamic(() => import("./components/AdminApp"), { ssr: false });
 
 export default function Home() {
-  return (
-    <Admin dataProvider={dataProvider}>
-      {/* Ajoute tes ressources ici */}
-      <Resource
-        name="users"
-        list={ListGuesser}
-        edit={EditGuesser}
-        show={ShowGuesser}
-      />
-    </Admin>
-  );
+  return <AdminApp />;
 }

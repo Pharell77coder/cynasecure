@@ -1,5 +1,3 @@
-version: "3.9"
-
 networks:
   cynasecure_net:
     driver: bridge
@@ -10,24 +8,26 @@ volumes:
 services:
 
   db:
-      image: mariadb:11
-      restart: unless-stopped
-      environment:
-        MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-        MYSQL_DATABASE: cynasecure
-        MYSQL_USER: ${DB_USER}
-        MYSQL_PASSWORD: ${DB_PASSWORD}
-      volumes:
-        - db_data:/var/lib/mysql
-        - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-      networks:
-        - cynasecure_net
-      healthcheck:
-        test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD}"]
-        interval: 10s
-        timeout: 5s
-        retries: 10
-        start_period: 30s
+    image: mariadb:11
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: cynasecure
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - cynasecure_net
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   phpmyadmin:
     image: phpmyadmin:latest
@@ -51,7 +51,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: "mysql://root:${DB_PASSWORD}@db:3306/cynasecure?serverVersion=mariadb-11.0.0"
+      DATABASE_URL: "mysql://root:root@127.0.0.1:3307/cynasecure?serverVersion=mariadb-11.0.0&charset=utf8mb4"
       APP_ENV: dev
       APP_SECRET: changeme_secret_32chars_minimum
     ports:
