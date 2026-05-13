@@ -111,21 +111,6 @@ npx expo start
 
 Scanner le QR code avec l'application **Expo Go** sur iOS ou Android.
 
-Pour la version web, télécharger d'abord avec cette commande.
-
-```bash
-cd mobile
-npx expo install react-dom react-native-web
-npm install @react-navigation/native @react-navigation/native-stack
-npx expo install react-native-screens react-native-safe-area-context
-```
-
-ensuite pour lancer directement sur le web
-```bash
-cd mobile
-npx expo start --web
-```
-
 ---
 
 ## Développement
@@ -163,37 +148,19 @@ docker compose up -d
 - Les `node_modules` et `.next` sont exclus des bind-mounts pour éviter les conflits entre l'hôte et le conteneur.
 - En production, remplacer `CMD ["npm", "run", "dev"]` par `CMD ["npm", "run", "build"]` + `CMD ["npm", "start"]` dans les Dockerfiles Next.js.
 
-## Utilisation sans Docker
 
-### Terminal 1 — Backend Symfony
-
-```bash
+Terminal 1 — Backend Symfony
 cd backend
-symfony serve
-```
-
-### Terminal 2 — Frontend
-
-```bash
+symfony serve --allow-all-ip
+Terminal 2 — Frontend Next.js
 cd frontend
 npm run dev
-```
-
-### Terminal 3 — Backoffice
-
-```bash
+Terminal 3 — Backoffice Next.js
 cd backoffice
-npm run dev -- --port 3001
-```
-
-Les URLs seront les mêmes :
-
-- Frontend → http://localhost:3000
-- Backoffice → http://localhost:3001
-- Backend → http://localhost:8000
-
-Pour la base de données, garde juste le conteneur MariaDB + phpMyAdmin actif sans le reste :
-
-```bash
-docker compose up -d db phpmyadmin
-```
+npm run dev
+Terminal 4 — Mobile Expo
+cd mobile
+npx expo start
+Terminal 5 — MailDev
+maildev
+lancer XAMPP (Apache + MySQL) avant tout
