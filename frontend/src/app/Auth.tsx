@@ -1,16 +1,18 @@
-"use client"; // Obligatoire pour utiliser useState avec Next.js App Router
+"use client";
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const endpoint = isLogin ? '/login' : '/register';
     
     try {
-      const response = await fetch(`http://localhost:8000/api${endpoint}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -18,8 +20,13 @@ const Auth = () => {
       
       const data = await response.json();
       if (response.ok) {
-        alert(isLogin ? "Connecté !" : "Inscrit !");
-        console.log(data);
+        if (isLogin) {
+          localStorage.setItem('token', data.token);
+          router.push('/dashboard');
+        } else {
+          alert("Inscrit ! Vous pouvez vous connecter.");
+          setIsLogin(true);
+        }
       } else {
         alert(data.error || "Erreur lors de l'opération");
       }
@@ -51,8 +58,13 @@ const Auth = () => {
         </button>
       </form>
       <p onClick={() => setIsLogin(!isLogin)} style={{ cursor: 'pointer', color: 'blue', marginTop: '15px' }}>
-        {isLogin ? "Pas de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
+        {isLogin ? "Pas de compte ? S'inscrire ici" : "Déjà un compte ? Se connecter"}
       </p>
+{isLogin && (
+  <p onClick={() => router.push('/forgot-password')} style={{ cursor: 'pointer', color: 'red', marginTop: '15px' }}>
+    Mot de passe oublié ?
+  </p>
+)}
     </div>
   );
 };

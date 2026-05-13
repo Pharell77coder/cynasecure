@@ -34,7 +34,7 @@ class ResetPasswordController extends AbstractController
         $reset = new ResetPasswordToken();
         $reset->setToken($token);
         $reset->setUser($user);
-        $reset->setExpiresAt(new \DateTime('+1 hour'));
+        $reset->setExpiresAt(new \DateTimeImmutable('+1 hour'));
 
         $em->persist($reset);
         $em->flush();
