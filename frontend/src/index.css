@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* -------------------------------------------------------
+   CynaSecure Design System — Dark Cybersecurity SaaS
+   Palette premium, minimaliste, inspirée Apple / Stripe.
+   ------------------------------------------------------- */
+
+@layer base {
+  :root {
+    /* Backgrounds */
+    --background: 222 47% 5%;
+    --surface: 222 40% 8%;
+    --surface-elevated: 222 35% 11%;
+
+    /* Text */
+    --foreground: 210 40% 98%;
+    --muted: 217 25% 16%;
+    --muted-foreground: 215 16% 60%;
+
+    /* Brand */
+    --primary: 192 100% 50%;
+    --primary-foreground: 222 47% 8%;
+
+    /* Borders / Inputs */
+    --border: 217 25% 18%;
+    --border-strong: 217 30% 24%;
+    --input: 217 30% 14%;
+    --ring: 192 100% 50%;
+
+    /* Status */
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 70% 45%;
+
+    /* Radius */
+    --radius: 0.875rem;
+
+    /* Gradients */
+    --gradient-hero: radial-gradient(
+      ellipse at top right,
+      hsl(192 100% 50% / 0.15),
+      transparent 60%
+    );
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(192 100% 50%),
+      hsl(192 100% 65%)
+    );
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100vh;
+  }
+
+  body {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  .text-gradient-primary {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+}
