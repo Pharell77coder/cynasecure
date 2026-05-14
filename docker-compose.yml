@@ -10,24 +10,24 @@ volumes:
 services:
 
   db:
-      image: mariadb:11
-      restart: unless-stopped
-      environment:
-        MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-        MYSQL_DATABASE: cynasecure
-        MYSQL_USER: ${DB_USER}
-        MYSQL_PASSWORD: ${DB_PASSWORD}
-      volumes:
-        - db_data:/var/lib/mysql
-        - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-      networks:
-        - cynasecure_net
-      healthcheck:
-        test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD}"]
-        interval: 10s
-        timeout: 5s
-        retries: 10
-        start_period: 30s
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: cynasecure
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - cynasecure_net
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   phpmyadmin:
     image: phpmyadmin:latest
@@ -54,6 +54,7 @@ services:
       DATABASE_URL: "mysql://root:${DB_PASSWORD}@db:3306/cynasecure?serverVersion=mariadb-11.0.0"
       APP_ENV: dev
       APP_SECRET: changeme_secret_32chars_minimum
+      MAILER_DSN: smtp://maildev:1025
     ports:
       - "8000:8000"
     volumes:
@@ -92,3 +93,12 @@ services:
       HOSTNAME: "0.0.0.0"
       TURBOPACK_WATCH_FOR_FS_EVENTS: "0"
       NEXT_PUBLIC_API_URL: http://localhost:8000
+
+  maildev:
+    image: maildev/maildev
+    restart: unless-stopped
+    ports:
+      - "1080:1080"
+      - "1025:1025"
+    networks:
+      - cynasecure_net

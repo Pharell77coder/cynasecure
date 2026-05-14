@@ -48,9 +48,29 @@ Write-F "backoffice/Dockerfile" "FROM node:20-alpine`nWORKDIR /app`nCOPY package
 Write-F "backoffice/.dockerignore" "node_modules`n.next`n.git"
 
 if (-not (Test-Path "database")) { New-Item -ItemType Directory -Path "database" | Out-Null }
-Write-F "database/init.sql" "CREATE DATABASE IF NOT EXISTS cynasecure CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`nUSE cynasecure;"
+Write-F "database/init.sql" @"
+CREATE DATABASE IF NOT EXISTS cynasecure 
+    CHARACTER SET utf8mb4 
+    COLLATE utf8mb4_unicode_ci;
 
-$compose = 'version: "3.9"
+USE cynasecure;
+
+CREATE TABLE \`user\` (
+    \`id\` INT AUTO_INCREMENT NOT NULL,
+    \`email\` VARCHAR(180) NOT NULL,
+    \`roles\` JSON NOT NULL,
+    \`password\` VARCHAR(255) NOT NULL,
+    \`reset_token\` VARCHAR(255) DEFAULT NULL,
+    \`reset_token_expires_at\` DATETIME DEFAULT NULL,
+    UNIQUE INDEX UNIQ_IDENTIFIER_EMAIL (\`email\`),
+    PRIMARY KEY(\`id\`)
+) 
+DEFAULT CHARACTER SET utf8mb4 
+COLLATE utf8mb4_unicode_ci 
+ENGINE = InnoDB;
+"@
+
+$compose = '
 
 networks:
   cynasecure_net:
