@@ -1,6 +1,6 @@
 # CynaSecure
 
-Plateforme de cybersécurité full-stack composée d'un frontend Next.js, d'un backoffice react-admin, d'une application mobile Expo, d'un backend Symfony et d'une base de données MariaDB orchestrés via Docker.
+Plateforme de cybersécurité full-stack composée d'un frontend Next.js, d'un backoffice react-admin, d'une application mobile Expo, d'un backend Symfony et d'une base de données MariaDB.
 
 ---
 
@@ -8,11 +8,12 @@ Plateforme de cybersécurité full-stack composée d'un frontend Next.js, d'un b
 
 | Couche | Technologie | Port |
 |---|---|---|
-| Frontend | Next.js 14 (TypeScript, Tailwind) | 3000 |
-| Backoffice | Next.js 14 + react-admin | 3001 |
+| Frontend | Next.js 15 (TypeScript, Tailwind) | 3000 |
+| Backoffice | Next.js 15 + react-admin | 3001 |
 | Backend | Symfony 7 (PHP 8.3) | 8000 |
 | Base de données | MariaDB 11 | 3306 |
 | Administration DB | phpMyAdmin | 8080 |
+| Mail (dev) | MailDev | 1080 |
 | Mobile | Expo (React Native) | — |
 
 ---
@@ -24,19 +25,8 @@ Plateforme de cybersécurité full-stack composée d'un frontend Next.js, d'un b
 - [Composer](https://getcomposer.org)
 - [Symfony CLI](https://symfony.com/download)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop)
-
----
-
-## Installation
-
-Placer `setup.ps1` à la racine du projet puis exécuter dans PowerShell :
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\setup.ps1
-```
-
-Le script installe tous les services, génère les Dockerfiles, le `docker-compose.yml` et lance les conteneurs.
+- [XAMPP](https://www.apachefriends.org) (pour le développement local)
+- [MailDev](https://github.com/maildev/maildev) — `npm install -g maildev`
 
 ---
 
@@ -51,29 +41,96 @@ cynasecure/
 ├── database/
 │   └── init.sql       # Script SQL d'initialisation
 ├── docker-compose.yml
-├── .env
-└── setup.ps1
+└── .env
 ```
 
 ---
 
 ## Variables d'environnement
 
-Le fichier `.env` est créé automatiquement à la racine :
-
+### Racine `.env` (Docker)
 ```env
 DB_PASSWORD=root
 DB_USER=root
 DB_NAME=cynasecure
 ```
 
-> Ne pas commiter `.env` en production. Modifier les valeurs avant tout déploiement.
+### `backend/.env` (local)
+```env
+DATABASE_URL="mysql://root:@127.0.0.1:3306/cynasecure?serverVersion=8.0"
+JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
+JWT_PASSPHRASE=
+MAILER_DSN=smtp://127.0.0.1:1025
+```
+
+### `frontend/.env.local`
+```env
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
+```
+
+### `mobile/.env`
+```env
+EXPO_PUBLIC_API_URL=http://127.0.0.1:8000
+```
+
+> Ne pas commiter `.env` en production.
 
 ---
 
-## Commandes Docker
+## Lancement en local (développement)
 
-```bash
+> Lancer **XAMPP** (Apache + MySQL) avant tout.
+
+Ouvrir **5 terminaux séparés** :
+
+### Terminal 1 — Backend Symfony
+```powershell
+cd backend
+symfony serve --allow-all-ip
+```
+
+### Terminal 2 — Frontend Next.js
+```powershell
+cd frontend
+npm run dev
+```
+
+### Terminal 3 — Backoffice Next.js
+```powershell
+cd backoffice
+npm run dev
+```
+
+### Terminal 4 — Mobile Expo
+```powershell
+cd mobile
+npx expo start
+```
+
+### Terminal 5 — MailDev
+```powershell
+maildev
+```
+
+---
+
+## Accès aux services (local)
+
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:3000 |
+| Backoffice | http://localhost:3001 |
+| Backend API | http://127.0.0.1:8000 |
+| phpMyAdmin | http://localhost/phpmyadmin |
+| MailDev | http://localhost:1080 |
+| Mobile Expo | http://localhost:8081 |
+
+---
+
+## Lancement via Docker
+
+```powershell
 # Démarrer tous les services
 docker compose up -d --build
 
@@ -87,9 +144,7 @@ docker compose down
 docker compose down -v
 ```
 
----
-
-## Accès aux services
+### Accès aux services (Docker)
 
 | Service | URL | Identifiants |
 |---|---|---|
@@ -97,6 +152,36 @@ docker compose down -v
 | Backoffice | http://localhost:3001 | — |
 | Backend API | http://localhost:8000 | — |
 | phpMyAdmin | http://localhost:8080 | root / root |
+| MailDev | http://localhost:1080 | — |
+
+### Commandes Symfony dans Docker
+```powershell
+docker compose exec backend php bin/console doctrine:migrations:migrate
+docker compose exec backend php bin/console cache:clear
+```
+
+---
+
+## Base de données
+
+Le fichier `database/init.sql` est exécuté automatiquement au premier démarrage du conteneur MariaDB.
+
+Pour réinitialiser la base :
+```powershell
+docker compose down -v
+docker compose up -d
+```
+
+---
+
+## Fonctionnalités
+
+- Authentification JWT (connexion / inscription)
+- Réinitialisation de mot de passe par email
+- Catalogue de produits
+- Panier synchronisé avec le backend
+- Interface d'administration (backoffice)
+- Application mobile (Expo)
 
 ---
 
@@ -104,63 +189,19 @@ docker compose down -v
 
 Le projet mobile tourne en local, hors Docker :
 
-```bash
+```powershell
 cd mobile
 npx expo start
 ```
 
 Scanner le QR code avec l'application **Expo Go** sur iOS ou Android.
 
----
-
-## Développement
-
-### Frontend & Backoffice
-
-Les dossiers `frontend/` et `backoffice/` sont montés en volume dans Docker. Toute modification est reflétée immédiatement grâce au hot-reload de Next.js.
-
-### Backend Symfony
-
-Le dossier `backend/` est également monté en volume. Pour exécuter des commandes Symfony dans le conteneur :
-
-```bash
-docker compose exec backend php bin/console <commande>
-
-# Exemples
-docker compose exec backend php bin/console doctrine:migrations:migrate
-docker compose exec backend php bin/console cache:clear
-```
-
-### Base de données
-
-Le fichier `database/init.sql` est exécuté automatiquement au premier démarrage du conteneur MariaDB. Pour ajouter des tables ou des données initiales, modifier ce fichier puis relancer avec :
-
-```bash
-docker compose down -v
-docker compose up -d
-```
+> En développement local, utiliser l'IP de la machine à la place de `localhost` dans `mobile/.env`.
 
 ---
 
 ## Notes
 
-- Le backend attend que MariaDB soit pleinement opérationnel avant de démarrer (healthcheck).
-- Les `node_modules` et `.next` sont exclus des bind-mounts pour éviter les conflits entre l'hôte et le conteneur.
-- En production, remplacer `CMD ["npm", "run", "dev"]` par `CMD ["npm", "run", "build"]` + `CMD ["npm", "start"]` dans les Dockerfiles Next.js.
-
-
-Terminal 1 — Backend Symfony
-cd backend
-symfony serve --allow-all-ip
-Terminal 2 — Frontend Next.js
-cd frontend
-npm run dev
-Terminal 3 — Backoffice Next.js
-cd backoffice
-npm run dev
-Terminal 4 — Mobile Expo
-cd mobile
-npx expo start
-Terminal 5 — MailDev
-maildev
-lancer XAMPP (Apache + MySQL) avant tout
+- Le backend attend que MariaDB soit pleinement opérationnel avant de démarrer (healthcheck Docker).
+- Les `node_modules` et `.next` sont exclus des bind-mounts Docker pour éviter les conflits.
+- En production, remplacer `CMD ["npm", "run", "dev"]` par `CMD ["npm", "start"]` dans les Dockerfiles Next.js.
