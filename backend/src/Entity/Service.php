@@ -14,14 +14,13 @@ class Service
     #[ORM\Column]
     private ?int $id = null;
 
-    // 🔥 Remplacement de title → name
+    // 🔥 name = titre du service
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
-    // 🔥 Ajout longDescription
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $longDescription = null;
 
@@ -44,11 +43,9 @@ class Service
     #[ORM\JoinColumn(nullable: true)]
     private ?Category $category = null;
 
-    // 🔥 Ajout features (JSON)
     #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $features = [];
 
-    // 🔥 Nouveau : type = saas | one_shot
     #[ORM\Column(length: 20)]
     private ?string $type = 'saas';
 
@@ -56,6 +53,12 @@ class Service
     public function getCategorySlug(): ?string
     {
         return $this->category ? $this->category->getSlug() : null;
+    }
+
+    // 🔥 Getter virtuel pour title (attendu par ton front)
+    public function getTitle(): ?string
+    {
+        return $this->name;
     }
 
     // --- GETTERS / SETTERS ---
@@ -152,8 +155,6 @@ class Service
         $this->features = $features;
         return $this;
     }
-
-    // --- TYPE (saas | one_shot) ---
 
     public function getType(): ?string
     {

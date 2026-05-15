@@ -20,19 +20,26 @@ class AdminSubscriptionController extends AbstractController
 
         $data = array_map(fn(Subscription $s) => [
             'id' => $s->getId(),
-            'status' => $s->getStatus(),
-            'startDate' => $s->getStartDate()?->format('Y-m-d'),
-            'endDate' => $s->getEndDate()?->format('Y-m-d'),
+
+            // ✔ USER
             'user' => [
                 'id' => $s->getUser()->getId(),
                 'email' => $s->getUser()->getEmail(),
                 'displayName' => $s->getUser()->getDisplayName(),
             ],
+
+            // ✔ SERVICE
             'service' => [
                 'id' => $s->getService()->getId(),
                 'name' => $s->getService()->getName(),
-                'price' => $s->getService()->getPrice(),
             ],
+
+            // ✔ SUBSCRIPTION DATA
+            'cycle' => $s->getCycle(),
+            'price' => $s->getPrice(),
+            'status' => $s->getStatus(),
+            'startDate' => $s->getStartDate()?->format('Y-m-d'),
+            'nextBillingAt' => $s->getNextBillingAt()?->format('Y-m-d'),
         ], $subs);
 
         return $this->json($data);

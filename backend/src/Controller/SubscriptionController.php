@@ -5,7 +5,7 @@ namespace App\Controller;
 use App\Entity\Subscription;
 use App\Entity\Service;
 use App\Entity\User;
-use App\Entity\Payment; // ⬅️ IMPORTANT
+use App\Entity\Payment;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -62,11 +62,9 @@ class SubscriptionController extends AbstractController
         $subscription->setEndDate(null);
 
         $em->persist($subscription);
-        $em->flush(); // ⬅️ ID du subscription créé ici
+        $em->flush();
 
-        // ---------------------------------------------------------
-        // 🔥 CREATE INITIAL PAYMENT (OBLIGATOIRE POUR TON FRONTEND)
-        // ---------------------------------------------------------
+        // CREATE INITIAL PAYMENT
         $payment = new Payment();
         $payment->setSubscription($subscription);
         $payment->setAmount($price);
@@ -76,7 +74,6 @@ class SubscriptionController extends AbstractController
 
         $em->persist($payment);
         $em->flush();
-        // ---------------------------------------------------------
 
         return new JsonResponse([
             'message' => 'Subscription created successfully',
@@ -99,6 +96,7 @@ class SubscriptionController extends AbstractController
             'service' => [
                 'id' => $s->getService()->getId(),
                 'title' => $s->getService()->getTitle(),
+                'categorySlug' => $s->getService()->getCategorySlug(),
             ],
             'cycle' => $s->getCycle(),
             'price' => $s->getPrice(),
@@ -125,6 +123,7 @@ class SubscriptionController extends AbstractController
             'service' => [
                 'id' => $subscription->getService()->getId(),
                 'title' => $subscription->getService()->getTitle(),
+                'categorySlug' => $subscription->getService()->getCategorySlug(),
             ],
             'cycle' => $subscription->getCycle(),
             'price' => $subscription->getPrice(),
