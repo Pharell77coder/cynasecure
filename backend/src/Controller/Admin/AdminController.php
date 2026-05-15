@@ -18,6 +18,9 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/api/admin', name: 'admin_')]
 class AdminController extends AbstractController
 {
+    /* ─────────────────────────────────────────────── */
+    /* STATS DASHBOARD                                 */
+    /* ─────────────────────────────────────────────── */
     #[Route('/stats', name: 'stats', methods: ['GET'])]
     public function stats(
         UserRepository $users,
@@ -27,10 +30,10 @@ class AdminController extends AbstractController
     ): JsonResponse {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        // MRR = somme des prix des abonnements actifs
         $mrr = $em->createQuery("
-            SELECT COALESCE(SUM(s.price), 0)
+            SELECT COALESCE(SUM(sub.price), 0)
             FROM App\Entity\Subscription sub
-            JOIN sub.service s
             WHERE sub.status = 'active'
         ")->getSingleScalarResult();
 
@@ -42,6 +45,9 @@ class AdminController extends AbstractController
         ]);
     }
 
+    /* ─────────────────────────────────────────────── */
+    /* USERS LIST                                       */
+    /* ─────────────────────────────────────────────── */
     #[Route('/users', name: 'users', methods: ['GET'])]
     public function users(UserRepository $users): JsonResponse
     {
@@ -57,6 +63,9 @@ class AdminController extends AbstractController
         return $this->json($data);
     }
 
+    /* ─────────────────────────────────────────────── */
+    /* SERVICES LIST (READ-ONLY)                        */
+    /* ─────────────────────────────────────────────── */
     #[Route('/services', name: 'services', methods: ['GET'])]
     public function services(ServiceRepository $services): JsonResponse
     {
@@ -65,13 +74,23 @@ class AdminController extends AbstractController
         $data = array_map(fn(Service $s) => [
             'id' => $s->getId(),
             'name' => $s->getName(),
-            'price' => $s->getPrice(),
             'description' => $s->getDescription(),
+            'longDescription' => $s->getLongDescription(),
+            'priceMonthly' => $s->getPriceMonthly(),
+            'priceYearly' => $s->getPriceYearly(),
+            'image' => $s->getImage(),
+            'category' => $s->getCategory()?->getName(),
+            'categorySlug' => $s->getCategorySlug(),
+            'features' => $s->getFeatures(),
+            'type' => $s->getType(),
         ], $services->findAll());
 
         return $this->json($data);
     }
 
+    /* ─────────────────────────────────────────────── */
+    /* PAYMENTS LIST                                    */
+    /* ─────────────────────────────────────────────── */
     #[Route('/payments', name: 'payments', methods: ['GET'])]
     public function payments(PaymentRepository $payments): JsonResponse
     {
