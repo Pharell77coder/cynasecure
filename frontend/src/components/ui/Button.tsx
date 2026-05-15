@@ -11,30 +11,36 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean;
 }
 
+/* 🎨 Variants XDR */
 const variants: Record<Variant, string> = {
   primary:
-    "bg-primary text-primary-foreground hover:bg-primary/90",
+    "bg-blue-600 text-white hover:bg-blue-500 active:scale-[0.98] border border-blue-500/40",
+
   outline:
-    "border border-border text-foreground hover:border-primary hover:text-primary bg-transparent",
+    "border border-gray-700 text-gray-300 hover:border-blue-500 hover:text-blue-400 hover:bg-gray-800/40",
+
   ghost:
-    "text-muted-foreground hover:text-foreground hover:bg-muted",
+    "text-gray-400 hover:text-white hover:bg-gray-800/40",
+
   danger:
-    "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+    "bg-red-600 text-white hover:bg-red-500 active:scale-[0.98] border border-red-500/40",
 };
 
+/* 📏 Tailles XDR */
 const sizes: Record<Size, string> = {
   sm: "h-9 px-3 text-sm",
   md: "h-11 px-5 text-sm",
   lg: "h-12 px-6 text-base",
-  icon: "h-10 w-10",
+  icon: "h-10 w-10 flex items-center justify-center",
 };
 
+/* 🚀 Composant final */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", fullWidth, children, ...rest }, ref) => (
     <button
       ref={ref}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:pointer-events-none",
+        "inline-flex items-center justify-center gap-2 rounded-none font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:opacity-50 disabled:pointer-events-none",
         variants[variant],
         sizes[size],
         fullWidth && "w-full",

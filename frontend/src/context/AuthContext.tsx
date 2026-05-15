@@ -16,7 +16,9 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  // Charger le user au démarrage si token existe
+  /* ────────────────────────────────────────────────
+     🔐 Chargement du user au démarrage
+     ──────────────────────────────────────────────── */
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -30,36 +32,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
   }, []);
 
+  /* ────────────────────────────────────────────────
+     🔑 Login
+     ──────────────────────────────────────────────── */
   const login = async (email: string, password: string) => {
     const { token, user } = await authApi.login(email, password);
     localStorage.setItem("token", token);
     setUser(user);
   };
 
+  /* ────────────────────────────────────────────────
+     🆕 Register
+     ──────────────────────────────────────────────── */
   const register = async (displayName: string, email: string, password: string) => {
     const { token, user } = await authApi.register(displayName, email, password);
     localStorage.setItem("token", token);
     setUser(user);
   };
 
+  /* ────────────────────────────────────────────────
+     🛠 Update profile
+     ──────────────────────────────────────────────── */
   const updateProfile = async (data: Partial<User>) => {
     const updated = await authApi.updateProfile(data);
     setUser(updated);
   };
 
+  /* ────────────────────────────────────────────────
+     🚪 Logout
+     ──────────────────────────────────────────────── */
   const logout = () => {
     authApi.logout().catch(() => {});
     localStorage.removeItem("token");
     setUser(null);
   };
 
-  // 🔥 FIX ADMIN : version robuste et 100% TypeScript-safe
-  const isAdmin = Boolean(
-    user &&
+  /* ────────────────────────────────────────────────
+     🛡 Détection admin robuste
+     ──────────────────────────────────────────────── */
+  const isAdmin =
+    !!user &&
     typeof user.role === "string" &&
-    user.role.toUpperCase().includes("ADMIN")
-  );
+    user.role.toUpperCase().includes("ADMIN");
 
+  /* ────────────────────────────────────────────────
+     🚀 Provider final
+     ──────────────────────────────────────────────── */
   return (
     <AuthContext.Provider
       value={{

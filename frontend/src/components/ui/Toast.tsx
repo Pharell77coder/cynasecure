@@ -12,27 +12,36 @@ export function Toast() {
         <div
           key={t.id}
           className={cn(
-            "pointer-events-auto flex items-center gap-3 rounded-lg border bg-background px-4 py-3 shadow-sm transition-all",
-            t.variant === "success" && "border-success/40",
-            t.variant === "error" && "border-destructive/40",
-            t.variant === "default" && "border-border",
+            // Base XDR : sombre, carré, technique
+            "pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-none",
+            "bg-gray-900 border border-gray-800 shadow-sm",
+
+            // Animation sobre
+            "animate-fade-in transition-all duration-150",
+
+            // Variants XDR
+            t.variant === "success" && "border-green-500/40 bg-green-500/10",
+            t.variant === "error" && "border-red-500/40 bg-red-500/10",
+            t.variant === "default" && "border-gray-700",
           )}
         >
-          {/* Icone */}
+          {/* Icône */}
           {t.variant === "success" && (
-            <CheckCircle2 className="h-5 w-5 text-success" />
+            <CheckCircle2 className="h-5 w-5 text-green-400" />
           )}
           {t.variant === "error" && (
-            <AlertCircle className="h-5 w-5 text-destructive" />
+            <AlertCircle className="h-5 w-5 text-red-400" />
           )}
 
           {/* Message */}
-          <span className="text-sm text-foreground">{t.message}</span>
+          <span className="text-sm text-gray-200 font-mono tracking-wider">
+            {t.message}
+          </span>
 
           {/* Bouton fermer */}
           <button
             onClick={() => dismiss(t.id)}
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="text-gray-500 hover:text-white transition"
             aria-label="Fermer"
           >
             <X className="h-4 w-4" />

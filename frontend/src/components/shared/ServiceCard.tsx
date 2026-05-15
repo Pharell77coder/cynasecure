@@ -4,8 +4,6 @@ import { Card } from "../ui/Card";
 import { useCart } from "../../hooks/useCart";
 import { formatPrice } from "../../lib/utils";
 import React from "react";
-
-// 🔥 On importe le type Service depuis l'API
 import type { Service } from "../../api/services";
 
 export function ServiceCard({ service }: { service: Service }) {
@@ -17,10 +15,11 @@ export function ServiceCard({ service }: { service: Service }) {
     service.priceYearly ?? Math.round(service.priceMonthly * 12 * 0.83);
 
   return (
-    <Card className="relative flex flex-col p-5">
+    <Card className="relative flex flex-col bg-gray-900 border border-gray-800 p-5 rounded-none hover:bg-gray-800 transition">
+
       {/* Badge */}
       {service.badge && (
-        <span className="absolute -top-3 right-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow">
+        <span className="absolute -top-3 right-4 border border-blue-500/30 bg-blue-500/10 text-blue-400 text-[11px] font-mono tracking-widest px-3 py-1">
           {service.badge}
         </span>
       )}
@@ -30,30 +29,30 @@ export function ServiceCard({ service }: { service: Service }) {
         <img
           src={`/${service.image}`}
           alt={service.name}
-          className="mb-4 h-32 w-full rounded-lg object-cover"
+          className="mb-4 h-32 w-full border border-gray-800 object-cover"
         />
       )}
 
       {/* Titre */}
-      <h3 className="text-lg font-bold">{service.name}</h3>
+      <h3 className="text-lg font-bold text-white">{service.name}</h3>
 
       {/* Description */}
-      <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+      <p className="mt-2 text-sm text-gray-400 line-clamp-2">
         {service.description}
       </p>
 
-      {/* 🔥 Prix dynamique selon type */}
+      {/* Prix */}
       <div className="mt-6">
         {service.type === "saas" && (
           <>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold">
+              <span className="text-2xl font-black text-white">
                 {formatPrice(monthlyPrice)}
               </span>
-              <span className="text-sm text-muted-foreground">/mois</span>
+              <span className="text-sm text-gray-500">/mois</span>
             </div>
 
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-gray-500">
               ou {formatPrice(yearlyPrice)} / an
             </p>
           </>
@@ -61,37 +60,38 @@ export function ServiceCard({ service }: { service: Service }) {
 
         {service.type === "one_shot" && (
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold">
+            <span className="text-2xl font-black text-white">
               {formatPrice(monthlyPrice)}
             </span>
-            <span className="text-sm text-muted-foreground">/achat</span>
+            <span className="text-sm text-gray-500">/achat</span>
           </div>
         )}
       </div>
 
-      {/* 🔥 Actions dynamiques */}
+      {/* Actions */}
       <div className="mt-6 flex items-center gap-2">
+
         {/* Découvrir */}
         <Link
           to={`/services/${service.id}`}
-          className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border text-sm font-semibold transition-colors hover:border-primary hover:text-primary"
+          className="inline-flex h-11 flex-1 items-center justify-center gap-2 border border-gray-700 text-sm font-semibold text-gray-300 hover:text-blue-400 hover:border-blue-500 transition rounded-none"
         >
           Découvrir
           <ArrowRight className="h-4 w-4" />
         </Link>
 
-        {/* 🔥 SaaS → pas de panier */}
+        {/* SaaS → bouton abonnement */}
         {service.type === "saas" && (
           <Link
             to={`/subscribe/${service.id}`}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="flex h-11 w-11 items-center justify-center bg-blue-600 hover:bg-blue-500 text-white transition rounded-none"
             aria-label="S’abonner"
           >
             <ArrowRight className="h-4 w-4" />
           </Link>
         )}
 
-        {/* 🔥 One‑shot → bouton panier */}
+        {/* One‑shot → bouton panier */}
         {service.type === "one_shot" && (
           <button
             onClick={() =>
@@ -104,18 +104,14 @@ export function ServiceCard({ service }: { service: Service }) {
                 image: service.image ? `/${service.image}` : undefined,
               })
             }
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors ${
+            className={`flex h-11 w-11 items-center justify-center transition rounded-none ${
               inCart
-                ? "bg-muted text-muted-foreground"
-                : "bg-primary text-primary-foreground hover:bg-primary/90"
+                ? "bg-gray-700 text-gray-400"
+                : "bg-blue-600 hover:bg-blue-500 text-white"
             }`}
             aria-label="Ajouter au panier"
           >
-            {inCart ? (
-              <Check className="h-4 w-4" />
-            ) : (
-              <ShoppingCart className="h-4 w-4" />
-            )}
+            {inCart ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
           </button>
         )}
       </div>

@@ -9,58 +9,87 @@ export default {
       padding: "1.5rem",
       screens: { "2xl": "1280px" },
     },
+
     extend: {
       colors: {
-        background: "hsl(var(--background))",
-        surface: "hsl(var(--surface))",
-        foreground: "hsl(var(--foreground))",
+        /* 🌑 Mode sombre premium */
+        background: "#0B0B0D",          // Noir profond
+        surface: "#111113",             // Surface sombre
+        "surface-elevated": "#1A1A1D",  // Cartes / panels
+        foreground: "#FFFFFF",          // Texte blanc
 
+        /* 🎨 Neutres modernes */
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "#2A2A2E",
+          foreground: "#A1A1AA",
         },
 
+        /* 🔵 Couleur principale (bleu néon premium) */
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "#3B82F6",
+          foreground: "#FFFFFF",
+          glow: "#3B82F6",
         },
 
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-
+        /* 🟥 Danger / erreurs */
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "#EF4444",
+          foreground: "#FFFFFF",
         },
 
-        success: "hsl(var(--success))",
+        /* 🟢 Succès */
+        success: "#10B981",
+
+        /* 🧱 Bordures */
+        border: "#2D2D31",
+        "border-strong": "#3A3A3F",
+
+        /* 🖊 Inputs */
+        input: "#1A1A1D",
+
+        /* 🔔 Focus ring */
+        ring: "#3B82F6",
       },
 
+      /* 🟦 Radius premium */
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 4px)",
-        sm: "calc(var(--radius) - 8px)",
+        lg: "14px",
+        md: "10px",
+        sm: "6px",
       },
 
+      /* 🌈 Dégradés modernes */
       backgroundImage: {
-        "gradient-hero": "var(--gradient-hero)",
-        "gradient-primary": "var(--gradient-primary)",
+        "gradient-hero":
+          "linear-gradient(135deg, #0B0B0D 0%, #111113 50%, #1A1A1D 100%)",
+        "gradient-primary":
+          "linear-gradient(90deg, #2563EB 0%, #3B82F6 50%, #60A5FA 100%)",
       },
 
+      /* ✨ Ombres premium */
+      boxShadow: {
+        glow: "0 0 25px rgba(59, 130, 246, 0.35)",
+        card: "0 4px 20px rgba(0,0,0,0.35)",
+      },
+
+      /* 🎞 Animations modernes */
       keyframes: {
         "fade-in": {
-          from: { opacity: "0" },
-          to: { opacity: "1" },
+          from: { opacity: "0", transform: "translateY(6px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "pulse-glow": {
+          "0%, 100%": { boxShadow: "0 0 20px rgba(59,130,246,0.25)" },
+          "50%": { boxShadow: "0 0 35px rgba(59,130,246,0.45)" },
         },
       },
 
       animation: {
         "fade-in": "fade-in 0.25s ease-out",
+        "pulse-glow": "pulse-glow 2.5s ease-in-out infinite",
       },
     },
   },
-  plugins: [
-    require("@tailwindcss/typography"),
-  ],
+
+  plugins: [require("@tailwindcss/typography")],
 } satisfies Config;

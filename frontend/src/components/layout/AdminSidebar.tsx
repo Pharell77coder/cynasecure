@@ -3,40 +3,62 @@ import {
   LayoutDashboard,
   Package,
   Users,
+  Activity,
   LogOut,
-  Activity, // ← AJOUT
+  Terminal,
+  Layers,
 } from "lucide-react";
-
 import { useAuth } from "../../hooks/useAuth";
 import React from "react";
 
 const navItems = [
-  { to: "/admin", icon: LayoutDashboard, label: "Dashboard", end: true },
+  { to: "/admin", icon: LayoutDashboard, label: "Tableau de bord", end: true },
   { to: "/admin/services", icon: Package, label: "Services" },
-  { to: "/admin/abonnements", icon: Activity, label: "Abonnements" }, // ← AJOUT
+  { to: "/admin/abonnements", icon: Activity, label: "Abonnements" },
   { to: "/admin/utilisateurs", icon: Users, label: "Utilisateurs" },
 ];
 
 export function AdminSidebar() {
   const { logout, user } = useAuth();
 
-  // Si pas admin → pas de sidebar
   if (!user || !user.role?.toUpperCase().includes("ADMIN")) {
     return null;
   }
 
   return (
-    <aside className="w-64 shrink-0 bg-gradient-to-b from-[#0A1A2F] to-black text-white flex flex-col min-h-screen border-r border-white/10">
+    <aside className="w-64 shrink-0 bg-gray-950 border-r border-gray-900 flex flex-col min-h-screen relative">
 
-      {/* Logo */}
-      <div className="px-6 py-6 border-b border-white/10">
-        <h2 className="text-lg font-bold bg-gradient-to-r from-white to-blue-300 bg-clip-text text-transparent">
-          Admin Panel
-        </h2>
+      {/* Glow bleu subtil */}
+      <div
+        className="absolute top-0 left-0 w-[300px] h-[300px] opacity-10 pointer-events-none"
+        style={{
+          background: "radial-gradient(circle, #2563eb 0%, transparent 70%)",
+        }}
+      />
+
+      {/* Header admin */}
+      <div className="px-6 py-8 border-b border-gray-900 relative">
+        <div className="flex items-center gap-3">
+
+          {/* Favicon à la place de l’icône Lucide */}
+          <img
+            src="/favicon.ico"
+            alt="Admin"
+            className="h-5 w-5 object-contain"
+          />
+
+          <h2 className="text-lg font-bold tracking-tight text-white">
+            Console Admin
+          </h2>
+        </div>
+
+        <p className="text-xs text-gray-500 mt-1 font-mono tracking-widest">
+          PRIVILÈGES ÉLEVÉS
+        </p>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 flex flex-col gap-2">
+      <nav className="flex-1 px-4 py-6 flex flex-col gap-1 relative">
         {navItems.map(({ to, icon: Icon, label, end }) => (
           <NavLink
             key={to}
@@ -44,30 +66,27 @@ export function AdminSidebar() {
             end={end}
             className={({ isActive }) =>
               [
-                "group flex items-center gap-3 px-4 py-3 rounded-2xl text-sm transition-all duration-300",
+                "flex items-center gap-3 px-3 py-2 rounded-none text-sm font-medium tracking-wide transition-colors border border-transparent",
                 isActive
-                  ? "bg-white text-[#0A1A2F] font-semibold shadow-lg"
-                  : "text-slate-300 hover:bg-white/10 hover:text-white",
+                  ? "bg-blue-500/10 text-blue-400 border-blue-500/30"
+                  : "text-gray-400 hover:text-white hover:bg-gray-900",
               ].join(" ")
             }
           >
-            <Icon
-              size={18}
-              className="transition-transform duration-300 group-hover:scale-110"
-            />
+            <Icon className="h-4 w-4" />
             {label}
           </NavLink>
         ))}
       </nav>
 
-      {/* Logout */}
-      <div className="px-4 py-6 border-t border-white/10">
+      {/* Déconnexion */}
+      <div className="px-4 py-6 border-t border-gray-900">
         <button
           onClick={logout}
-          className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl text-sm text-slate-300 hover:bg-red-500/10 hover:text-red-400 transition duration-300"
+          className="flex items-center gap-3 w-full px-3 py-2 rounded-none text-sm font-medium text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
         >
-          <LogOut size={18} />
-          Se déconnecter
+          <LogOut className="h-4 w-4" />
+          Déconnexion
         </button>
       </div>
     </aside>

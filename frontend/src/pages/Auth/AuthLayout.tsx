@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Shield } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import React from "react";
 
@@ -13,9 +12,14 @@ export function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="container flex justify-center py-16">
       <Card className="w-full max-w-md p-8">
+
         {/* Logo */}
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-          <Shield className="h-8 w-8 text-primary" />
+          <img
+            src="/favicon.ico"
+            alt="CynaSecure"
+            className="h-10 w-10 object-contain"
+          />
         </div>
 
         {/* Titre */}

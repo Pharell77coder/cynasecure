@@ -5,11 +5,12 @@ import React from "react";
 
 export function PublicLayout() {
   return (
-    <div className="flex min-h-screen flex-col">
-      {/* Navigation */}
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+
+      {/* Navigation principale */}
       <Navbar />
 
-      {/* Contenu principal */}
+      {/* Contenu public */}
       <main className="flex-1">
         <Outlet />
       </main>

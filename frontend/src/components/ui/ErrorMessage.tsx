@@ -14,7 +14,12 @@ export function ErrorMessage({
     <p
       role="alert"
       className={cn(
-        "rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive",
+        // Style XDR : sombre, carré, technique
+        "border border-red-500/30 bg-red-500/10 text-red-400 font-mono tracking-widest p-3 rounded-none text-sm",
+
+        // Hover discret (optionnel)
+        "transition-colors hover:border-red-500/50",
+
         className,
       )}
     >

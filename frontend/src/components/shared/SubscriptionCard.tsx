@@ -40,25 +40,31 @@ export function SubscriptionCard({
           <button
             key={opt.value}
             onClick={() => onChange(opt.value)}
-            className={`rounded-xl border p-4 text-left transition-colors ${
-              active
-                ? "border-primary bg-primary/5"
-                : "border-border hover:border-primary/50"
-            }`}
+            className={`p-4 border bg-gray-900 rounded-none text-left transition
+              ${
+                active
+                  ? "border-blue-500/40 bg-blue-500/10"
+                  : "border-gray-800 hover:border-blue-500/30 hover:bg-gray-800/40"
+              }
+            `}
           >
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold">{opt.label}</span>
+              <span className="text-sm font-semibold text-white">
+                {opt.label}
+              </span>
 
               {opt.tag && (
-                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                <span className="px-2 py-0.5 text-[11px] font-mono tracking-widest border border-blue-500/30 bg-blue-500/10 text-blue-400">
                   {opt.tag}
                 </span>
               )}
             </div>
 
             <div className="mt-3 flex items-baseline gap-1">
-              <span className="text-2xl font-bold">{opt.price}</span>
-              <span className="text-xs text-muted-foreground">{opt.suffix}</span>
+              <span className="text-2xl font-black text-white">
+                {opt.price}
+              </span>
+              <span className="text-xs text-gray-500">{opt.suffix}</span>
             </div>
           </button>
         );
