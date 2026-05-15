@@ -13,9 +13,7 @@ import {
   Database,
 } from "lucide-react";
 
-/* ─────────────────────────────────────────────── */
-/* TYPES                                           */
-/* ─────────────────────────────────────────────── */
+/* TYPES */
 export interface Subscription {
   id: number;
   user: { id: number; displayName: string; email: string };
@@ -27,12 +25,10 @@ export interface Subscription {
   nextBillingAt: string | null;
 }
 
-/* ─────────────────────────────────────────────── */
-/* STAT CARD — style XDR                           */
-/* ─────────────────────────────────────────────── */
+/* STAT CARD */
 function StatCard({ label, value, icon: Icon }: any) {
   return (
-    <div className="p-6 bg-gray-900 border border-gray-800 rounded-none hover:bg-gray-800 transition-colors">
+    <div className="p-6 bg-gray-900 border border-gray-800 hover:bg-gray-800 transition-colors">
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-400">{label}</p>
         <Icon className="h-5 w-5 text-blue-500" />
@@ -42,9 +38,7 @@ function StatCard({ label, value, icon: Icon }: any) {
   );
 }
 
-/* ─────────────────────────────────────────────── */
-/* PAGE                                            */
-/* ─────────────────────────────────────────────── */
+/* PAGE */
 export default function AdminSubscriptionsPage() {
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +68,7 @@ export default function AdminSubscriptionsPage() {
       : "—";
 
   return (
-    <div className="space-y-20 relative">
+    <div className="relative">
 
       {/* Glow bleu */}
       <div
@@ -95,7 +89,7 @@ export default function AdminSubscriptionsPage() {
       />
 
       {/* HEADER */}
-      <section className="relative py-16 border-b border-gray-900">
+      <section className="relative py-10 border-b border-gray-900">
         <div className="container space-y-4">
           <div className="inline-flex items-center gap-2 border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs font-mono tracking-widest px-3 py-1.5 rounded">
             <Radar className="h-3 w-3" />
@@ -114,7 +108,7 @@ export default function AdminSubscriptionsPage() {
 
       {/* STATS */}
       {!loading && (
-        <section className="container grid gap-6 md:grid-cols-4">
+        <section className="container mt-10 grid gap-6 md:grid-cols-4">
           <StatCard label="Actifs" value={active} icon={CheckCircle} />
           <StatCard label="Expirés" value={expired} icon={XCircle} />
           <StatCard label="MRR" value={`${mrr.toLocaleString()} €`} icon={TrendingUp} />
@@ -123,8 +117,8 @@ export default function AdminSubscriptionsPage() {
       )}
 
       {/* TABLE */}
-      <section className="container">
-        <div className="bg-gray-900 border border-gray-800 rounded-none overflow-hidden">
+      <section className="container mt-10 mb-20">
+        <div className="bg-gray-900 border border-gray-800 overflow-hidden">
 
           {/* Header */}
           <div className="px-6 py-5 border-b border-gray-800 flex items-center gap-3">
@@ -137,7 +131,7 @@ export default function AdminSubscriptionsPage() {
           ) : subs.length === 0 ? (
             <p className="p-6 text-gray-500">Aucun abonnement trouvé.</p>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm align-middle">
               <thead>
                 <tr className="border-b border-gray-800 text-gray-500 text-left bg-gray-950/40">
                   <th className="px-6 py-4 font-medium">Utilisateur</th>
@@ -159,14 +153,18 @@ export default function AdminSubscriptionsPage() {
                     transition={{ duration: 0.25 }}
                     className="border-b border-gray-800 last:border-0 hover:bg-gray-800/40 transition"
                   >
-                    <td className="px-6 py-4 font-medium text-white flex items-center gap-2">
-                      <User size={16} className="text-blue-500" />
-                      {s.user.displayName}
+                    <td className="px-6 py-4 font-medium text-white">
+                      <div className="flex items-center gap-2">
+                        <User size={16} className="text-blue-500" />
+                        {s.user.displayName}
+                      </div>
                     </td>
 
-                    <td className="px-6 py-4 text-gray-400 flex items-center gap-2">
-                      <Activity size={16} className="text-blue-500" />
-                      {s.service.name}
+                    <td className="px-6 py-4 text-gray-400">
+                      <div className="flex items-center gap-2">
+                        <Activity size={16} className="text-blue-500" />
+                        {s.service.name}
+                      </div>
                     </td>
 
                     <td className="px-6 py-4 text-gray-400">{s.cycle}</td>
@@ -187,7 +185,7 @@ export default function AdminSubscriptionsPage() {
 
                     <td className="px-6 py-4">
                       <span
-                        className={`text-xs px-3 py-1 rounded-none font-mono tracking-widest ${
+                        className={`text-xs px-3 py-1 font-mono tracking-widest ${
                           s.status === "ACTIVE"
                             ? "bg-green-500/10 text-green-400 border border-green-500/20"
                             : "bg-gray-700/30 text-gray-400 border border-gray-700"

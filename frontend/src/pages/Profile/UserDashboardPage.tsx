@@ -106,7 +106,7 @@ export default function UserDashboardPage() {
   }));
 
   return (
-    <div className="container py-20 space-y-20 relative">
+    <div className="container py-10 space-y-16 relative">
 
       {/* Glow bleu */}
       <div
@@ -124,7 +124,7 @@ export default function UserDashboardPage() {
         }}
       />
 
-      <div className="relative space-y-20">
+      <div className="relative space-y-16">
 
         {/* Titre */}
         <h1 className="text-4xl font-black text-white tracking-tight">
@@ -236,7 +236,7 @@ export default function UserDashboardPage() {
         </section>
 
         {/* Recommandations */}
-        <section className="space-y-6">
+        <section className="space-y-6 mb-20">
           <h2 className="text-xl font-bold text-white">Recommandations pour vous</h2>
 
           {recommended.length === 0 ? (

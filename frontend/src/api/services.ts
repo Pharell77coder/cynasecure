@@ -1,5 +1,9 @@
 import { apiFetch } from "./apiFetch";
 
+/* ─────────────────────────────────────────────── */
+/* TYPES                                           */
+/* ─────────────────────────────────────────────── */
+
 export interface ServiceFeature {
   label: string;
   included: boolean;
@@ -9,8 +13,10 @@ export interface Service {
   id: number;
   name: string;
 
-  // 🔥 Le backend renvoie category et categorySlug
+  // Catégorie (nom lisible)
   category: string | null;
+
+  // Slug de la catégorie
   categorySlug: string | null;
 
   description: string;
@@ -21,53 +27,57 @@ export interface Service {
 
   badge?: string | null;
 
-  // 🔥 Peut être null si pas d'image
   image: string | null;
 
   features: ServiceFeature[];
 
-  // 🔥 AJOUT OBLIGATOIRE
   type: "saas" | "one_shot";
 }
 
 export interface CreateServicePayload {
   name: string;
-  category: string;
   categorySlug: string;
   description: string;
   longDescription: string;
   priceMonthly: number;
-  priceYearly?: number;
-  badge?: string;
-  image: string;
+  priceYearly?: number | null;
+  badge?: string | null;
+  image: string | null;
   features: ServiceFeature[];
-
-  // 🔥 AJOUT
   type: "saas" | "one_shot";
 }
 
 export interface UpdateServicePayload extends Partial<CreateServicePayload> {}
 
+/* ─────────────────────────────────────────────── */
+/* API ADMIN SERVICES                              */
+/* ─────────────────────────────────────────────── */
+
 export const servicesApi = {
-  getAll: () => apiFetch<Service[]>("/api/services"),
+  // LISTE ADMIN
+  getAll: () => apiFetch<Service[]>("/api/admin/services"),
 
+  // GET ONE
   getById: (id: string | number) =>
-    apiFetch<Service>(`/api/services/${id}`),
+    apiFetch<Service>(`/api/admin/services/${id}`),
 
+  // CREATE
   create: (data: CreateServicePayload) =>
-    apiFetch<Service>("/api/services", {
+    apiFetch("/api/admin/services", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
+  // UPDATE
   update: (id: string | number, data: UpdateServicePayload) =>
-    apiFetch<Service>(`/api/services/${id}`, {
-      method: "PATCH",
+    apiFetch(`/api/admin/services/${id}`, {
+      method: "PUT",
       body: JSON.stringify(data),
     }),
 
+  // DELETE
   remove: (id: string | number) =>
-    apiFetch(`/api/services/${id}`, {
+    apiFetch(`/api/admin/services/${id}`, {
       method: "DELETE",
     }),
 };

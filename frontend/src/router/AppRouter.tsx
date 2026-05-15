@@ -20,7 +20,10 @@ import UserDashboardPage from "../pages/Profile/UserDashboardPage";
 import AdminDashboardPage from "../pages/Admin/AdminDashboardPage";
 import AdminServicesPage from "../pages/Admin/AdminServicesPage";
 import AdminUsersPage from "../pages/Admin/AdminUsersPage";
-import AdminSubscriptionsPage from "../pages/Admin/AdminSubscriptionsPage"; // 🔥 AJOUT
+import AdminSubscriptionsPage from "../pages/Admin/AdminSubscriptionsPage";
+
+// 🔥 AJOUT : formulaire création / édition
+import AdminServiceFormPage from "../pages/Admin/AdminServiceFormPage";
 
 import NotFoundPage from "../pages/NotFound/NotFoundPage";
 
@@ -35,13 +38,14 @@ export function AppRouter() {
     <BrowserRouter>
       <Routes>
 
-        {/* Public */}
+        {/* PUBLIC */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/catalogue" element={<CataloguePage />} />
           <Route path="/services/:id" element={<ServiceDetailsPage />} />
           <Route path="/panier" element={<CartPage />} />
 
+          {/* Auth */}
           <Route
             path="/connexion"
             element={
@@ -60,6 +64,7 @@ export function AppRouter() {
             }
           />
 
+          {/* User protected */}
           <Route
             path="/profil"
             element={
@@ -99,12 +104,22 @@ export function AppRouter() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
 
-        {/* Admin */}
+        {/* ADMIN */}
         <Route element={<AdminProtectedRoute />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboardPage />} />
+
+            {/* SERVICES */}
             <Route path="services" element={<AdminServicesPage />} />
-            <Route path="abonnements" element={<AdminSubscriptionsPage />} /> {/* 🔥 AJOUT */}
+
+            {/* 🔥 AJOUT : création */}
+            <Route path="services/new" element={<AdminServiceFormPage />} />
+
+            {/* 🔥 AJOUT : édition */}
+            <Route path="services/:id" element={<AdminServiceFormPage />} />
+
+            {/* AUTRES */}
+            <Route path="abonnements" element={<AdminSubscriptionsPage />} />
             <Route path="utilisateurs" element={<AdminUsersPage />} />
           </Route>
         </Route>

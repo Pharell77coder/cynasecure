@@ -12,7 +12,7 @@ import { adminApi } from "../../api/admin";
 import React from "react";
 
 /* ─────────────────────────────────────────────── */
-/* STAT CARD — style XDR                           */
+/* STAT CARD                                       */
 /* ─────────────────────────────────────────────── */
 function StatCard({ label, value, icon: Icon }: any) {
   return (
@@ -47,7 +47,7 @@ export default function AdminDashboardPage() {
   }, []);
 
   return (
-    <div className="space-y-20 relative">
+    <div className="relative">
 
       {/* Glow bleu */}
       <div
@@ -68,7 +68,7 @@ export default function AdminDashboardPage() {
       />
 
       {/* HEADER */}
-      <section className="relative py-16 border-b border-gray-900">
+      <section className="relative py-10 border-b border-gray-900">
         <div className="container space-y-4">
           <div className="inline-flex items-center gap-2 border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs font-mono tracking-widest px-3 py-1.5 rounded">
             <Radar className="h-3 w-3" />
@@ -87,37 +87,21 @@ export default function AdminDashboardPage() {
       </section>
 
       {/* STATS */}
-      <section className="container">
+      <section className="container mt-10">
         {loading ? (
           <p className="text-gray-500">Chargement…</p>
         ) : (
           <div className="grid gap-6 md:grid-cols-4">
-            <StatCard
-              label="Services"
-              value={stats.services}
-              icon={Package}
-            />
-            <StatCard
-              label="Utilisateurs"
-              value={stats.users}
-              icon={Users}
-            />
-            <StatCard
-              label="Abonnements actifs"
-              value={stats.subscriptions}
-              icon={Activity}
-            />
-            <StatCard
-              label="MRR"
-              value={`${stats.mrr.toLocaleString()} €`}
-              icon={TrendingUp}
-            />
+            <StatCard label="Services" value={stats.services} icon={Package} />
+            <StatCard label="Utilisateurs" value={stats.users} icon={Users} />
+            <StatCard label="Abonnements actifs" value={stats.subscriptions} icon={Activity} />
+            <StatCard label="MRR" value={`${stats.mrr.toLocaleString()} €`} icon={TrendingUp} />
           </div>
         )}
       </section>
 
       {/* ACTIVITÉ RÉCENTE */}
-      <section className="container">
+      <section className="container mt-10 mb-20">
         <Card className="p-8 bg-gray-900 border-gray-800">
           <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5 text-blue-500" />

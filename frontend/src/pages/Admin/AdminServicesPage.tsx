@@ -6,7 +6,6 @@ import {
   Pencil,
   Trash2,
   Plus,
-  Layers,
   FolderTree,
   Database,
 } from "lucide-react";
@@ -44,7 +43,7 @@ export default function AdminServicesPage() {
   };
 
   return (
-    <div className="space-y-20 relative">
+    <div className="relative">
 
       {/* Glow bleu */}
       <div
@@ -65,7 +64,7 @@ export default function AdminServicesPage() {
       />
 
       {/* HEADER */}
-      <section className="relative py-16 border-b border-gray-900">
+      <section className="relative py-10 border-b border-gray-900">
         <div className="container space-y-4">
           <div className="inline-flex items-center gap-2 border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs font-mono tracking-widest px-3 py-1.5 rounded">
             <FolderTree className="h-3 w-3" />
@@ -84,7 +83,7 @@ export default function AdminServicesPage() {
       </section>
 
       {/* ACTION BUTTON */}
-      <div className="container flex justify-end">
+      <div className="container flex justify-end mt-8">
         <Link to="/admin/services/new">
           <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500">
             <Plus size={18} /> Nouveau service
@@ -93,7 +92,7 @@ export default function AdminServicesPage() {
       </div>
 
       {/* TABLE */}
-      <section className="container">
+      <section className="container mt-8 mb-20">
         <Card className="bg-gray-900 border-gray-800 p-0 overflow-hidden">
 
           {/* Header */}
