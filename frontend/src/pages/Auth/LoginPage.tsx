@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, Shield } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -100,9 +100,15 @@ export default function LoginPage() {
 
         {/* Mot de passe */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-300">
-            Mot de passe
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-medium text-gray-300">Mot de passe</label>
+            <Link
+              to="/mot-de-passe-oublie"
+              className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              Mot de passe oublié ?
+            </Link>
+          </div>
 
           <div className="relative">
             <Input

@@ -11,6 +11,7 @@ import CartPage from "../pages/Cart/CartPage";
 
 import LoginPage from "../pages/Auth/LoginPage";
 import RegisterPage from "../pages/Auth/RegisterPage";
+import ForgotPasswordPage from "../pages/Auth/ForgotPasswordPage";
 
 import ProfilePage from "../pages/Profile/ProfilePage";
 import MySubscriptionsPage from "../pages/Profile/MySubscriptionsPage";
@@ -63,6 +64,8 @@ export function AppRouter() {
               )
             }
           />
+
+          <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
 
           {/* User protected */}
           <Route

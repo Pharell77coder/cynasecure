@@ -42,4 +42,16 @@ export const authApi = {
     apiFetch("/api/logout", {
       method: "POST",
     }),
+
+  resetPasswordRequest: (email: string) =>
+    apiFetch<{ message: string; dev_token?: string }>("/api/password-reset/request", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPasswordConfirm: (token: string, newPassword: string) =>
+    apiFetch<{ message: string }>("/api/password-reset/confirm", {
+      method: "POST",
+      body: JSON.stringify({ token, newPassword }),
+    }),
 };
