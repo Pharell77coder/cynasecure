@@ -1,7 +1,7 @@
 /**
  * Client API centralisé pour toutes les requêtes backend.
  * Gère automatiquement :
- * - BASE_URL (depuis .env)
+ * - BASE_URL (depuis .env → "/api")
  * - Sessions (credentials: include)
  * - Timeout
  * - JSON / FormData
@@ -25,9 +25,8 @@ export async function apiFetch<T = unknown>(
     const res = await fetch(`${BASE_URL}${path}`, {
       ...options,
       signal: controller.signal,
-      credentials: "include", // 🔥 obligatoire pour les sessions Symfony
+      credentials: "include", // 🔥 indispensable pour les sessions Symfony
       headers: {
-        // 🔥 N'ajoute Content-Type QUE si ce n'est pas du FormData
         ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...(options.headers || {}),
       },
@@ -40,7 +39,7 @@ export async function apiFetch<T = unknown>(
       return {} as T;
     }
 
-    // 🔥 JSON ou texte
+    // 🔥 JSON ou texte brut
     const data = await res
       .json()
       .catch(async () => await res.text().catch(() => null));
