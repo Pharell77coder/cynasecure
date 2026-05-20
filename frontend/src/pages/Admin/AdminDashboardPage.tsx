@@ -1,118 +1,153 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { Package, Users, Activity, TrendingUp, ArrowRight, CheckCircle2, XCircle } from "lucide-react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { Card } from "../../components/ui/Card";
-import {
-  Package,
-  Users,
-  Activity,
-  TrendingUp,
-  Shield,
-  Radar,
-} from "lucide-react";
 import { adminApi } from "../../api/admin";
-import React from "react";
+import type { Subscription } from "./AdminSubscriptionsPage";
 
-/* ─────────────────────────────────────────────── */
-/* STAT CARD                                       */
-/* ─────────────────────────────────────────────── */
-function StatCard({ label, value, icon: Icon }: any) {
+function fmt(d: string) {
+  try { return format(new Date(d), "dd MMM yyyy", { locale: fr }); }
+  catch { return d; }
+}
+
+function StatCard({
+  label, value, icon: Icon, to, borderCls, iconCls, gradCls,
+}: {
+  label: string;
+  value: React.ReactNode;
+  icon: React.ElementType;
+  to: string;
+  borderCls: string;
+  iconCls: string;
+  gradCls: string;
+}) {
   return (
-    <Card className="p-6 bg-gray-900 border-gray-800 hover:bg-gray-800 transition-colors">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-400">{label}</p>
-        <Icon className="h-5 w-5 text-blue-500" />
+    <Link to={to}>
+      <div className={`border ${borderCls} bg-gradient-to-br ${gradCls} bg-gray-900 p-6 hover:bg-gray-800 transition-colors group`}>
+        <div className="flex items-center justify-between mb-4">
+          <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${iconCls}`}>
+            <Icon className="h-4 w-4" />
+          </div>
+          <ArrowRight className="h-3.5 w-3.5 text-gray-700 group-hover:text-gray-500 transition-colors" />
+        </div>
+        <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest">{label}</p>
+        <p className="text-3xl font-black text-white mt-1">{value}</p>
       </div>
-      <p className="text-4xl font-black text-white mt-3">{value}</p>
-    </Card>
+    </Link>
   );
 }
 
-/* ─────────────────────────────────────────────── */
-/* PAGE                                            */
-/* ─────────────────────────────────────────────── */
 export default function AdminDashboardPage() {
-  const [stats, setStats] = useState({
-    services: 0,
-    users: 0,
-    subscriptions: 0,
-    mrr: 0,
-  });
-
+  const [stats, setStats] = useState({ services: 0, users: 0, subscriptions: 0, mrr: 0 });
+  const [recentSubs, setRecentSubs] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    adminApi
-      .getStats()
-      .then((data) => setStats(data))
+    Promise.all([adminApi.getStats(), adminApi.getSubscriptions()])
+      .then(([s, subs]) => {
+        setStats(s);
+        setRecentSubs(
+          [...subs].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()).slice(0, 6)
+        );
+      })
       .finally(() => setLoading(false));
   }, []);
 
-  return (
-    <div className="relative">
-
-      {/* Glow bleu */}
-      <div
-        className="absolute top-0 right-0 w-[600px] h-[600px] opacity-10 pointer-events-none"
-        style={{
-          background: "radial-gradient(circle, #2563eb 0%, transparent 70%)",
-        }}
-      />
-
-      {/* Grille technique */}
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
-      />
-
-      {/* HEADER */}
-      <section className="relative py-10 border-b border-gray-900">
-        <div className="container space-y-4">
-          <div className="inline-flex items-center gap-2 border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs font-mono tracking-widest px-3 py-1.5 rounded">
-            <Radar className="h-3 w-3" />
-            CONSOLE ADMINISTRATEUR
-          </div>
-
-          <h1 className="text-4xl font-black text-white tracking-tight">
-            Tableau de bord
-          </h1>
-
-          <p className="text-gray-400 max-w-2xl leading-relaxed">
-            Vue d’ensemble des indicateurs clés de la plateforme : services, utilisateurs,
-            abonnements et revenus récurrents.
-          </p>
+  if (loading) {
+    return (
+      <div className="p-8 space-y-6 animate-pulse">
+        <div className="h-7 w-48 bg-gray-800" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {[...Array(4)].map((_, i) => <div key={i} className="h-32 bg-gray-800" />)}
         </div>
-      </section>
+        <div className="h-72 bg-gray-800" />
+      </div>
+    );
+  }
 
-      {/* STATS */}
-      <section className="container mt-10">
-        {loading ? (
-          <p className="text-gray-500">Chargement…</p>
+  return (
+    <div className="p-8 space-y-8 max-w-6xl">
+
+      <div>
+        <p className="text-[11px] font-mono tracking-widest text-blue-500 mb-1">CONSOLE ADMINISTRATEUR</p>
+        <h1 className="text-2xl font-black text-white">Tableau de bord</h1>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Services" value={stats.services} icon={Package} to="/admin/services"
+          borderCls="border-violet-500/20" iconCls="bg-violet-500/10 text-violet-400"
+          gradCls="from-violet-500/10 to-transparent"
+        />
+        <StatCard
+          label="Utilisateurs" value={stats.users} icon={Users} to="/admin/utilisateurs"
+          borderCls="border-blue-500/20" iconCls="bg-blue-500/10 text-blue-400"
+          gradCls="from-blue-500/10 to-transparent"
+        />
+        <StatCard
+          label="Abonnements actifs" value={stats.subscriptions} icon={Activity} to="/admin/abonnements"
+          borderCls="border-emerald-500/20" iconCls="bg-emerald-500/10 text-emerald-400"
+          gradCls="from-emerald-500/10 to-transparent"
+        />
+        <StatCard
+          label="MRR" value={`${stats.mrr.toLocaleString("fr-FR")} €`} icon={TrendingUp} to="/admin/abonnements"
+          borderCls="border-amber-500/20" iconCls="bg-amber-500/10 text-amber-400"
+          gradCls="from-amber-500/10 to-transparent"
+        />
+      </div>
+
+      {/* Recent subscriptions */}
+      <Card className="p-0 overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+          <h2 className="font-semibold text-white text-sm">Abonnements récents</h2>
+          <Link
+            to="/admin/abonnements"
+            className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            Voir tous <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+
+        {recentSubs.length === 0 ? (
+          <p className="text-gray-500 text-sm px-6 py-10 text-center">Aucun abonnement enregistré.</p>
         ) : (
-          <div className="grid gap-6 md:grid-cols-4">
-            <StatCard label="Services" value={stats.services} icon={Package} />
-            <StatCard label="Utilisateurs" value={stats.users} icon={Users} />
-            <StatCard label="Abonnements actifs" value={stats.subscriptions} icon={Activity} />
-            <StatCard label="MRR" value={`${stats.mrr.toLocaleString()} €`} icon={TrendingUp} />
-          </div>
+          <>
+            <div className="hidden md:grid grid-cols-4 gap-4 px-6 py-2.5 text-[10px] font-medium text-gray-600 uppercase tracking-wider border-b border-gray-800 bg-gray-950">
+              <span>Utilisateur</span>
+              <span>Service</span>
+              <span>Montant</span>
+              <span className="text-right">Statut · Date</span>
+            </div>
+            <div className="divide-y divide-gray-800">
+              {recentSubs.map((sub) => (
+                <div key={sub.id} className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-center px-6 py-3.5 hover:bg-gray-800/40 transition-colors">
+                  <p className="text-sm text-white font-medium truncate">{sub.user.displayName}</p>
+                  <p className="text-sm text-gray-400 truncate">{sub.service.name}</p>
+                  <p className="text-sm font-semibold text-white">
+                    {sub.price} € <span className="text-gray-600 font-normal text-xs">/ {sub.cycle === "monthly" ? "mois" : "an"}</span>
+                  </p>
+                  <div className="flex items-center justify-between md:justify-end gap-3">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full border ${
+                      sub.status === "ACTIVE"
+                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                        : "bg-red-500/10 text-red-400 border-red-500/20"
+                    }`}>
+                      {sub.status === "ACTIVE"
+                        ? <CheckCircle2 className="h-2.5 w-2.5" />
+                        : <XCircle className="h-2.5 w-2.5" />}
+                      {sub.status === "ACTIVE" ? "Actif" : "Annulé"}
+                    </span>
+                    <span className="text-xs text-gray-600">{fmt(sub.startDate)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
-      </section>
-
-      {/* ACTIVITÉ RÉCENTE */}
-      <section className="container mt-10 mb-20">
-        <Card className="p-8 bg-gray-900 border-gray-800">
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <Shield className="h-5 w-5 text-blue-500" />
-            Activité récente
-          </h2>
-
-          <p className="text-gray-500 text-sm">
-            Aucune activité récente pour le moment.
-          </p>
-        </Card>
-      </section>
+      </Card>
     </div>
   );
 }
