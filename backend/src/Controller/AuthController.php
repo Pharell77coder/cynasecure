@@ -4,42 +4,47 @@ namespace App\Controller;
 
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 class AuthController extends AbstractController
 {
+    // json_login intercepts this route — the method body never executes
+    #[Route('/api/login', name: 'api_login', methods: ['POST'])]
+    public function login(): never
+    {
+        throw new \LogicException('json_login handles this route.');
+    }
+
     #[Route('/api/register', name: 'api_register', methods: ['POST'])]
     public function register(
         Request $request,
         EntityManagerInterface $em,
         UserPasswordHasherInterface $passwordHasher,
-        SessionInterface $session
+        Security $security
     ): JsonResponse {
-        $data = json_decode($request->getContent(), true);
+        $data = json_decode($request->getContent(), true) ?? [];
 
-        $email = $data['email'] ?? null;
-        $password = $data['password'] ?? null;
-        $displayName = $data['displayName'] ?? null;
+        $email       = trim($data['email'] ?? '');
+        $password    = $data['password'] ?? '';
+        $displayName = trim($data['displayName'] ?? '');
 
         if (!$email || !$password) {
-            return new JsonResponse(['message' => 'Email and password are required'], 400);
+            return new JsonResponse(['message' => 'Email et mot de passe requis'], 400);
         }
 
-        $existing = $em->getRepository(User::class)->findOneBy(['email' => $email]);
-        if ($existing) {
-            return new JsonResponse(['message' => 'Email already used'], 400);
+        if ($em->getRepository(User::class)->findOneBy(['email' => $email])) {
+            return new JsonResponse(['message' => 'Email déjà utilisé'], 400);
         }
 
         $user = new User();
         $user->setEmail($email);
         $user->setPassword($passwordHasher->hashPassword($user, $password));
-        $user->setDisplayName($displayName ?? $email);
+        $user->setDisplayName($displayName ?: $email);
         $user->setRole('ROLE_USER');
         $user->setCreatedAt(new \DateTimeImmutable());
         $user->setUpdatedAt(new \DateTime());
@@ -47,79 +52,42 @@ class AuthController extends AbstractController
         $em->persist($user);
         $em->flush();
 
-        // Auto-login après inscription
-        $session->set('user_id', $user->getId());
-
-        return new JsonResponse([
-            'token' => 'session', // ton frontend attend un token
-            'user' => [
-                'id' => $user->getId(),
-                'email' => $user->getEmail(),
-                'displayName' => $user->getDisplayName(),
-                'role' => $user->getRole(),
-            ]
-        ], 201);
-    }
-
-    #[Route('/api/login', name: 'api_login', methods: ['POST'])]
-    public function login(
-        Request $request,
-        EntityManagerInterface $em,
-        UserPasswordHasherInterface $passwordHasher,
-        SessionInterface $session
-    ): JsonResponse {
-        $data = json_decode($request->getContent(), true);
-
-        $email = $data['email'] ?? null;
-        $password = $data['password'] ?? null;
-
-        $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
-
-        if (!$user || !$passwordHasher->isPasswordValid($user, $password)) {
-            return new JsonResponse(['message' => 'Invalid credentials'], 401);
-        }
-
-        // Stocker l'utilisateur en session
-        $session->set('user_id', $user->getId());
+        // Programmatic login — creates the Symfony security token in session
+        $security->login($user, 'json_login', 'api');
 
         return new JsonResponse([
             'token' => 'session',
-            'user' => [
-                'id' => $user->getId(),
-                'email' => $user->getEmail(),
-                'displayName' => $user->getDisplayName(),
-                'role' => $user->getRole(),
-            ]
-        ]);
+            'user'  => $this->serializeUser($user),
+        ], 201);
     }
 
     #[Route('/api/me', name: 'api_me', methods: ['GET'])]
-    public function me(SessionInterface $session, EntityManagerInterface $em): JsonResponse
+    public function me(EntityManagerInterface $em): JsonResponse
     {
-        $id = $session->get('user_id');
+        /** @var User $authUser */
+        $authUser = $this->getUser();
 
-        if (!$id) {
+        if (!$authUser) {
             return new JsonResponse(['message' => 'Not authenticated'], 401);
         }
 
-        $user = $em->getRepository(User::class)->find($id);
+        // Re-fetch so we always return fresh data (phone, company, etc.)
+        $user = $em->getRepository(User::class)->find($authUser->getId());
 
         return new JsonResponse($this->serializeUser($user));
     }
 
     #[Route('/api/me', name: 'api_me_update', methods: ['PATCH'])]
-    public function updateMe(Request $request, EntityManagerInterface $em, SessionInterface $session): JsonResponse
+    public function updateMe(Request $request, EntityManagerInterface $em): JsonResponse
     {
-        $id = $session->get('user_id');
-        if (!$id) {
+        /** @var User $authUser */
+        $authUser = $this->getUser();
+
+        if (!$authUser) {
             return new JsonResponse(['message' => 'Not authenticated'], 401);
         }
 
-        $user = $em->getRepository(User::class)->find($id);
-        if (!$user) {
-            return new JsonResponse(['message' => 'Utilisateur introuvable'], 404);
-        }
-
+        $user = $em->getRepository(User::class)->find($authUser->getId());
         $data = json_decode($request->getContent(), true) ?? [];
 
         if (!empty($data['displayName'])) {
@@ -142,15 +110,16 @@ class AuthController extends AbstractController
     public function changePassword(
         Request $request,
         EntityManagerInterface $em,
-        UserPasswordHasherInterface $passwordHasher,
-        SessionInterface $session
+        UserPasswordHasherInterface $passwordHasher
     ): JsonResponse {
-        $id = $session->get('user_id');
-        if (!$id) {
+        /** @var User $authUser */
+        $authUser = $this->getUser();
+
+        if (!$authUser) {
             return new JsonResponse(['message' => 'Not authenticated'], 401);
         }
 
-        $user = $em->getRepository(User::class)->find($id);
+        $user = $em->getRepository(User::class)->find($authUser->getId());
         $data = json_decode($request->getContent(), true) ?? [];
 
         $current = $data['currentPassword'] ?? '';
@@ -172,11 +141,10 @@ class AuthController extends AbstractController
     }
 
     #[Route('/api/logout', name: 'api_logout', methods: ['POST'])]
-    public function logout(SessionInterface $session): JsonResponse
+    public function logout(): never
     {
-        $session->invalidate();
-
-        return new JsonResponse(['message' => 'Logged out']);
+        // Handled by Symfony's logout listener (security.yaml)
+        throw new \LogicException('This should never be reached.');
     }
 
     private function serializeUser(User $user): array
