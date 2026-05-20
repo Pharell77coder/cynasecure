@@ -104,12 +104,71 @@ class AuthController extends AbstractController
 
         $user = $em->getRepository(User::class)->find($id);
 
-        return new JsonResponse([
-            'id' => $user->getId(),
-            'email' => $user->getEmail(),
-            'displayName' => $user->getDisplayName(),
-            'role' => $user->getRole(),
-        ]);
+        return new JsonResponse($this->serializeUser($user));
+    }
+
+    #[Route('/api/me', name: 'api_me_update', methods: ['PATCH'])]
+    public function updateMe(Request $request, EntityManagerInterface $em, SessionInterface $session): JsonResponse
+    {
+        $id = $session->get('user_id');
+        if (!$id) {
+            return new JsonResponse(['message' => 'Not authenticated'], 401);
+        }
+
+        $user = $em->getRepository(User::class)->find($id);
+        if (!$user) {
+            return new JsonResponse(['message' => 'Utilisateur introuvable'], 404);
+        }
+
+        $data = json_decode($request->getContent(), true) ?? [];
+
+        if (!empty($data['displayName'])) {
+            $user->setDisplayName(trim($data['displayName']));
+        }
+        if (array_key_exists('phone', $data)) {
+            $user->setPhone($data['phone'] ? trim($data['phone']) : null);
+        }
+        if (array_key_exists('company', $data)) {
+            $user->setCompany($data['company'] ? trim($data['company']) : null);
+        }
+
+        $user->setUpdatedAt(new \DateTime());
+        $em->flush();
+
+        return new JsonResponse($this->serializeUser($user));
+    }
+
+    #[Route('/api/me/password', name: 'api_me_password', methods: ['PATCH'])]
+    public function changePassword(
+        Request $request,
+        EntityManagerInterface $em,
+        UserPasswordHasherInterface $passwordHasher,
+        SessionInterface $session
+    ): JsonResponse {
+        $id = $session->get('user_id');
+        if (!$id) {
+            return new JsonResponse(['message' => 'Not authenticated'], 401);
+        }
+
+        $user = $em->getRepository(User::class)->find($id);
+        $data = json_decode($request->getContent(), true) ?? [];
+
+        $current = $data['currentPassword'] ?? '';
+        $new     = $data['newPassword'] ?? '';
+
+        if (!$passwordHasher->isPasswordValid($user, $current)) {
+            return new JsonResponse(['message' => 'Mot de passe actuel incorrect'], 400);
+        }
+
+        if (mb_strlen($new) < 6) {
+            return new JsonResponse(['message' => 'Le nouveau mot de passe doit contenir au moins 6 caractères'], 400);
+        }
+
+        $user->setPassword($passwordHasher->hashPassword($user, $new));
+        $user->setUpdatedAt(new \DateTime());
+        $em->flush();
+
+        return new JsonResponse(['message' => 'Mot de passe mis à jour avec succès']);
     }
 
     #[Route('/api/logout', name: 'api_logout', methods: ['POST'])]
@@ -118,5 +177,19 @@ class AuthController extends AbstractController
         $session->invalidate();
 
         return new JsonResponse(['message' => 'Logged out']);
+    }
+
+    private function serializeUser(User $user): array
+    {
+        return [
+            'id'          => $user->getId(),
+            'email'       => $user->getEmail(),
+            'displayName' => $user->getDisplayName(),
+            'role'        => $user->getRole(),
+            'phone'       => $user->getPhone(),
+            'company'     => $user->getCompany(),
+            'createdAt'   => $user->getCreatedAt()?->format('c'),
+            'updatedAt'   => $user->getUpdatedAt()?->format('c'),
+        ];
     }
 }

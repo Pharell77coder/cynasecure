@@ -7,6 +7,8 @@ export interface User {
   role?: string;
   phone?: string;
   company?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export const authApi = {
@@ -26,6 +28,12 @@ export const authApi = {
 
   updateProfile: (data: Partial<User>) =>
     apiFetch<User>("/api/me", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    apiFetch<{ message: string }>("/api/me/password", {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
