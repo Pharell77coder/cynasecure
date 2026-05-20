@@ -37,6 +37,8 @@ const TYPE_OPTIONS: { value: TypeFilter; label: string; tag: string }[] = [
   { value: "one_shot", label: "Produits One-shot", tag: "ONE" },
 ];
 
+const PAGE_SIZE = 9;
+
 /* ─── Skeleton card ────────────────────────────────────────────────────── */
 function SkeletonCard() {
   return (
@@ -105,6 +107,56 @@ function SortDropdown({
   );
 }
 
+/* ─── Pagination ───────────────────────────────────────────────────────── */
+function Pagination({ page, total, onChange }: { page: number; total: number; onChange: (p: number) => void }) {
+  if (total <= 1) return null;
+
+  const pages = Array.from({ length: total }, (_, i) => i + 1);
+  const visible = pages.filter((p) => p === 1 || p === total || Math.abs(p - page) <= 1);
+
+  return (
+    <div className="flex items-center justify-center gap-1 mt-8 pt-6 border-t border-gray-800">
+      <button
+        onClick={() => onChange(page - 1)}
+        disabled={page === 1}
+        className="px-3 py-2 text-xs font-mono text-gray-400 border border-gray-700 hover:text-white hover:border-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+      >
+        ← Précédent
+      </button>
+
+      {visible.map((p, i) => {
+        const prev = visible[i - 1];
+        return (
+          <React.Fragment key={p}>
+            {prev && p - prev > 1 && (
+              <span className="px-2 text-gray-600 text-xs select-none">…</span>
+            )}
+            <button
+              onClick={() => onChange(p)}
+              className={cn(
+                "w-9 h-9 text-xs font-mono border transition-colors",
+                p === page
+                  ? "bg-blue-600 border-blue-600 text-white"
+                  : "border-gray-700 text-gray-400 hover:text-white hover:border-gray-600"
+              )}
+            >
+              {p}
+            </button>
+          </React.Fragment>
+        );
+      })}
+
+      <button
+        onClick={() => onChange(page + 1)}
+        disabled={page === total}
+        className="px-3 py-2 text-xs font-mono text-gray-400 border border-gray-700 hover:text-white hover:border-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+      >
+        Suivant →
+      </button>
+    </div>
+  );
+}
+
 /* ════════════════════════════════════════════════════════════════════════ */
 export default function CataloguePage() {
   const [params, setParams] = useSearchParams();
@@ -116,6 +168,7 @@ export default function CataloguePage() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [page, setPage] = useState(1);
 
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,6 +225,12 @@ export default function CataloguePage() {
     if (sort === "desc") list.sort((a, b) => b.priceMonthly - a.priceMonthly);
     return list;
   }, [services, active, query, sort]);
+
+  /* ── Reset page quand les filtres changent ── */
+  useEffect(() => { setPage(1); }, [active, query, sort, typeFilter]);
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const setCat = (slug: string) => {
     setActive(slug);
@@ -283,7 +342,7 @@ export default function CataloguePage() {
           <div className="flex items-center gap-3">
             {/* Compteur */}
             <span className="text-gray-600 text-xs font-mono hidden sm:block">
-              {loading ? "…" : `${filtered.length} résultat${filtered.length !== 1 ? "s" : ""}`}
+              {loading ? "…" : filtered.length === 0 ? "0 résultat" : `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, filtered.length)} sur ${filtered.length}`}
             </span>
 
             {/* Reset */}
@@ -499,7 +558,7 @@ export default function CataloguePage() {
                 ))}
 
               {!loading &&
-                filtered.map((s) => (
+                paginated.map((s) => (
                   <div
                     key={s.id}
                     className={cn(
@@ -532,19 +591,22 @@ export default function CataloguePage() {
               </div>
             )}
 
-            {/* Footer de grille */}
+            {/* Pagination + footer */}
             {!loading && filtered.length > 0 && (
-              <div className="mt-8 pt-6 border-t border-gray-800 flex items-center justify-between">
-                <span className="text-gray-600 text-xs font-mono">
-                  {filtered.length} solution{filtered.length !== 1 ? "s" : ""} affichée{filtered.length !== 1 ? "s" : ""}
-                </span>
-                <a
-                  href="/contact"
-                  className="text-blue-400 text-xs font-mono hover:text-blue-300 transition-colors"
-                >
-                  Solution manquante ? Contactez-nous →
-                </a>
-              </div>
+              <>
+                <Pagination page={page} total={totalPages} onChange={setPage} />
+                <div className="mt-6 flex items-center justify-between">
+                  <span className="text-gray-600 text-xs font-mono">
+                    {filtered.length} solution{filtered.length !== 1 ? "s" : ""} au total
+                  </span>
+                  <a
+                    href="/contact"
+                    className="text-blue-400 text-xs font-mono hover:text-blue-300 transition-colors"
+                  >
+                    Solution manquante ? Contactez-nous →
+                  </a>
+                </div>
+              </>
             )}
           </div>
         </div>
