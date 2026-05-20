@@ -1,5 +1,5 @@
 import React, { FormEvent, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, Shield, ArrowLeft, KeyRound, CheckCircle2 } from "lucide-react";
 
 import { Button } from "../../components/ui/Button";
@@ -12,10 +12,12 @@ type Step = "email" | "token" | "done";
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const tokenFromUrl = searchParams.get("token") ?? "";
 
-  const [step, setStep] = useState<Step>("email");
+  const [step, setStep] = useState<Step>(tokenFromUrl ? "token" : "email");
   const [email, setEmail] = useState("");
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState(tokenFromUrl);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNew, setShowNew] = useState(false);
