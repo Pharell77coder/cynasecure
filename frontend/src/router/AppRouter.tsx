@@ -27,6 +27,10 @@ import AdminSubscriptionsPage from "../pages/Admin/AdminSubscriptionsPage";
 import AdminServiceFormPage from "../pages/Admin/AdminServiceFormPage";
 
 import NotFoundPage from "../pages/NotFound/NotFoundPage";
+import AProposPage from "../pages/Legal/AProposPage";
+import MentionsLegalesPage from "../pages/Legal/MentionsLegalesPage";
+import CguPage from "../pages/Legal/CguPage";
+import ConfidentialitePage from "../pages/Legal/ConfidentialitePage";
 
 import { ProtectedRoute } from "./ProtectedRoute";
 import { AdminProtectedRoute } from "./AdminProtectedRoute";
@@ -66,6 +70,12 @@ export function AppRouter() {
           />
 
           <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
+
+          {/* Pages légales */}
+          <Route path="/a-propos" element={<AProposPage />} />
+          <Route path="/mentions-legales" element={<MentionsLegalesPage />} />
+          <Route path="/cgv" element={<CguPage />} />
+          <Route path="/confidentialite" element={<ConfidentialitePage />} />
 
           {/* User protected */}
           <Route
