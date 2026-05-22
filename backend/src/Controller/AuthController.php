@@ -37,6 +37,10 @@ class AuthController extends AbstractController
             return new JsonResponse(['message' => 'Email et mot de passe requis'], 400);
         }
 
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return new JsonResponse(['message' => 'Adresse email invalide. Utilisez le format exemple@domaine.com'], 400);
+        }
+
         if ($em->getRepository(User::class)->findOneBy(['email' => $email])) {
             return new JsonResponse(['message' => 'Email déjà utilisé'], 400);
         }
