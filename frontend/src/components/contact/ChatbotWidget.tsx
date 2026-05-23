@@ -1,18 +1,24 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
-import { MessageCircle, X, Send, ChevronDown } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { MessageCircle, X, ChevronDown, CornerDownLeft } from "lucide-react";
 import { contactApi } from "../../api/contact";
 import React from "react";
 
 interface Message {
   sender: "user" | "bot";
   content: string;
+  escalate?: boolean;
+}
+
+interface Category {
+  label: string;
+  questions: string[];
 }
 
 interface Props {
   onEscalate: (message: string) => void;
 }
 
-const WELCOME = "Bonjour ! Je suis l'assistant CynaSecure. Posez-moi votre question — abonnement, paiement, support, déploiement…";
+const WELCOME = "Bonjour ! Sélectionnez une question ci-dessous — je répondrai immédiatement.";
 
 function generateSessionId() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -22,46 +28,43 @@ function generateSessionId() {
 }
 
 export function ChatbotWidget({ onEscalate }: Props) {
-  const [open, setOpen]         = useState(false);
-  const [input, setInput]       = useState("");
-  const [loading, setLoading]   = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
+  const [open, setOpen]               = useState(false);
+  const [categories, setCategories]   = useState<Category[]>([]);
+  const [activeTab, setActiveTab]     = useState(0);
+  const [messages, setMessages]       = useState<Message[]>([
     { sender: "bot", content: WELCOME },
   ]);
+  const [loading, setLoading]         = useState(false);
+  const [loadingSugg, setLoadingSugg] = useState(false);
+  const [view, setView]               = useState<"questions" | "chat">("questions");
 
-  const sessionId  = useRef(generateSessionId());
-  const bottomRef  = useRef<HTMLDivElement>(null);
-  const inputRef   = useRef<HTMLInputElement>(null);
+  const sessionId = useRef(generateSessionId());
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (open) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-      inputRef.current?.focus();
-    }
+    if (!open || categories.length > 0) return;
+    setLoadingSugg(true);
+    contactApi.suggestions()
+      .then(setCategories)
+      .catch(() => {})
+      .finally(() => setLoadingSugg(false));
+  }, [open]);
+
+  useEffect(() => {
+    if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [open, messages]);
 
-  const send = async (e: FormEvent) => {
-    e.preventDefault();
-    const text = input.trim();
-    if (!text || loading) return;
-
-    setInput("");
-    setMessages((prev) => [...prev, { sender: "user", content: text }]);
+  const ask = async (question: string) => {
+    setView("chat");
+    setMessages((prev) => [...prev, { sender: "user", content: question }]);
     setLoading(true);
 
     try {
-      const res = await contactApi.chatbot({ sessionId: sessionId.current, message: text });
-      setMessages((prev) => [...prev, { sender: "bot", content: res.reply }]);
-
-      if (!res.matched) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            sender: "bot",
-            content: "__escalate__",
-          },
-        ]);
-      }
+      const res = await contactApi.chatbot({ sessionId: sessionId.current, message: question });
+      setMessages((prev) => [
+        ...prev,
+        { sender: "bot", content: res.reply, escalate: !res.matched },
+      ]);
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -78,18 +81,19 @@ export function ChatbotWidget({ onEscalate }: Props) {
     setOpen(false);
   };
 
+  const backToQuestions = () => setView("questions");
+
   return (
     <>
-      {/* Fenêtre de chat */}
       {open && (
         <div
-          className="fixed bottom-20 right-4 sm:right-6 w-[calc(100vw-2rem)] sm:w-96 bg-gray-950 border border-gray-800 shadow-2xl z-50 flex flex-col"
-          style={{ maxHeight: "520px" }}
+          className="fixed bottom-20 right-4 sm:right-6 w-[calc(100vw-2rem)] sm:w-[400px] bg-gray-950 border border-gray-800 shadow-2xl z-50 flex flex-col"
+          style={{ maxHeight: "560px" }}
           role="dialog"
           aria-label="Chat support CynaSecure"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900 flex-shrink-0">
             <div className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -107,78 +111,116 @@ export function ChatbotWidget({ onEscalate }: Props) {
             </button>
           </div>
 
-          {/* Messages */}
-          <div
-            className="flex-1 overflow-y-auto px-4 py-4 space-y-3"
-            aria-live="polite"
-            aria-label="Historique de la conversation"
-          >
-            {messages.map((msg, i) => {
-              if (msg.content === "__escalate__") {
-                return (
-                  <div key={i} className="flex justify-start">
-                    <button
-                      onClick={handleEscalate}
-                      className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 transition-colors font-medium"
+          {/* Vue chat */}
+          {view === "chat" && (
+            <div className="flex flex-col flex-1 min-h-0">
+              <div
+                className="flex-1 overflow-y-auto px-4 py-4 space-y-3"
+                aria-live="polite"
+              >
+                {messages.map((msg, i) => (
+                  <div key={i} className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}>
+                    <div
+                      className={`max-w-[85%] px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap ${
+                        msg.sender === "user"
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-800 text-gray-200 border border-gray-700"
+                      }`}
                     >
-                      Transférer ma demande au support
-                    </button>
-                  </div>
-                );
-              }
+                      {msg.content}
+                    </div>
 
-              return (
-                <div key={i} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`max-w-[80%] px-3 py-2 text-sm leading-relaxed ${
-                      msg.sender === "user"
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-800 text-gray-200 border border-gray-700"
-                    }`}
-                  >
-                    {msg.content}
+                    {msg.escalate && (
+                      <button
+                        onClick={handleEscalate}
+                        className="mt-2 text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 transition-colors font-medium"
+                      >
+                        Contacter le support
+                      </button>
+                    )}
                   </div>
-                </div>
-              );
-            })}
+                ))}
 
-            {loading && (
-              <div className="flex justify-start">
-                <div className="bg-gray-800 border border-gray-700 px-3 py-2 text-gray-500 text-sm">
-                  <span className="inline-flex gap-1">
-                    <span className="animate-bounce" style={{ animationDelay: "0ms" }}>•</span>
-                    <span className="animate-bounce" style={{ animationDelay: "150ms" }}>•</span>
-                    <span className="animate-bounce" style={{ animationDelay: "300ms" }}>•</span>
-                  </span>
-                </div>
+                {loading && (
+                  <div className="flex justify-start">
+                    <div className="bg-gray-800 border border-gray-700 px-3 py-2">
+                      <span className="inline-flex gap-1 text-gray-500 text-sm">
+                        <span className="animate-bounce" style={{ animationDelay: "0ms" }}>•</span>
+                        <span className="animate-bounce" style={{ animationDelay: "150ms" }}>•</span>
+                        <span className="animate-bounce" style={{ animationDelay: "300ms" }}>•</span>
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div ref={bottomRef} />
               </div>
-            )}
 
-            <div ref={bottomRef} />
-          </div>
+              <div className="border-t border-gray-800 px-4 py-3 flex-shrink-0">
+                <button
+                  onClick={backToQuestions}
+                  className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors font-mono"
+                >
+                  <CornerDownLeft className="h-3.5 w-3.5" />
+                  Poser une autre question
+                </button>
+              </div>
+            </div>
+          )}
 
-          {/* Input */}
-          <form onSubmit={send} className="border-t border-gray-800 flex items-center gap-2 px-3 py-3">
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Votre question…"
-              maxLength={500}
-              disabled={loading}
-              aria-label="Votre message"
-              className="flex-1 bg-transparent text-gray-200 text-sm placeholder:text-gray-600 focus:outline-none"
-            />
-            <button
-              type="submit"
-              disabled={loading || !input.trim()}
-              className="text-blue-400 hover:text-blue-300 disabled:text-gray-700 transition-colors"
-              aria-label="Envoyer"
-            >
-              <Send className="h-4 w-4" />
-            </button>
-          </form>
+          {/* Vue questions */}
+          {view === "questions" && (
+            <div className="flex flex-col flex-1 min-h-0">
+              <p className="px-4 pt-4 pb-3 text-gray-400 text-xs leading-relaxed flex-shrink-0">
+                {WELCOME}
+              </p>
+
+              {loadingSugg ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <p className="text-gray-600 text-xs font-mono animate-pulse">Chargement…</p>
+                </div>
+              ) : (
+                <>
+                  {/* Onglets catégories */}
+                  <div className="flex gap-1 px-4 border-b border-gray-800 flex-shrink-0">
+                    {categories.map((cat, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setActiveTab(i)}
+                        className={`text-xs font-mono py-2 px-3 border-b-2 -mb-px transition-colors ${
+                          activeTab === i
+                            ? "text-blue-400 border-blue-500"
+                            : "text-gray-600 border-transparent hover:text-gray-400"
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Liste de questions */}
+                  <div className="flex-1 overflow-y-auto py-2">
+                    {categories[activeTab]?.questions.map((q, i) => (
+                      <button
+                        key={i}
+                        onClick={() => ask(q)}
+                        disabled={loading}
+                        className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-800/60 hover:text-white transition-colors border-b border-gray-900 last:border-0 disabled:opacity-50"
+                      >
+                        {q}
+                      </button>
+                    ))}
+
+                    {categories[activeTab]?.questions.length === 0 && (
+                      <p className="px-4 py-6 text-gray-600 text-xs text-center">
+                        Aucune question disponible.
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       )}
 

@@ -70,6 +70,9 @@ export const contactApi = {
       body: JSON.stringify(payload),
     }),
 
+  suggestions: () =>
+    apiFetch<{ label: string; questions: string[] }[]>("/api/chatbot/suggestions"),
+
   user: {
     myMessages: () =>
       apiFetch<UserMessage[]>("/api/my-messages"),

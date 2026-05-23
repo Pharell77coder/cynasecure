@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\ChatbotConversation;
 use App\Entity\ChatbotMessage;
 use App\Entity\ContactMessage;
+use App\Entity\Service;
 use App\Repository\ChatbotConversationRepository;
 use App\Repository\ContactMessageRepository;
 use App\Service\ChatbotService;
@@ -16,6 +17,28 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class ContactController extends AbstractController
 {
+    #[Route('/api/chatbot/suggestions', name: 'chatbot_suggestions', methods: ['GET'])]
+    public function suggestions(EntityManagerInterface $em, ChatbotService $chatbot): JsonResponse
+    {
+        $services = $em->getRepository(Service::class)->findAll();
+
+        $serviceQuestions = array_map(
+            fn(Service $s) => "Qu'est-ce que " . $s->getName() . ' ?',
+            $services
+        );
+
+        return new JsonResponse([
+            [
+                'label'     => 'Questions fréquentes',
+                'questions' => $chatbot->getFaqQuestions(),
+            ],
+            [
+                'label'     => 'Nos services (' . count($services) . ')',
+                'questions' => $serviceQuestions,
+            ],
+        ]);
+    }
+
     #[Route('/api/contact', name: 'contact_send', methods: ['POST'])]
     public function send(
         Request $request,
