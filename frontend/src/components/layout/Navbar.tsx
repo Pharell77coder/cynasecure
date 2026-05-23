@@ -53,6 +53,10 @@ export function Navbar() {
             Solutions
           </NavLink>
 
+          <NavLink to="/contact" className={linkStyle}>
+            Contact
+          </NavLink>
+
           {/* ✔️ Tableau de bord visible uniquement pour les USERS */}
           {isAuthenticated && !isAdmin && (
             <NavLink to="/dashboard" className={linkStyle}>
