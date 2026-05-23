@@ -25,8 +25,10 @@ import AdminSubscriptionsPage from "../pages/Admin/AdminSubscriptionsPage";
 
 // 🔥 AJOUT : formulaire création / édition
 import AdminServiceFormPage from "../pages/Admin/AdminServiceFormPage";
+import AdminContactPage from "../pages/Admin/AdminContactPage";
 
 import NotFoundPage from "../pages/NotFound/NotFoundPage";
+import ContactPage from "../pages/Contact/ContactPage";
 import AProposPage from "../pages/Legal/AProposPage";
 import MentionsLegalesPage from "../pages/Legal/MentionsLegalesPage";
 import CguPage from "../pages/Legal/CguPage";
@@ -70,6 +72,8 @@ export function AppRouter() {
           />
 
           <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
+
+          <Route path="/contact" element={<ContactPage />} />
 
           {/* Pages légales */}
           <Route path="/a-propos" element={<AProposPage />} />
@@ -133,6 +137,7 @@ export function AppRouter() {
 
             {/* AUTRES */}
             <Route path="abonnements" element={<AdminSubscriptionsPage />} />
+            <Route path="contact" element={<AdminContactPage />} />
             <Route path="utilisateurs" element={<AdminUsersPage />} />
           </Route>
         </Route>

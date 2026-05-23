@@ -5,8 +5,7 @@ import {
   Users,
   Activity,
   LogOut,
-  Terminal,
-  Layers,
+  MessageSquare,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import React from "react";
@@ -16,6 +15,7 @@ const navItems = [
   { to: "/admin/services", icon: Package, label: "Services" },
   { to: "/admin/abonnements", icon: Activity, label: "Abonnements" },
   { to: "/admin/utilisateurs", icon: Users, label: "Utilisateurs" },
+  { to: "/admin/contact", icon: MessageSquare, label: "Messages contact" },
 ];
 
 export function AdminSidebar() {
