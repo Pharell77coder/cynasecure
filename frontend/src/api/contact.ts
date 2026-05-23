@@ -24,6 +24,20 @@ export interface AdminContactMessage {
   message: string;
   status: "new" | "read" | "answered";
   ipAddress: string | null;
+  adminReply: string | null;
+  repliedAt: string | null;
+  replyReadAt: string | null;
+  createdAt: string;
+}
+
+export interface UserMessage {
+  id: number;
+  subject: string;
+  message: string;
+  status: "new" | "read" | "answered";
+  adminReply: string | null;
+  repliedAt: string | null;
+  replyReadAt: string | null;
   createdAt: string;
 }
 
@@ -56,6 +70,17 @@ export const contactApi = {
       body: JSON.stringify(payload),
     }),
 
+  user: {
+    myMessages: () =>
+      apiFetch<UserMessage[]>("/api/my-messages"),
+
+    unreadCount: () =>
+      apiFetch<{ count: number }>("/api/my-messages/unread-count"),
+
+    markRead: () =>
+      apiFetch<{ ok: boolean }>("/api/my-messages/mark-read", { method: "POST" }),
+  },
+
   admin: {
     listMessages: (page = 1) =>
       apiFetch<{ items: AdminContactMessage[]; total: number; page: number }>(
@@ -66,6 +91,12 @@ export const contactApi = {
       apiFetch<AdminContactMessage>(`/api/admin/contact-messages/${id}`, {
         method: "PATCH",
         body: JSON.stringify({ status }),
+      }),
+
+    reply: (id: number, reply: string) =>
+      apiFetch<AdminContactMessage>(`/api/admin/contact-messages/${id}/reply`, {
+        method: "POST",
+        body: JSON.stringify({ reply }),
       }),
 
     listConversations: () =>

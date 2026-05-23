@@ -28,6 +28,15 @@ class ContactMessage
     #[ORM\Column(length: 45, nullable: true)]
     private ?string $ipAddress = null;
 
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $adminReply = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $repliedAt = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $replyReadAt = null;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -52,6 +61,15 @@ class ContactMessage
 
     public function getIpAddress(): ?string { return $this->ipAddress; }
     public function setIpAddress(?string $ip): static { $this->ipAddress = $ip; return $this; }
+
+    public function getAdminReply(): ?string { return $this->adminReply; }
+    public function setAdminReply(?string $reply): static { $this->adminReply = $reply; return $this; }
+
+    public function getRepliedAt(): ?\DateTimeImmutable { return $this->repliedAt; }
+    public function setRepliedAt(?\DateTimeImmutable $at): static { $this->repliedAt = $at; return $this; }
+
+    public function getReplyReadAt(): ?\DateTimeImmutable { return $this->replyReadAt; }
+    public function setReplyReadAt(?\DateTimeImmutable $at): static { $this->replyReadAt = $at; return $this; }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
 }

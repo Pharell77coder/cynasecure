@@ -1,8 +1,29 @@
-import { useRef } from "react";
-import { Mail, Phone, MapPin, Clock, Shield } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Mail, Phone, MapPin, Clock, Shield, CornerDownRight, Inbox } from "lucide-react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { ContactForm } from "../../components/contact/ContactForm";
 import { ChatbotWidget } from "../../components/contact/ChatbotWidget";
+import { contactApi, type UserMessage } from "../../api/contact";
+import { useAuth } from "../../hooks/useAuth";
 import React from "react";
+
+const STATUS_LABELS: Record<string, string> = {
+  new: "En attente",
+  read: "Pris en charge",
+  answered: "Répondu",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  new:      "bg-gray-800 text-gray-400 border-gray-700",
+  read:     "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  answered: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+};
+
+function fmt(d: string) {
+  try { return format(new Date(d), "dd MMM yyyy HH:mm", { locale: fr }); }
+  catch { return d; }
+}
 
 const INFOS = [
   {
@@ -32,11 +53,20 @@ const INFOS = [
 ];
 
 export default function ContactPage() {
+  const { isAuthenticated } = useAuth();
   const formRef = useRef<HTMLDivElement>(null);
 
-  const [prefillSubject, setPrefillSubject] = React.useState("");
-  const [prefillMessage, setPrefillMessage] = React.useState("");
-  const [formKey, setFormKey]               = React.useState(0);
+  const [prefillSubject, setPrefillSubject] = useState("");
+  const [prefillMessage, setPrefillMessage] = useState("");
+  const [formKey, setFormKey]               = useState(0);
+  const [myMessages, setMyMessages]         = useState<UserMessage[]>([]);
+  const [expanded, setExpanded]             = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    contactApi.user.myMessages().then(setMyMessages).catch(() => {});
+    contactApi.user.markRead().catch(() => {});
+  }, [isAuthenticated]);
 
   const handleEscalate = (message: string) => {
     setPrefillSubject("Assistance générale");
@@ -101,6 +131,65 @@ export default function ContactPage() {
           ))}
         </div>
       </section>
+
+      {/* ── Mes échanges (utilisateurs connectés) ───────────────────── */}
+      {isAuthenticated && myMessages.length > 0 && (
+        <section className="border-b border-gray-800 bg-gray-900/40">
+          <div className="container max-w-4xl py-12">
+            <div className="flex items-center gap-3 mb-6">
+              <Inbox className="h-4 w-4 text-blue-500" />
+              <div className="text-blue-500 font-mono text-xs tracking-widest">MES ÉCHANGES</div>
+              {myMessages.some((m) => m.adminReply && !m.replyReadAt) && (
+                <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 font-mono">
+                  NOUVELLE RÉPONSE
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              {myMessages.map((m) => (
+                <div key={m.id} className={`border ${m.adminReply && !m.replyReadAt ? "border-blue-500/40 bg-blue-500/5" : "border-gray-800 bg-gray-900"}`}>
+                  <button
+                    className="w-full flex items-center justify-between px-5 py-4 text-left"
+                    onClick={() => setExpanded(expanded === m.id ? null : m.id)}
+                  >
+                    <div className="flex items-center gap-4 min-w-0">
+                      {m.adminReply && !m.replyReadAt && (
+                        <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" aria-label="Nouveau" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-white text-sm font-medium truncate">{m.subject}</p>
+                        <p className="text-gray-500 text-xs mt-0.5">{fmt(m.createdAt)}</p>
+                      </div>
+                    </div>
+                    <span className={`ml-4 flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 border font-mono ${STATUS_COLORS[m.status]}`}>
+                      {STATUS_LABELS[m.status]}
+                    </span>
+                  </button>
+
+                  {expanded === m.id && (
+                    <div className="px-5 pb-5 space-y-4 border-t border-gray-800">
+                      <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap pt-4">{m.message}</p>
+
+                      {m.adminReply && (
+                        <div className="border-l-2 border-blue-500/50 pl-4 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <CornerDownRight className="h-3.5 w-3.5 text-blue-400" />
+                            <span className="text-blue-400 text-xs font-mono">
+                              Réponse de CynaSecure — {m.repliedAt ? fmt(m.repliedAt) : ""}
+                            </span>
+                          </div>
+                          <p className="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">{m.adminReply}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── Formulaire ──────────────────────────────────────────────── */}
       <section className="py-20">

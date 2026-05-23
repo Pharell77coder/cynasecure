@@ -25,6 +25,18 @@ class ContactMessageRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    public function countUnreadRepliesByEmail(string $email): int
+    {
+        return (int) $this->createQueryBuilder('m')
+            ->select('COUNT(m.id)')
+            ->where('m.email = :email')
+            ->andWhere('m.adminReply IS NOT NULL')
+            ->andWhere('m.replyReadAt IS NULL')
+            ->setParameter('email', $email)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /** @return ContactMessage[] */
     public function findPaginated(int $page, int $limit): array
     {

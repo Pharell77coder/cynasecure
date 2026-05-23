@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { MessageSquare, Bot, ChevronRight, X } from "lucide-react";
+import { MessageSquare, Bot, ChevronRight, X, Send, CornerDownRight } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { contactApi, type AdminContactMessage, type AdminConversation, type AdminConversationDetail } from "../../api/contact";
 import { toast } from "../../hooks/useToast";
@@ -28,11 +28,28 @@ function fmt(d: string) {
 function MessageRow({
   msg,
   onStatusChange,
+  onReply,
 }: {
   msg: AdminContactMessage;
   onStatusChange: (id: number, status: string) => void;
+  onReply: (id: number, reply: string) => Promise<void>;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen]       = useState(false);
+  const [reply, setReply]     = useState(msg.adminReply ?? "");
+  const [sending, setSending] = useState(false);
+  const textareaRef           = useRef<HTMLTextAreaElement>(null);
+
+  const submitReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!reply.trim()) return;
+    setSending(true);
+    try {
+      await onReply(msg.id, reply.trim());
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <>
@@ -53,24 +70,67 @@ function MessageRow({
       </div>
 
       {open && (
-        <div className="px-6 pb-5 bg-gray-900/40 border-b border-gray-800">
-          <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap mb-4">{msg.message}</p>
-          <div className="flex items-center gap-2">
-            <span className="text-gray-600 text-xs font-mono">Changer le statut :</span>
-            {(["new", "read", "answered"] as const).map((s) => (
+        <div className="px-6 pb-6 bg-gray-900/40 border-b border-gray-800 space-y-5" onClick={(e) => e.stopPropagation()}>
+
+          {/* Message original */}
+          <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap pt-2">{msg.message}</p>
+
+          {/* Réponse existante */}
+          {msg.adminReply && (
+            <div className="border-l-2 border-blue-500/40 pl-4">
+              <div className="flex items-center gap-2 mb-1">
+                <CornerDownRight className="h-3.5 w-3.5 text-blue-400" />
+                <span className="text-blue-400 text-xs font-mono">Réponse envoyée — {msg.repliedAt ? fmt(msg.repliedAt) : ""}</span>
+                {msg.replyReadAt
+                  ? <span className="text-emerald-400 text-[10px] font-mono">Lu par l'utilisateur</span>
+                  : <span className="text-gray-600 text-[10px] font-mono">Pas encore lu</span>}
+              </div>
+              <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap">{msg.adminReply}</p>
+            </div>
+          )}
+
+          {/* Formulaire de réponse */}
+          <form onSubmit={submitReply} className="space-y-3">
+            <label className="text-xs font-mono text-gray-500 tracking-widest">
+              {msg.adminReply ? "MODIFIER LA RÉPONSE" : "RÉPONDRE À CE MESSAGE"}
+            </label>
+            <textarea
+              ref={textareaRef}
+              rows={4}
+              value={reply}
+              onChange={(e) => setReply(e.target.value)}
+              placeholder="Votre réponse à l'utilisateur..."
+              className="w-full bg-gray-900 border border-gray-700 text-gray-200 text-sm px-4 py-3 placeholder:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-500 transition-all resize-none"
+            />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-600 text-xs font-mono">Statut :</span>
+                {(["new", "read", "answered"] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => onStatusChange(msg.id, s)}
+                    className={`text-[10px] px-2 py-1 border transition-colors font-mono ${
+                      msg.status === s
+                        ? STATUS_COLORS[s]
+                        : "border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-300"
+                    }`}
+                  >
+                    {STATUS_LABELS[s]}
+                  </button>
+                ))}
+              </div>
               <button
-                key={s}
-                onClick={(e) => { e.stopPropagation(); onStatusChange(msg.id, s); }}
-                className={`text-[10px] px-2 py-1 border transition-colors font-mono ${
-                  msg.status === s
-                    ? STATUS_COLORS[s]
-                    : "border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-300"
-                }`}
+                type="submit"
+                disabled={sending || !reply.trim()}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-800 disabled:text-gray-600 text-white text-xs font-semibold px-4 py-2 transition-colors"
               >
-                {STATUS_LABELS[s]}
+                {sending ? "Envoi…" : "Envoyer la réponse"}
+                <Send className="h-3.5 w-3.5" />
               </button>
-            ))}
-          </div>
+            </div>
+          </form>
+
         </div>
       )}
     </>
@@ -156,6 +216,16 @@ export default function AdminContactPage() {
     }
   };
 
+  const handleReply = async (id: number, reply: string) => {
+    try {
+      const updated = await contactApi.admin.reply(id, reply);
+      setMessages((prev) => prev.map((m) => m.id === id ? { ...m, ...updated } : m));
+      toast("Réponse envoyée à l'utilisateur", "success");
+    } catch (err: any) {
+      toast(err.message || "Erreur lors de l'envoi", "error");
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-8 space-y-4 animate-pulse">
@@ -218,7 +288,7 @@ export default function AdminContactPage() {
               </div>
               <div>
                 {messages.map((m) => (
-                  <MessageRow key={m.id} msg={m} onStatusChange={handleStatusChange} />
+                  <MessageRow key={m.id} msg={m} onStatusChange={handleStatusChange} onReply={handleReply} />
                 ))}
               </div>
             </>

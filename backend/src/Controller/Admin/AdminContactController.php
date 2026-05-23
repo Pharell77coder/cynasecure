@@ -25,15 +25,7 @@ class AdminContactController extends AbstractController
         $items = $repo->findPaginated($page, $limit);
         $total = $repo->count([]);
 
-        $data = array_map(fn(ContactMessage $m) => [
-            'id'        => $m->getId(),
-            'email'     => $m->getEmail(),
-            'subject'   => $m->getSubject(),
-            'message'   => $m->getMessage(),
-            'status'    => $m->getStatus(),
-            'ipAddress' => $m->getIpAddress(),
-            'createdAt' => $m->getCreatedAt()->format('c'),
-        ], $items);
+        $data = array_map(fn(ContactMessage $m) => $this->serializeMessage($m), $items);
 
         return new JsonResponse(['items' => $data, 'total' => $total, 'page' => $page]);
     }
@@ -58,6 +50,51 @@ class AdminContactController extends AbstractController
         $em->flush();
 
         return new JsonResponse(['id' => $msg->getId(), 'status' => $msg->getStatus()]);
+    }
+
+    #[Route('/api/admin/contact-messages/{id}/reply', name: 'admin_contact_reply', methods: ['POST'])]
+    public function replyMessage(int $id, Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $msg = $em->getRepository(ContactMessage::class)->find($id);
+
+        if (!$msg) {
+            return new JsonResponse(['message' => 'Message introuvable.'], 404);
+        }
+
+        $data  = json_decode($request->getContent(), true) ?? [];
+        $reply = trim($data['reply'] ?? '');
+
+        if (!$reply) {
+            return new JsonResponse(['message' => 'La réponse ne peut pas être vide.'], 400);
+        }
+
+        if (mb_strlen($reply) > 5000) {
+            return new JsonResponse(['message' => 'La réponse ne peut pas dépasser 5000 caractères.'], 400);
+        }
+
+        $msg->setAdminReply($reply);
+        $msg->setRepliedAt(new \DateTimeImmutable());
+        $msg->setReplyReadAt(null);
+        $msg->setStatus('answered');
+        $em->flush();
+
+        return new JsonResponse($this->serializeMessage($msg));
+    }
+
+    private function serializeMessage(ContactMessage $m): array
+    {
+        return [
+            'id'          => $m->getId(),
+            'email'       => $m->getEmail(),
+            'subject'     => $m->getSubject(),
+            'message'     => $m->getMessage(),
+            'status'      => $m->getStatus(),
+            'ipAddress'   => $m->getIpAddress(),
+            'adminReply'  => $m->getAdminReply(),
+            'repliedAt'   => $m->getRepliedAt()?->format('c'),
+            'replyReadAt' => $m->getReplyReadAt()?->format('c'),
+            'createdAt'   => $m->getCreatedAt()->format('c'),
+        ];
     }
 
     #[Route('/api/admin/chatbot-conversations', name: 'admin_chatbot_list', methods: ['GET'])]

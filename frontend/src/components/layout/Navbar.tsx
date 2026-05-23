@@ -8,7 +8,8 @@ import {
 import { Button } from "../ui/Button";
 import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../hooks/useCart";
-import React, { useState } from "react";
+import { contactApi } from "../../api/contact";
+import React, { useEffect, useState } from "react";
 
 export function Navbar() {
   const { isAuthenticated, isAdmin, user, logout } = useAuth() as unknown as {
@@ -20,7 +21,15 @@ export function Navbar() {
 
   const { count } = useCart();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen]           = useState(false);
+  const [unread, setUnread]       = useState(0);
+
+  useEffect(() => {
+    if (!isAuthenticated) { setUnread(0); return; }
+    contactApi.user.unreadCount()
+      .then((r) => setUnread(r.count))
+      .catch(() => {});
+  }, [isAuthenticated]);
 
   const linkStyle = ({ isActive }: { isActive: boolean }) =>
     `text-sm font-medium tracking-wide transition-colors ${
@@ -54,7 +63,14 @@ export function Navbar() {
           </NavLink>
 
           <NavLink to="/contact" className={linkStyle}>
-            Contact
+            <span className="relative">
+              Contact
+              {unread > 0 && (
+                <span className="absolute -top-2 -right-4 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white px-1">
+                  {unread}
+                </span>
+              )}
+            </span>
           </NavLink>
 
           {/* ✔️ Tableau de bord visible uniquement pour les USERS */}
@@ -157,7 +173,14 @@ export function Navbar() {
             </NavLink>
 
             <NavLink to="/contact" className={linkStyle}>
-              Contact
+              <span className="relative inline-flex items-center gap-2">
+                Contact
+                {unread > 0 && (
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white px-1">
+                    {unread}
+                  </span>
+                )}
+              </span>
             </NavLink>
 
             {/* ✔️ Tableau de bord visible uniquement pour les USERS */}
