@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\OrderRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\User;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -29,6 +30,18 @@ class Order
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $billingAddress = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $stripePaymentIntentId = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $paypalOrderId = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $gateway = null;
 
     #[ORM\OneToMany(
         mappedBy: 'orderRef',
@@ -118,6 +131,50 @@ class Order
             }
         }
 
+        return $this;
+    }
+
+    public function getBillingAddress(): ?array
+    {
+        return $this->billingAddress;
+    }
+
+    public function setBillingAddress(?array $billingAddress): static
+    {
+        $this->billingAddress = $billingAddress;
+        return $this;
+    }
+
+    public function getStripePaymentIntentId(): ?string
+    {
+        return $this->stripePaymentIntentId;
+    }
+
+    public function setStripePaymentIntentId(?string $id): static
+    {
+        $this->stripePaymentIntentId = $id;
+        return $this;
+    }
+
+    public function getPaypalOrderId(): ?string
+    {
+        return $this->paypalOrderId;
+    }
+
+    public function setPaypalOrderId(?string $id): static
+    {
+        $this->paypalOrderId = $id;
+        return $this;
+    }
+
+    public function getGateway(): ?string
+    {
+        return $this->gateway;
+    }
+
+    public function setGateway(?string $gateway): static
+    {
+        $this->gateway = $gateway;
         return $this;
     }
 }

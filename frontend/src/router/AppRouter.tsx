@@ -27,6 +27,7 @@ import AdminSubscriptionsPage from "../pages/Admin/AdminSubscriptionsPage";
 import AdminServiceFormPage from "../pages/Admin/AdminServiceFormPage";
 import AdminContactPage from "../pages/Admin/AdminContactPage";
 
+import CheckoutPage from "../pages/Checkout/CheckoutPage";
 import NotFoundPage from "../pages/NotFound/NotFoundPage";
 import ContactPage from "../pages/Contact/ContactPage";
 import AProposPage from "../pages/Legal/AProposPage";
@@ -74,6 +75,15 @@ export function AppRouter() {
           <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
 
           <Route path="/contact" element={<ContactPage />} />
+
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute>
+                <CheckoutPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Pages légales */}
           <Route path="/a-propos" element={<AProposPage />} />

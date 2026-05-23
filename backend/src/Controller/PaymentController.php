@@ -14,7 +14,8 @@ class PaymentController extends AbstractController
     {
         $user = $this->getUser();
 
-        $payments = $paymentRepo->createQueryBuilder('p')
+        // Subscription-based payments
+        $subPayments = $paymentRepo->createQueryBuilder('p')
             ->join('p.subscription', 's')
             ->andWhere('s.user = :user')
             ->setParameter('user', $user)
@@ -22,16 +23,32 @@ class PaymentController extends AbstractController
             ->getQuery()
             ->getResult();
 
+        // Checkout-based payments (via Order)
+        $orderPayments = $paymentRepo->createQueryBuilder('p')
+            ->join('p.orderRef', 'o')
+            ->andWhere('o.user = :user')
+            ->andWhere('p.orderRef IS NOT NULL')
+            ->setParameter('user', $user)
+            ->orderBy('p.paidAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        $seen = [];
         $data = [];
 
-        foreach ($payments as $payment) {
+        foreach (array_merge($orderPayments, $subPayments) as $payment) {
+            if (in_array($payment->getId(), $seen, true)) continue;
+            $seen[] = $payment->getId();
+
             $data[] = [
-                'id' => $payment->getId(),
-                'amount' => $payment->getAmount(),
-                'cycle' => $payment->getCycle(),
-                'status' => $payment->getStatus(),
-                'paidAt' => $payment->getPaidAt()->format('Y-m-d H:i:s'),
-                'subscriptionId' => $payment->getSubscription()->getId(),
+                'id'            => $payment->getId(),
+                'amount'        => $payment->getAmount(),
+                'cycle'         => $payment->getCycle(),
+                'status'        => $payment->getStatus(),
+                'gateway'       => $payment->getGateway(),
+                'last4'         => $payment->getLast4(),
+                'invoiceNumber' => $payment->getInvoiceNumber(),
+                'paidAt'        => $payment->getPaidAt()?->format('Y-m-d H:i:s'),
             ];
         }
 

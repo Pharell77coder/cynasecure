@@ -42,6 +42,8 @@ security:
         - { path: ^/api/password-reset, roles: PUBLIC_ACCESS }
         - { path: ^/api/contact, roles: PUBLIC_ACCESS }
         - { path: ^/api/chatbot, roles: PUBLIC_ACCESS }
+        - { path: ^/api/stripe/webhook, roles: PUBLIC_ACCESS }
+        - { path: ^/api/paypal/webhook, roles: PUBLIC_ACCESS }
 
         # 🔐 Routes admin
         - { path: ^/api/admin, roles: ROLE_ADMIN }

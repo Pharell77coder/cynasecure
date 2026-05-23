@@ -18,9 +18,7 @@ export default function CartPage() {
       navigate("/connexion");
       return;
     }
-    toast("Commande passée avec succès !", "success");
-    clearCart();
-    navigate("/dashboard");
+    navigate("/checkout");
   };
 
   if (items.length === 0) {

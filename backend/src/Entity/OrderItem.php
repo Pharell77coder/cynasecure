@@ -19,6 +19,9 @@ class OrderItem
     #[ORM\Column]
     private ?float $price = null;
 
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $billing = 'monthly';
+
     #[ORM\ManyToOne(inversedBy: 'orderItems')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Order $orderRef = null;
@@ -73,6 +76,17 @@ class OrderItem
     public function setService(?Service $service): static
     {
         $this->service = $service;
+        return $this;
+    }
+
+    public function getBilling(): ?string
+    {
+        return $this->billing;
+    }
+
+    public function setBilling(?string $billing): static
+    {
+        $this->billing = $billing;
         return $this;
     }
 }

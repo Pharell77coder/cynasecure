@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use Stripe\PaymentIntent;
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
 
@@ -25,5 +26,20 @@ class StripeService
             'cancel_url' => $data['cancelUrl'],
             'customer_email' => $data['email'],
         ]);
+    }
+
+    public function createPaymentIntent(int $amountCents, string $currency = 'eur', string $description = ''): PaymentIntent
+    {
+        return PaymentIntent::create([
+            'amount'   => $amountCents,
+            'currency' => $currency,
+            'description' => $description,
+            'payment_method_types' => ['card'],
+        ]);
+    }
+
+    public function retrievePaymentIntent(string $id): PaymentIntent
+    {
+        return PaymentIntent::retrieve($id);
     }
 }

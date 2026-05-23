@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
-  CreditCard, CheckCircle2, XCircle, TrendingUp, Receipt, AlertCircle,
+  CreditCard, CheckCircle2, XCircle, TrendingUp, Receipt, AlertCircle, Download,
 } from "lucide-react";
 
 import { apiFetch } from "../../api/apiFetch";
@@ -14,6 +14,9 @@ interface Payment {
   amount: number;
   cycle: string;
   status: string;
+  gateway: string | null;
+  last4: string | null;
+  invoiceNumber: string | null;
   paidAt: string;
 }
 
@@ -135,19 +138,19 @@ export default function MyPaymentsPage() {
           </Card>
         ) : (
           <div className="border border-gray-800 bg-gray-900 overflow-hidden">
-            {/* Table header — desktop only */}
-            <div className="hidden md:grid grid-cols-4 gap-4 px-6 py-3 text-[11px] font-medium text-gray-500 uppercase tracking-widest border-b border-gray-800 bg-gray-950">
+            <div className="hidden md:grid grid-cols-5 gap-4 px-6 py-3 text-[11px] font-medium text-gray-500 uppercase tracking-widest border-b border-gray-800 bg-gray-950">
               <span>Date</span>
-              <span>Cycle</span>
+              <span>Moyen</span>
               <span>Montant</span>
-              <span className="text-right">Statut</span>
+              <span className="text-center">Statut</span>
+              <span className="text-right">Facture</span>
             </div>
 
             <div className="divide-y divide-gray-800">
               {payments.map((p) => (
                 <div
                   key={p.id}
-                  className="grid gap-3 md:grid-cols-4 md:gap-4 items-center px-6 py-4 hover:bg-gray-800/50 transition-colors"
+                  className="grid gap-3 md:grid-cols-5 md:gap-4 items-center px-6 py-4 hover:bg-gray-800/50 transition-colors"
                 >
                   <div>
                     <p className="text-[10px] text-gray-500 uppercase mb-0.5 md:hidden">Date</p>
@@ -155,8 +158,10 @@ export default function MyPaymentsPage() {
                   </div>
 
                   <div>
-                    <p className="text-[10px] text-gray-500 uppercase mb-0.5 md:hidden">Cycle</p>
-                    <p className="text-sm text-gray-400">{cycleLabel(p.cycle)}</p>
+                    <p className="text-[10px] text-gray-500 uppercase mb-0.5 md:hidden">Moyen</p>
+                    <p className="text-sm text-gray-400">
+                      {p.gateway === "paypal" ? "PayPal" : p.last4 ? `•••• ${p.last4}` : cycleLabel(p.cycle)}
+                    </p>
                   </div>
 
                   <div>
@@ -164,8 +169,24 @@ export default function MyPaymentsPage() {
                     <p className="text-lg font-bold text-white">{p.amount} €</p>
                   </div>
 
-                  <div className="md:text-right">
+                  <div className="md:text-center">
                     <StatusBadge status={p.status} />
+                  </div>
+
+                  <div className="md:text-right">
+                    {p.invoiceNumber ? (
+                      <a
+                        href={`/api/checkout/invoice/${p.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors font-mono"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        {p.invoiceNumber}
+                      </a>
+                    ) : (
+                      <span className="text-gray-600 text-xs">—</span>
+                    )}
                   </div>
                 </div>
               ))}
