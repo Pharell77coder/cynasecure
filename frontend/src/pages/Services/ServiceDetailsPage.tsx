@@ -4,9 +4,9 @@ import { Check, X, ShoppingCart, ArrowLeft, Sparkles, Shield, Layers, Lock } fro
 import { Button } from "../../components/ui/Button";
 import { ServiceCard } from "../../components/shared/ServiceCard";
 import { useCart } from "../../hooks/useCart";
+import { useAuth } from "../../hooks/useAuth";
 import { toast } from "../../hooks/useToast";
 import { servicesApi, type Service } from "../../api/services";
-import { subscriptionsApi } from "../../api/subscriptions";
 import type { BillingCycle } from "../../context/CartContext";
 
 function Skeleton() {
@@ -33,6 +33,7 @@ function Skeleton() {
 export default function ServiceDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth() as { isAuthenticated: boolean };
   const navigate = useNavigate();
 
   const [service, setService] = useState<Service | null>(null);
@@ -68,14 +69,21 @@ export default function ServiceDetailsPage() {
   const yearlyPrice = service.priceYearly ?? Math.round(service.priceMonthly * 12 * 0.85);
   const yearlySaving = Math.round(service.priceMonthly * 12 - yearlyPrice);
 
-  const handleSubscribe = async () => {
-    try {
-      await subscriptionsApi.create(Number(service.id), cycle);
-      toast("Abonnement créé avec succès", "success");
-      navigate("/mes-abonnements");
-    } catch (err: any) {
-      toast(err.message || "Erreur lors de l'abonnement", "error");
+  const handleSubscribe = () => {
+    if (!isAuthenticated) {
+      toast("Connectez-vous pour vous abonner", "error");
+      navigate("/connexion");
+      return;
     }
+    addToCart({
+      id: service.id,
+      name: service.name,
+      description: service.description ?? "",
+      priceMonthly: service.priceMonthly,
+      cycle,
+      image: imageSrc || undefined,
+    });
+    navigate("/checkout");
   };
 
   return (
@@ -223,19 +231,24 @@ export default function ServiceDetailsPage() {
                   size="lg"
                   fullWidth
                   onClick={() => {
+                    if (!isAuthenticated) {
+                      toast("Connectez-vous pour passer commande", "error");
+                      navigate("/connexion");
+                      return;
+                    }
                     addToCart({
                       id: service.id,
                       name: service.name,
-                      description: service.description,
+                      description: service.description ?? "",
                       priceMonthly: service.priceMonthly,
                       cycle: "monthly",
                       image: imageSrc || undefined,
                     });
-                    toast(`${service.name} ajouté au panier`, "success");
+                    navigate("/checkout");
                   }}
                 >
                   <ShoppingCart className="h-4 w-4" />
-                  Ajouter au panier
+                  Commander maintenant
                 </Button>
               )}
 

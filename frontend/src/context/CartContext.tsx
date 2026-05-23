@@ -64,11 +64,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
      ➕ addToCart (one_shot uniquement)
      ──────────────────────────────────────────────── */
   const addToCart = useCallback<CartContextValue["addToCart"]>((item) => {
-    if (item.type === "saas") {
-      console.warn("❌ Impossible d'ajouter un service SaaS au panier.");
-      return;
-    }
-
     setItems((prev) => {
       if (prev.some((p) => p.id === item.id)) return prev;
 
@@ -76,7 +71,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ...prev,
         {
           ...item,
-          cycle: "monthly", // one_shot = prix unique
+          cycle: item.cycle ?? "monthly",
         },
       ];
     });
