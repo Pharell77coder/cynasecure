@@ -94,8 +94,11 @@ class ChatbotService
         $answer .= ".";
 
         $features = $s->getFeatures() ?? [];
-        if (!empty($features)) {
-            $answer .= "\n\nInclus : " . implode(', ', array_slice($features, 0, 4)) . ".";
+        $included = array_filter($features, fn($f) => is_array($f) && ($f['included'] ?? false));
+        $labels   = array_values(array_map(fn($f) => $f['label'] ?? '', $included));
+
+        if (!empty($labels)) {
+            $answer .= "\n\nInclus : " . implode(', ', array_slice($labels, 0, 4)) . ".";
         }
 
         $answer .= "\n\nPour souscrire, rendez-vous sur le catalogue ou démarrez un POC gratuit.";
