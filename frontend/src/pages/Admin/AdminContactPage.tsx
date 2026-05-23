@@ -5,6 +5,10 @@ import { MessageSquare, Bot, ChevronRight, X, Send, CornerDownRight } from "luci
 import { Card } from "../../components/ui/Card";
 import { contactApi, type AdminContactMessage, type AdminConversation, type AdminConversationDetail } from "../../api/contact";
 import { toast } from "../../hooks/useToast";
+import { Pagination } from "../../components/ui/Pagination";
+
+const MSG_PER_PAGE  = 8;
+const CONV_PER_PAGE = 10;
 
 type Tab = "messages" | "chatbot";
 
@@ -195,6 +199,8 @@ export default function AdminContactPage() {
   const [convs, setConvs]         = useState<AdminConversation[]>([]);
   const [loading, setLoading]     = useState(true);
   const [openConv, setOpenConv]   = useState<number | null>(null);
+  const [msgPage, setMsgPage]     = useState(1);
+  const [convPage, setConvPage]   = useState(1);
 
   useEffect(() => {
     Promise.all([
@@ -225,6 +231,9 @@ export default function AdminContactPage() {
       toast(err.message || "Erreur lors de l'envoi", "error");
     }
   };
+
+  const pagedMessages = messages.slice((msgPage - 1) * MSG_PER_PAGE, msgPage * MSG_PER_PAGE);
+  const pagedConvs    = convs.slice((convPage - 1) * CONV_PER_PAGE, convPage * CONV_PER_PAGE);
 
   if (loading) {
     return (
@@ -287,10 +296,15 @@ export default function AdminContactPage() {
                 <span />
               </div>
               <div>
-                {messages.map((m) => (
+                {pagedMessages.map((m) => (
                   <MessageRow key={m.id} msg={m} onStatusChange={handleStatusChange} onReply={handleReply} />
                 ))}
               </div>
+              {messages.length > MSG_PER_PAGE && (
+                <div className="px-6 pb-4 border-t border-gray-800 pt-3">
+                  <Pagination page={msgPage} total={messages.length} perPage={MSG_PER_PAGE} onChange={setMsgPage} />
+                </div>
+              )}
             </>
           )}
         </Card>
@@ -310,7 +324,7 @@ export default function AdminContactPage() {
                 <span>Date</span>
               </div>
               <div className="divide-y divide-gray-800">
-                {convs.map((c) => (
+                {pagedConvs.map((c) => (
                   <div
                     key={c.id}
                     className="grid grid-cols-1 md:grid-cols-[1fr_200px_80px_130px] gap-3 items-center px-6 py-4 hover:bg-gray-800/40 transition-colors cursor-pointer"
@@ -323,6 +337,11 @@ export default function AdminContactPage() {
                   </div>
                 ))}
               </div>
+              {convs.length > CONV_PER_PAGE && (
+                <div className="px-6 pb-4 border-t border-gray-800 pt-3">
+                  <Pagination page={convPage} total={convs.length} perPage={CONV_PER_PAGE} onChange={setConvPage} />
+                </div>
+              )}
             </>
           )}
         </Card>

@@ -13,10 +13,14 @@ import { Button } from "../../components/ui/Button";
 import { toast } from "../../hooks/useToast";
 
 import { adminUsersApi, AdminUser } from "../../api/adminUsers";
+import { Pagination } from "../../components/ui/Pagination";
+
+const PER_PAGE = 10;
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [users, setUsers]     = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage]       = useState(1);
 
   useEffect(() => {
     adminUsersApi
@@ -25,6 +29,8 @@ export default function AdminUsersPage() {
       .catch(() => toast("Erreur lors du chargement des utilisateurs", "error"))
       .finally(() => setLoading(false));
   }, []);
+
+  const paginated = users.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const remove = async (id: number) => {
     try {
@@ -101,7 +107,7 @@ export default function AdminUsersPage() {
               </thead>
 
               <tbody>
-                {users.map((u) => (
+                {paginated.map((u) => (
                   <motion.tr
                     key={u.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -145,6 +151,11 @@ export default function AdminUsersPage() {
                 ))}
               </tbody>
             </table>
+          )}
+          {!loading && users.length > PER_PAGE && (
+            <div className="px-6 pb-4 border-t border-gray-800 pt-3">
+              <Pagination page={page} total={users.length} perPage={PER_PAGE} onChange={setPage} />
+            </div>
           )}
         </div>
       </section>

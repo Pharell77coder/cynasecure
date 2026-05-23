@@ -17,10 +17,14 @@ import { toast } from "../../hooks/useToast";
 import { Link } from "react-router-dom";
 
 import { servicesApi, type Service } from "../../api/services";
+import { Pagination } from "../../components/ui/Pagination";
+
+const PER_PAGE = 10;
 
 export default function AdminServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]   = useState(true);
+  const [page, setPage]         = useState(1);
 
   // FETCH SERVICES
   useEffect(() => {
@@ -30,6 +34,8 @@ export default function AdminServicesPage() {
       .catch(() => toast("Erreur lors du chargement des services", "error"))
       .finally(() => setLoading(false));
   }, []);
+
+  const paginated = services.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   // DELETE SERVICE
   const remove = async (id: string) => {
@@ -118,7 +124,7 @@ export default function AdminServicesPage() {
               </thead>
 
               <tbody>
-                {services.map((s) => (
+                {paginated.map((s) => (
                   <motion.tr
                     key={s.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -163,6 +169,11 @@ export default function AdminServicesPage() {
                 ))}
               </tbody>
             </table>
+          )}
+          {!loading && services.length > PER_PAGE && (
+            <div className="px-6 pb-4 border-t border-gray-800 pt-3">
+              <Pagination page={page} total={services.length} perPage={PER_PAGE} onChange={setPage} />
+            </div>
           )}
         </Card>
       </section>

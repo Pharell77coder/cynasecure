@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { adminApi } from "../../api/admin";
+import { Pagination } from "../../components/ui/Pagination";
 
 import {
   Activity,
@@ -28,6 +29,7 @@ export interface Subscription {
 }
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
+const PER_PAGE = 10;
 
 /* STAT CARD */
 function StatCard({ label, value, icon: Icon }: any) {
@@ -44,8 +46,9 @@ function StatCard({ label, value, icon: Icon }: any) {
 
 /* PAGE */
 export default function AdminSubscriptionsPage() {
-  const [subs, setSubs] = useState<Subscription[]>([]);
+  const [subs, setSubs]     = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage]     = useState(1);
 
   useEffect(() => {
     adminApi
@@ -54,6 +57,7 @@ export default function AdminSubscriptionsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const paginated = subs.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const active = subs.filter((s) => s.status === "ACTIVE").length;
   const expired = subs.filter((s) => s.status !== "ACTIVE").length;
 
@@ -150,7 +154,7 @@ export default function AdminSubscriptionsPage() {
               </thead>
 
               <tbody>
-                {subs.map((s) => (
+                {paginated.map((s) => (
                   <motion.tr
                     key={s.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -219,6 +223,11 @@ export default function AdminSubscriptionsPage() {
                 ))}
               </tbody>
             </table>
+          )}
+          {!loading && subs.length > PER_PAGE && (
+            <div className="px-6 pb-4 border-t border-gray-800 pt-3">
+              <Pagination page={page} total={subs.length} perPage={PER_PAGE} onChange={setPage} />
+            </div>
           )}
         </div>
       </section>
