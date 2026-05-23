@@ -11,6 +11,7 @@ import {
   XCircle,
   Radar,
   Database,
+  Download,
 } from "lucide-react";
 
 /* TYPES */
@@ -23,7 +24,10 @@ export interface Subscription {
   status: string;
   startDate: string;
   nextBillingAt: string | null;
+  invoicePaymentId: number | null;
 }
+
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
 
 /* STAT CARD */
 function StatCard({ label, value, icon: Icon }: any) {
@@ -141,6 +145,7 @@ export default function AdminSubscriptionsPage() {
                   <th className="px-6 py-4 font-medium">Début</th>
                   <th className="px-6 py-4 font-medium">Prochaine facture</th>
                   <th className="px-6 py-4 font-medium">Statut</th>
+                  <th className="px-6 py-4 font-medium">Facture</th>
                 </tr>
               </thead>
 
@@ -193,6 +198,22 @@ export default function AdminSubscriptionsPage() {
                       >
                         {s.status}
                       </span>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      {s.invoicePaymentId ? (
+                        <a
+                          href={`${API_BASE}/api/checkout/invoice/${s.invoicePaymentId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors font-mono"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          PDF
+                        </a>
+                      ) : (
+                        <span className="text-gray-700 text-xs">—</span>
+                      )}
                     </td>
                   </motion.tr>
                 ))}

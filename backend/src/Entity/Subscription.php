@@ -48,6 +48,9 @@ class Subscription
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $userEmail = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $invoicePaymentId = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -160,6 +163,17 @@ class Subscription
     public function setUserEmail(?string $userEmail): static
     {
         $this->userEmail = $userEmail;
+        return $this;
+    }
+
+    public function getInvoicePaymentId(): ?int
+    {
+        return $this->invoicePaymentId;
+    }
+
+    public function setInvoicePaymentId(?int $invoicePaymentId): static
+    {
+        $this->invoicePaymentId = $invoicePaymentId;
         return $this;
     }
 }

@@ -244,6 +244,8 @@ class CheckoutController extends AbstractController
         }
 
         $em->persist($payment);
+        // Flush now to get the Payment ID before creating subscriptions
+        $em->flush();
 
         // Subscriptions
         $now = new \DateTimeImmutable();
@@ -256,8 +258,8 @@ class CheckoutController extends AbstractController
             $sub->setStatus('ACTIVE');
             $sub->setStartDate($now);
             $sub->setUserEmail($user->getEmail());
+            $sub->setInvoicePaymentId($payment->getId());
 
-            // ✅ DateTimeImmutable::add() returns DateTimeImmutable — no TypeError
             if ($item->getBilling() === 'yearly') {
                 $sub->setNextBillingAt($now->add(new \DateInterval('P1Y')));
                 $sub->setEndDate($now->add(new \DateInterval('P1Y')));

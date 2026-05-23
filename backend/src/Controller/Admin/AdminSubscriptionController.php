@@ -40,6 +40,7 @@ class AdminSubscriptionController extends AbstractController
             'status' => $s->getStatus(),
             'startDate' => $s->getStartDate()?->format('Y-m-d'),
             'nextBillingAt' => $s->getNextBillingAt()?->format('Y-m-d'),
+            'invoicePaymentId' => $s->getInvoicePaymentId(),
         ], $subs);
 
         return $this->json($data);
