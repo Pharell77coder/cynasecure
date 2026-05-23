@@ -176,7 +176,7 @@ export default function MyPaymentsPage() {
                   <div className="md:text-right">
                     {p.invoiceNumber ? (
                       <a
-                        href={`/api/checkout/invoice/${p.id}`}
+                        href={`${import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000"}/api/checkout/invoice/${p.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors font-mono"

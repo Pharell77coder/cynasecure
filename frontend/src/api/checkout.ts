@@ -50,5 +50,5 @@ export const checkoutApi = {
     }),
 
   invoiceUrl: (paymentId: number) =>
-    `/api/checkout/invoice/${paymentId}`,
+    `${import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000"}/api/checkout/invoice/${paymentId}`,
 };
