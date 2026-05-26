@@ -5,11 +5,14 @@ parameters:
     paypal_client_id: '%env(PAYPAL_CLIENT_ID)%'
     paypal_secret: '%env(PAYPAL_SECRET)%'
     paypal_mode: '%env(PAYPAL_MODE)%'
+    paypal_webhook_id: '%env(PAYPAL_WEBHOOK_ID)%'
 
 services:
     _defaults:
         autowire: true
         autoconfigure: true
+        bind:
+            string $env: '%kernel.environment%'
 
     App\:
         resource: '../src/'
@@ -18,8 +21,14 @@ services:
         arguments:
             $secretKey: '%stripe_secret_key%'
 
+    App\Controller\PaymentMethodController:
+        arguments:
+            $stripeSecretKey: '%stripe_secret_key%'
+        tags: ['controller.service_arguments']
+
     App\Service\PayPalService:
         arguments:
             $clientId: '%paypal_client_id%'
             $secret: '%paypal_secret%'
             $mode: '%paypal_mode%'
+            $webhookId: '%paypal_webhook_id%'

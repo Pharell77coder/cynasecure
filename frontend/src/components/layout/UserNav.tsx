@@ -1,11 +1,11 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Shield, CreditCard, UserCircle } from "lucide-react";
+import { LayoutDashboard, Shield, ShoppingBag, UserCircle } from "lucide-react";
 
 const links = [
   { to: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
   { to: "/mes-abonnements", label: "Abonnements", icon: Shield },
-  { to: "/mes-paiements", label: "Paiements", icon: CreditCard },
+  { to: "/mes-commandes", label: "Commandes", icon: ShoppingBag },
   { to: "/profil", label: "Mon profil", icon: UserCircle },
 ];
 

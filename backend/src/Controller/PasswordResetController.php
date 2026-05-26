@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Validator\StrongPassword;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -11,6 +12,7 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class PasswordResetController extends AbstractController
 {
@@ -77,7 +79,8 @@ class PasswordResetController extends AbstractController
     public function confirm(
         Request $request,
         EntityManagerInterface $em,
-        UserPasswordHasherInterface $passwordHasher
+        UserPasswordHasherInterface $passwordHasher,
+        ValidatorInterface $validator
     ): JsonResponse {
         $data        = json_decode($request->getContent(), true) ?? [];
         $token       = trim($data['token'] ?? '');
@@ -87,8 +90,9 @@ class PasswordResetController extends AbstractController
             return new JsonResponse(['message' => 'Token et nouveau mot de passe requis.'], 400);
         }
 
-        if (mb_strlen($newPassword) < 6) {
-            return new JsonResponse(['message' => 'Le mot de passe doit contenir au moins 6 caractères.'], 400);
+        $violations = $validator->validate($newPassword, [new StrongPassword()]);
+        if (count($violations) > 0) {
+            return new JsonResponse(['message' => $violations[0]->getMessage()], 400);
         }
 
         $hash = hash('sha256', $token);

@@ -2,8 +2,10 @@
 
 namespace App\Controller;
 
+use App\Dto\SearchCriteria;
 use App\Entity\Service;
 use App\Entity\Category;
+use App\Service\ServiceSearchService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,31 +20,105 @@ class ServiceController extends AbstractController
     public function index(Request $request, EntityManagerInterface $em): JsonResponse
     {
         $repo = $em->getRepository(Service::class);
-
-        // 🔥 Filtre optionnel : ?type=saas ou ?type=one_shot
         $type = $request->query->get('type');
 
-        if ($type) {
-            $services = $repo->findBy(['type' => $type]);
-        } else {
-            $services = $repo->findAll();
+        $services = $type ? $repo->findBy(['type' => $type]) : $repo->findAll();
+
+        return new JsonResponse(array_map(fn(Service $s) => $this->serialize($s), $services));
+    }
+
+    #[Route('/search', name: 'service_search', methods: ['GET'])]
+    public function search(Request $request, ServiceSearchService $svc): JsonResponse
+    {
+        $raw = $request->query;
+
+        $cats = array_values(array_filter(
+            explode(',', $raw->get('categories', '')),
+            fn(string $s) => $s !== ''
+        ));
+
+        $pmin = $raw->get('priceMin') !== null ? max(0.0, (float) $raw->get('priceMin')) : null;
+        $pmax = $raw->get('priceMax') !== null ? max(0.0, (float) $raw->get('priceMax')) : null;
+
+        if ($pmin !== null && $pmax !== null && $pmin > $pmax) {
+            [$pmin, $pmax] = [$pmax, $pmin];
         }
 
-        $data = array_map(fn(Service $s) => [
-            'id' => $s->getId(),
-            'name' => $s->getName(),
-            'description' => $s->getDescription(),
-            'longDescription' => $s->getLongDescription(),
-            'priceMonthly' => $s->getPriceMonthly(),
-            'priceYearly' => $s->getPriceYearly(),
-            'image' => $s->getImage(),
-            'features' => $s->getFeatures(),
-            'category' => $s->getCategory()?->getName(),
-            'categorySlug' => $s->getCategorySlug(),
-            'type' => $s->getType(), // 🔥 IMPORTANT
-        ], $services);
+        $sort = in_array($raw->get('sort'), ['relevance', 'price_asc', 'price_desc', 'newest'], true)
+            ? $raw->get('sort')
+            : 'relevance';
 
-        return new JsonResponse($data);
+        $type = in_array($raw->get('type'), ['all', 'saas', 'one_shot'], true)
+            ? $raw->get('type')
+            : 'all';
+
+        $criteria = new SearchCriteria(
+            q: trim($raw->get('q', '')),
+            categories: $cats,
+            priceMin: $pmin,
+            priceMax: $pmax,
+            onlyAvailable: (bool) $raw->get('onlyAvailable', 0),
+            sort: $sort,
+            type: $type,
+        );
+
+        $results = $svc->search($criteria);
+
+        $items = array_map(fn(array $r) => [
+            ...$this->serialize($r['service']),
+            'score' => $r['score'],
+        ], $results);
+
+        $response = new JsonResponse(['total' => count($items), 'items' => $items]);
+        $response->headers->set('Cache-Control', 'public, max-age=30');
+        return $response;
+    }
+
+    #[Route('/{id}', name: 'service_show', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function show(Service $service): JsonResponse
+    {
+        return new JsonResponse($this->serialize($service));
+    }
+
+    #[Route('/{id}/similar', name: 'service_similar', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function similar(int $id, Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $service = $em->getRepository(Service::class)->find($id);
+        if (!$service) {
+            return new JsonResponse(['message' => 'Not found'], 404);
+        }
+
+        $limit = min(12, max(1, (int) $request->query->get('limit', 6)));
+        $repo  = $em->getRepository(Service::class);
+
+        $pool = $service->getCategory()
+            ? array_values(array_filter(
+                $repo->findBy(['category' => $service->getCategory()]),
+                fn(Service $s) => $s->getId() !== $service->getId()
+            ))
+            : [];
+
+        $avail = array_values(array_filter($pool, fn(Service $s) => $s->getAvailability() === 'available'));
+        $rest  = array_values(array_filter($pool, fn(Service $s) => $s->getAvailability() !== 'available'));
+        shuffle($avail);
+        shuffle($rest);
+        $pool = array_merge($avail, $rest);
+
+        if (count($pool) < $limit) {
+            $catId  = $service->getCategory()?->getId();
+            $others = array_values(array_filter(
+                $repo->findAll(),
+                fn(Service $s) => $s->getId() !== $service->getId()
+                    && $s->getCategory()?->getId() !== $catId
+            ));
+            shuffle($others);
+            $pool = array_merge($pool, $others);
+        }
+
+        return new JsonResponse(array_map(
+            fn(Service $s) => $this->serialize($s),
+            array_slice($pool, 0, $limit)
+        ));
     }
 
     #[Route('', name: 'service_create', methods: ['POST'])]
@@ -65,38 +141,15 @@ class ServiceController extends AbstractController
         $service->setImage($data['image'] ?? null);
         $service->setFeatures($data['features'] ?? []);
         $service->setCategory($category);
-
-        // 🔥 Ajout du type (saas ou one_shot)
         $service->setType($data['type'] ?? 'saas');
 
         $em->persist($service);
         $em->flush();
 
-        return new JsonResponse([
-            'message' => 'Service created successfully',
-            'id' => $service->getId()
-        ], 201);
+        return new JsonResponse(['message' => 'Service created successfully', 'id' => $service->getId()], 201);
     }
 
-    #[Route('/{id}', name: 'service_show', methods: ['GET'])]
-    public function show(Service $service): JsonResponse
-    {
-        return new JsonResponse([
-            'id' => $service->getId(),
-            'name' => $service->getName(),
-            'description' => $service->getDescription(),
-            'longDescription' => $service->getLongDescription(),
-            'priceMonthly' => $service->getPriceMonthly(),
-            'priceYearly' => $service->getPriceYearly(),
-            'image' => $service->getImage(),
-            'features' => $service->getFeatures(),
-            'category' => $service->getCategory()?->getName(),
-            'categorySlug' => $service->getCategorySlug(),
-            'type' => $service->getType(), // 🔥 IMPORTANT
-        ]);
-    }
-
-    #[Route('/{id}', name: 'service_update', methods: ['PUT'])]
+    #[Route('/{id}', name: 'service_update', requirements: ['id' => '\d+'], methods: ['PUT'])]
     #[IsGranted('ROLE_ADMIN')]
     public function update(Request $request, Service $service, EntityManagerInterface $em): JsonResponse
     {
@@ -118,23 +171,42 @@ class ServiceController extends AbstractController
         $service->setImage($data['image'] ?? $service->getImage());
         $service->setFeatures($data['features'] ?? $service->getFeatures());
 
-        // 🔥 Mise à jour du type
-        if (isset($data['type'])) {
-            $service->setType($data['type']);
-        }
+        if (isset($data['type'])) $service->setType($data['type']);
+        if (isset($data['isAvailable'])) $service->setIsAvailable((bool) $data['isAvailable']);
 
         $em->flush();
 
         return new JsonResponse(['message' => 'Service updated successfully']);
     }
 
-    #[Route('/{id}', name: 'service_delete', methods: ['DELETE'])]
+    #[Route('/{id}', name: 'service_delete', requirements: ['id' => '\d+'], methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN')]
     public function delete(Service $service, EntityManagerInterface $em): JsonResponse
     {
         $em->remove($service);
         $em->flush();
-
         return new JsonResponse(['message' => 'Service deleted successfully']);
+    }
+
+    private function serialize(Service $s): array
+    {
+        return [
+            'id'              => $s->getId(),
+            'name'            => $s->getName(),
+            'description'     => $s->getDescription(),
+            'longDescription' => $s->getLongDescription(),
+            'priceMonthly'    => $s->getPriceMonthly(),
+            'priceYearly'     => $s->getPriceYearly(),
+            'image'           => $s->getImage(),
+            'images'          => $s->getImages() ?? [],
+            'technicalSpecs'  => $s->getTechnicalSpecs() ?? [],
+            'features'        => $s->getFeatures(),
+            'category'        => $s->getCategory()?->getName(),
+            'categorySlug'    => $s->getCategorySlug(),
+            'type'            => $s->getType(),
+            'isAvailable'     => $s->isAvailable(),
+            'availability'    => $s->getAvailability(),
+            'trialAvailable'  => $s->isTrialAvailable(),
+        ];
     }
 }

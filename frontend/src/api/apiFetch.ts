@@ -9,7 +9,7 @@
  * - Réponses vides (204)
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const BASE_URL = "";
 const DEFAULT_TIMEOUT = 15000; // 15s
 
 export async function apiFetch<T = unknown>(
@@ -51,7 +51,10 @@ export async function apiFetch<T = unknown>(
         data ||
         `Erreur API (${res.status})`;
 
-      throw new Error(message);
+      const error = new Error(message) as Error & { statusCode: number; data: unknown };
+      error.statusCode = res.status;
+      error.data = data;
+      throw error;
     }
 
     return data as T;
@@ -59,6 +62,7 @@ export async function apiFetch<T = unknown>(
     if (err.name === "AbortError") {
       throw new Error("La requête a expiré (timeout).");
     }
+    if (err.statusCode) throw err;
     throw new Error(err.message || "Erreur réseau.");
   }
 }

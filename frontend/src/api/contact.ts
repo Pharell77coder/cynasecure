@@ -85,9 +85,9 @@ export const contactApi = {
   },
 
   admin: {
-    listMessages: (page = 1) =>
-      apiFetch<{ items: AdminContactMessage[]; total: number; page: number }>(
-        `/api/admin/contact-messages?page=${page}`
+    listMessages: (page = 1, perPage = 20) =>
+      apiFetch<{ items: AdminContactMessage[]; total: number; page: number; perPage: number; totalPages: number }>(
+        `/api/admin/contact-messages?page=${page}&perPage=${perPage}`
       ),
 
     updateStatus: (id: number, status: string) =>
@@ -102,8 +102,10 @@ export const contactApi = {
         body: JSON.stringify({ reply }),
       }),
 
-    listConversations: () =>
-      apiFetch<AdminConversation[]>("/api/admin/chatbot-conversations"),
+    listConversations: (page = 1, perPage = 20) =>
+      apiFetch<{ items: AdminConversation[]; total: number; page: number; perPage: number; totalPages: number }>(
+        `/api/admin/chatbot-conversations?page=${page}&perPage=${perPage}`
+      ),
 
     getConversation: (id: number) =>
       apiFetch<AdminConversationDetail>(`/api/admin/chatbot-conversations/${id}`),

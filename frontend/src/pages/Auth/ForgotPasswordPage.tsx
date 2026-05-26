@@ -1,6 +1,7 @@
 import React, { FormEvent, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, Shield, ArrowLeft, KeyRound, CheckCircle2 } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Shield, ArrowLeft, KeyRound, CheckCircle2, XCircle } from "lucide-react";
+import { checkPasswordStrength } from "../../lib/utils";
 
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -26,6 +27,8 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [devToken, setDevToken] = useState<string | null>(null);
+
+  const strength = checkPasswordStrength(newPassword);
 
   const handleEmailSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -61,8 +64,8 @@ export default function ForgotPasswordPage() {
       setError("Veuillez saisir un nouveau mot de passe.");
       return;
     }
-    if (newPassword.length < 6) {
-      setError("Le mot de passe doit contenir au moins 6 caractères.");
+    if (!strength.isValid) {
+      setError("Le mot de passe ne respecte pas les critères de sécurité.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -169,7 +172,7 @@ export default function ForgotPasswordPage() {
                 <Input
                   icon={<Lock className="h-4 w-4" />}
                   type={showNew ? "text" : "password"}
-                  placeholder="6 caractères minimum"
+                  placeholder="8 caractères minimum"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                 />
@@ -182,6 +185,22 @@ export default function ForgotPasswordPage() {
                   {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {newPassword.length > 0 && (
+                <ul className="mt-2 space-y-1 text-xs">
+                  {[
+                    { ok: strength.minLength, label: "8 caractères minimum" },
+                    { ok: strength.hasUppercase, label: "Une majuscule" },
+                    { ok: strength.hasLowercase, label: "Une minuscule" },
+                    { ok: strength.hasDigit, label: "Un chiffre" },
+                    { ok: strength.hasSpecial, label: "Un caractère spécial" },
+                  ].map(({ ok, label }) => (
+                    <li key={label} className={`flex items-center gap-1.5 ${ok ? "text-green-400" : "text-slate-500"}`}>
+                      {ok ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                      {label}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div>
@@ -215,7 +234,7 @@ export default function ForgotPasswordPage() {
               type="submit"
               fullWidth
               size="lg"
-              disabled={loading || !token || !newPassword || newPassword !== confirmPassword}
+              disabled={loading || !token || !strength.isValid || newPassword !== confirmPassword}
               className="bg-blue-600 hover:bg-blue-500 text-white font-semibold"
             >
               {loading ? "Réinitialisation…" : "Réinitialiser le mot de passe"}

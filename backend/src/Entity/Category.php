@@ -23,6 +23,12 @@ class Category
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $homePosition = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $imagePath = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -63,4 +69,10 @@ class Category
 
         return $this;
     }
+
+    public function getHomePosition(): ?int { return $this->homePosition; }
+    public function setHomePosition(?int $v): static { $this->homePosition = $v; return $this; }
+
+    public function getImagePath(): ?string { return $this->imagePath; }
+    public function setImagePath(?string $v): static { $this->imagePath = $v; return $this; }
 }

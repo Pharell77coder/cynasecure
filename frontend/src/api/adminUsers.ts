@@ -7,19 +7,21 @@ export interface AdminUser {
   role: "admin" | "user";
 }
 
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+  page: number;
+  perPage: number;
+  totalPages: number;
+}
+
 export const adminUsersApi = {
-  /**
-   * Liste des utilisateurs (admin)
-   */
-  list: () =>
-    apiFetch<AdminUser[]>("/api/admin/users", {
+  list: (page = 1, perPage = 20) =>
+    apiFetch<Paginated<AdminUser>>(`/api/admin/users?page=${page}&perPage=${perPage}`, {
       method: "GET",
       credentials: "include",
     }),
 
-  /**
-   * Supprimer un utilisateur
-   */
   remove: (id: number) =>
     apiFetch(`/api/admin/users/${id}`, {
       method: "DELETE",

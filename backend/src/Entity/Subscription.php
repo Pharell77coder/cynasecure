@@ -51,6 +51,18 @@ class Subscription
     #[ORM\Column(nullable: true)]
     private ?int $invoicePaymentId = null;
 
+    #[ORM\Column]
+    private bool $autoRenew = true;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $lastRenewalAttempt = null;
+
+    #[ORM\Column]
+    private int $renewalFailureCount = 0;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $paymentMethodId = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -176,4 +188,16 @@ class Subscription
         $this->invoicePaymentId = $invoicePaymentId;
         return $this;
     }
+
+    public function isAutoRenew(): bool { return $this->autoRenew; }
+    public function setAutoRenew(bool $autoRenew): static { $this->autoRenew = $autoRenew; return $this; }
+
+    public function getLastRenewalAttempt(): ?\DateTimeImmutable { return $this->lastRenewalAttempt; }
+    public function setLastRenewalAttempt(?\DateTimeImmutable $dt): static { $this->lastRenewalAttempt = $dt; return $this; }
+
+    public function getRenewalFailureCount(): int { return $this->renewalFailureCount; }
+    public function setRenewalFailureCount(int $count): static { $this->renewalFailureCount = $count; return $this; }
+
+    public function getPaymentMethodId(): ?string { return $this->paymentMethodId; }
+    public function setPaymentMethodId(?string $id): static { $this->paymentMethodId = $id; return $this; }
 }

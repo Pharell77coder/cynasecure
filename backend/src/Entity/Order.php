@@ -6,6 +6,7 @@ use App\Repository\OrderRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\User;
+use App\Entity\PromoCode;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
@@ -19,8 +20,11 @@ class Order
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'orders')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?User $user = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $guestEmail = null;
 
     #[ORM\Column]
     private ?float $total = null;
@@ -42,6 +46,13 @@ class Order
 
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $gateway = null;
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?PromoCode $promoCode = null;
+
+    #[ORM\Column]
+    private float $discount = 0.0;
 
     #[ORM\OneToMany(
         mappedBy: 'orderRef',
@@ -69,6 +80,17 @@ class Order
     public function setUser(?User $user): static
     {
         $this->user = $user;
+        return $this;
+    }
+
+    public function getGuestEmail(): ?string
+    {
+        return $this->guestEmail;
+    }
+
+    public function setGuestEmail(?string $guestEmail): static
+    {
+        $this->guestEmail = $guestEmail;
         return $this;
     }
 
@@ -177,4 +199,10 @@ class Order
         $this->gateway = $gateway;
         return $this;
     }
+
+    public function getPromoCode(): ?PromoCode { return $this->promoCode; }
+    public function setPromoCode(?PromoCode $promoCode): static { $this->promoCode = $promoCode; return $this; }
+
+    public function getDiscount(): float { return $this->discount; }
+    public function setDiscount(float $discount): static { $this->discount = $discount; return $this; }
 }

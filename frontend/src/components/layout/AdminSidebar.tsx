@@ -6,16 +6,22 @@ import {
   Activity,
   LogOut,
   MessageSquare,
+  CreditCard,
+  Home,
+  Tag,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import React from "react";
 
 const navItems = [
   { to: "/admin", icon: LayoutDashboard, label: "Tableau de bord", end: true },
+  { to: "/admin/home", icon: Home, label: "Page d'accueil" },
   { to: "/admin/services", icon: Package, label: "Services" },
   { to: "/admin/abonnements", icon: Activity, label: "Abonnements" },
+  { to: "/admin/paiements", icon: CreditCard, label: "Paiements" },
   { to: "/admin/utilisateurs", icon: Users, label: "Utilisateurs" },
   { to: "/admin/contact", icon: MessageSquare, label: "Messages contact" },
+  { to: "/admin/promos", icon: Tag, label: "Codes promo" },
 ];
 
 export function AdminSidebar() {

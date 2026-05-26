@@ -19,10 +19,19 @@ export interface CartItem {
   image?: string;
 }
 
+export interface PromoState {
+  code: string;
+  discount: number;
+  discountedTotal: number;
+  type: string;
+}
+
 interface CartContextValue {
   items: CartItem[];
   count: number;
   total: number;
+  promo: PromoState | null;
+  setPromo: (promo: PromoState | null) => void;
   addToCart: (
     item: Omit<CartItem, "cycle"> & { cycle?: BillingCycle; type?: string }
   ) => void;
@@ -39,6 +48,7 @@ const yearlyPrice = (m: number) => Math.round(m * 12 * 0.83);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [promo, setPromo] = useState<PromoState | null>(null);
 
   /* ────────────────────────────────────────────────
      🔄 Chargement depuis localStorage
@@ -96,7 +106,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   /* ────────────────────────────────────────────────
      🗑 clearCart
      ──────────────────────────────────────────────── */
-  const clearCart = useCallback(() => setItems([]), []);
+  const clearCart = useCallback(() => { setItems([]); setPromo(null); }, []);
 
   /* ────────────────────────────────────────────────
      💰 total (one_shot = prix unique)
@@ -117,13 +127,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
       items,
       count: items.length,
       total,
+      promo,
+      setPromo,
       addToCart,
       removeFromCart,
       setCycle,
       clearCart,
       has: (id) => items.some((p) => p.id === id),
     }),
-    [items, total, addToCart, removeFromCart, setCycle, clearCart]
+    [items, total, promo, addToCart, removeFromCart, setCycle, clearCart]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

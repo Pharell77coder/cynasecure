@@ -7,6 +7,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ServiceRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Service
 {
     #[ORM\Id]
@@ -49,6 +50,27 @@ class Service
     #[ORM\Column(length: 20)]
     private ?string $type = 'saas';
 
+    #[ORM\Column(options: ['default' => true])]
+    private bool $isAvailable = true;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $homePosition = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $images = null;
+
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $technicalSpecs = null;
+
+    #[ORM\Column(length: 20, options: ['default' => 'available'])]
+    private string $availability = 'available';
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $trialAvailable = false;
+
     // 🔥 Getter virtuel pour categorySlug
     public function getCategorySlug(): ?string
     {
@@ -59,6 +81,12 @@ class Service
     public function getTitle(): ?string
     {
         return $this->name;
+    }
+
+    #[ORM\PrePersist]
+    public function initCreatedAt(): void
+    {
+        $this->createdAt ??= new \DateTimeImmutable();
     }
 
     // --- GETTERS / SETTERS ---
@@ -166,4 +194,24 @@ class Service
         $this->type = $type;
         return $this;
     }
+
+    public function isAvailable(): bool { return $this->isAvailable; }
+    public function setIsAvailable(bool $v): static { $this->isAvailable = $v; return $this; }
+
+    public function getHomePosition(): ?int { return $this->homePosition; }
+    public function setHomePosition(?int $v): static { $this->homePosition = $v; return $this; }
+
+    public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }
+
+    public function getImages(): ?array { return $this->images; }
+    public function setImages(?array $v): static { $this->images = $v; return $this; }
+
+    public function getTechnicalSpecs(): ?array { return $this->technicalSpecs; }
+    public function setTechnicalSpecs(?array $v): static { $this->technicalSpecs = $v; return $this; }
+
+    public function getAvailability(): string { return $this->availability; }
+    public function setAvailability(string $v): static { $this->availability = $v; return $this; }
+
+    public function isTrialAvailable(): bool { return $this->trialAvailable; }
+    public function setTrialAvailable(bool $v): static { $this->trialAvailable = $v; return $this; }
 }

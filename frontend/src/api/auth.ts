@@ -12,16 +12,55 @@ export interface User {
 }
 
 export const authApi = {
-  login: (email: string, password: string) =>
-    apiFetch<{ token: string; user: User }>("/api/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    }),
+  login: (email: string, password: string, rememberMe = false) =>
+    apiFetch<{ token: string; user: User; requires2fa?: boolean; emailUnverified?: boolean }>(
+      `/api/login${rememberMe ? "?_remember_me=1" : ""}`,
+      {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      }
+    ),
 
   register: (displayName: string, email: string, password: string) =>
-    apiFetch<{ token: string; user: User }>("/api/register", {
+    apiFetch<{ needsVerification?: boolean; message?: string }>("/api/register", {
       method: "POST",
       body: JSON.stringify({ displayName, email, password }),
+    }),
+
+  verifyEmail: (token: string) =>
+    apiFetch<{ message: string }>("/api/auth/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }),
+
+  resendVerification: (email: string) =>
+    apiFetch<{ message: string }>("/api/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  twoFactorCheck: (code: string) =>
+    apiFetch<{ token: string; user: User }>("/api/auth/2fa/check", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
+
+  twoFactorStatus: () =>
+    apiFetch<{ enabled: boolean }>("/api/me/2fa/status"),
+
+  twoFactorSetup: () =>
+    apiFetch<{ secret: string; qrContent: string }>("/api/me/2fa/setup", { method: "POST" }),
+
+  twoFactorConfirm: (code: string) =>
+    apiFetch<{ message: string }>("/api/me/2fa/confirm", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
+
+  twoFactorDisable: (password: string, code: string) =>
+    apiFetch<{ message: string }>("/api/me/2fa/disable", {
+      method: "POST",
+      body: JSON.stringify({ password, code }),
     }),
 
   me: () => apiFetch<User>("/api/me"),
@@ -53,5 +92,17 @@ export const authApi = {
     apiFetch<{ message: string }>("/api/password-reset/confirm", {
       method: "POST",
       body: JSON.stringify({ token, newPassword }),
+    }),
+
+  requestEmailChange: (currentPassword: string, newEmail: string) =>
+    apiFetch<{ message: string }>("/api/me/email/request-change", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newEmail }),
+    }),
+
+  verifyEmailChange: (token: string) =>
+    apiFetch<{ message: string }>("/api/email/verify-change", {
+      method: "POST",
+      body: JSON.stringify({ token }),
     }),
 };

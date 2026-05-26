@@ -31,10 +31,24 @@ class StripeService
     public function createPaymentIntent(int $amountCents, string $currency = 'eur', string $description = ''): PaymentIntent
     {
         return PaymentIntent::create([
-            'amount'   => $amountCents,
-            'currency' => $currency,
-            'description' => $description,
+            'amount'               => $amountCents,
+            'currency'             => $currency,
+            'description'          => $description,
             'payment_method_types' => ['card'],
+            'setup_future_usage'   => 'off_session',
+        ]);
+    }
+
+    public function createPaymentIntentOffSession(int $amountCents, string $paymentMethodId, string $currency = 'eur', string $description = ''): PaymentIntent
+    {
+        return PaymentIntent::create([
+            'amount'               => $amountCents,
+            'currency'             => $currency,
+            'description'          => $description,
+            'payment_method'       => $paymentMethodId,
+            'payment_method_types' => ['card'],
+            'confirm'              => true,
+            'off_session'          => true,
         ]);
     }
 

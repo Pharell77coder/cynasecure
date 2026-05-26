@@ -13,6 +13,7 @@ export interface Subscription {
   startDate: string;
   nextBillingAt?: string;
   endDate?: string;
+  autoRenew: boolean;
 }
 
 export const subscriptionsApi = {
@@ -35,6 +36,20 @@ export const subscriptionsApi = {
    */
   cancel: (id: number) =>
     apiFetch(`/api/subscriptions/${id}/cancel`, {
+      method: "PUT",
+    }),
+
+  renew: (id: number) =>
+    apiFetch(`/api/subscriptions/${id}/renew`, { method: "PUT" }),
+
+  upgrade: (id: number, cycle: "monthly" | "yearly") =>
+    apiFetch(`/api/subscriptions/${id}/upgrade`, {
+      method: "PUT",
+      body: JSON.stringify({ cycle }),
+    }),
+
+  toggleAutoRenew: (id: number) =>
+    apiFetch<{ autoRenew: boolean; message: string }>(`/api/subscriptions/${id}/auto-renew`, {
       method: "PUT",
     }),
 };

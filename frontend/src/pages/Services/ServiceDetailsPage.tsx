@@ -1,6 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Check, X, ShoppingCart, ArrowLeft, Sparkles, Shield, Layers, Lock } from "lucide-react";
+import {
+  Check,
+  X,
+  ShoppingCart,
+  ArrowLeft,
+  Sparkles,
+  Shield,
+  Layers,
+  Lock,
+  Cpu,
+  ChevronLeft,
+  ChevronRight,
+  AlertTriangle,
+  FlaskConical,
+} from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { ServiceCard } from "../../components/shared/ServiceCard";
 import { useCart } from "../../hooks/useCart";
@@ -40,18 +54,20 @@ export default function ServiceDetailsPage() {
   const [similar, setSimilar] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
+  const [imgIdx, setImgIdx] = useState(0);
 
   useEffect(() => {
     if (!id) return;
+    setImgIdx(0);
     setLoading(true);
-    servicesApi.getById(id).then((data) => {
-      setService(data);
-      servicesApi.getAll().then((all) => {
-        setSimilar(all.filter((s) => s.categorySlug === data.categorySlug && s.id !== data.id).slice(0, 3));
-      });
-    })
-    .catch(() => setService(null))
-    .finally(() => setLoading(false));
+    servicesApi
+      .getById(id)
+      .then((data) => {
+        setService(data);
+        servicesApi.getSimilar(id, 6).then(setSimilar).catch(() => setSimilar([]));
+      })
+      .catch(() => setService(null))
+      .finally(() => setLoading(false));
   }, [id]);
 
   if (loading) return <Skeleton />;
@@ -60,16 +76,26 @@ export default function ServiceDetailsPage() {
     return (
       <div className="container py-20 text-center">
         <p className="text-gray-500 mb-4">Service introuvable.</p>
-        <Link to="/catalogue"><Button variant="outline">Retour au catalogue</Button></Link>
+        <Link to="/catalogue">
+          <Button variant="outline">Retour au catalogue</Button>
+        </Link>
       </div>
     );
   }
 
-  const imageSrc = service.image ? `/${service.image}` : "";
+  const imgs: string[] = (service.images && service.images.length > 0)
+    ? service.images
+    : service.image
+    ? [service.image]
+    : [];
+
+  const mainImg = imgs.length > 0 ? `/${imgs[imgIdx]}` : "";
   const yearlyPrice = service.priceYearly ?? Math.round(service.priceMonthly * 12 * 0.85);
   const yearlySaving = Math.round(service.priceMonthly * 12 - yearlyPrice);
+  const avail = service.availability ?? "available";
+  const unavail = avail === "unavailable" || avail === "maintenance";
 
-  const handleSubscribe = () => {
+  const doSubscribe = (tryCycle: BillingCycle = cycle) => {
     if (!isAuthenticated) {
       toast("Connectez-vous pour vous abonner", "error");
       navigate("/connexion");
@@ -80,11 +106,14 @@ export default function ServiceDetailsPage() {
       name: service.name,
       description: service.description ?? "",
       priceMonthly: service.priceMonthly,
-      cycle,
-      image: imageSrc || undefined,
+      cycle: tryCycle,
+      image: mainImg || undefined,
     });
     navigate("/checkout");
   };
+
+  const goImg = (dir: -1 | 1) =>
+    setImgIdx((i) => (i + dir + imgs.length) % imgs.length);
 
   return (
     <div className="relative">
@@ -95,7 +124,6 @@ export default function ServiceDetailsPage() {
 
       <div className="container py-12 relative">
 
-        {/* Breadcrumb */}
         <Link
           to="/catalogue"
           className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-white transition-colors mb-10"
@@ -106,20 +134,65 @@ export default function ServiceDetailsPage() {
 
         <div className="grid gap-14 lg:grid-cols-2">
 
-          {/* Left — image + features */}
+          {/* Left — carrousel + features */}
           <div>
-            {imageSrc ? (
-              <img
-                src={imageSrc}
-                alt={service.name}
-                className="w-full border border-gray-800 object-cover aspect-video"
-              />
-            ) : (
-              <div className="w-full aspect-video bg-gray-900 border border-gray-800 flex items-center justify-center">
-                <Shield className="h-16 w-16 text-gray-700" />
+            {/* Carrousel */}
+            <div className="relative w-full aspect-video bg-gray-900 border border-gray-800">
+              {mainImg ? (
+                <img
+                  src={mainImg}
+                  alt={service.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Shield className="h-16 w-16 text-gray-700" />
+                </div>
+              )}
+
+              {imgs.length > 1 && (
+                <>
+                  <button
+                    onClick={() => goImg(-1)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-black/60 border border-white/10 text-white hover:bg-black/80 transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => goImg(1)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-black/60 border border-white/10 text-white hover:bg-black/80 transition-colors"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                    {imgs.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setImgIdx(i)}
+                        className={`w-1.5 h-1.5 rounded-full transition-colors ${i === imgIdx ? "bg-blue-400" : "bg-white/30 hover:bg-white/60"}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Miniatures */}
+            {imgs.length > 1 && (
+              <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+                {imgs.map((src, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setImgIdx(i)}
+                    className={`flex-shrink-0 w-16 h-10 border transition-colors overflow-hidden ${i === imgIdx ? "border-blue-500" : "border-gray-700 hover:border-gray-500"}`}
+                  >
+                    <img src={`/${src}`} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
               </div>
             )}
 
+            {/* Features */}
             {service.features && service.features.length > 0 && (
               <div className="mt-6 border border-gray-800 bg-gray-900 p-6">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-5">
@@ -138,6 +211,24 @@ export default function ServiceDetailsPage() {
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {/* Specs techniques */}
+            {service.technicalSpecs && service.technicalSpecs.length > 0 && (
+              <div className="mt-4 border border-gray-800 bg-gray-900 p-6">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-5">
+                  <Cpu className="h-4 w-4 text-blue-500" />
+                  Caractéristiques techniques
+                </h3>
+                <dl className="grid grid-cols-2 gap-x-6 gap-y-3">
+                  {service.technicalSpecs.map((spec, i) => (
+                    <div key={i} className="contents">
+                      <dt className="text-xs font-mono text-gray-500 self-center">{spec.label}</dt>
+                      <dd className="text-sm text-gray-200 self-center">{spec.value}</dd>
+                    </div>
+                  ))}
+                </dl>
               </div>
             )}
           </div>
@@ -163,8 +254,18 @@ export default function ServiceDetailsPage() {
               {service.longDescription || service.description}
             </p>
 
-            {/* SaaS pricing */}
-            {service.type === "saas" && (
+            {/* Bandeau indisponibilité */}
+            {unavail && (
+              <div className="mt-6 flex items-center gap-2 border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                {avail === "maintenance"
+                  ? "Service en maintenance — indisponible temporairement."
+                  : "Service momentanément indisponible."}
+              </div>
+            )}
+
+            {/* Pricing SaaS */}
+            {service.type === "saas" && !unavail && (
               <div className="mt-8">
                 <p className="text-xs font-mono tracking-widest text-gray-500 uppercase mb-3">
                   Choisissez votre formule
@@ -214,8 +315,8 @@ export default function ServiceDetailsPage() {
               </div>
             )}
 
-            {/* One-shot pricing */}
-            {service.type === "one_shot" && (
+            {/* Pricing one-shot */}
+            {service.type === "one_shot" && !unavail && (
               <div className="mt-8">
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-black text-white">{service.priceMonthly}€</span>
@@ -226,7 +327,11 @@ export default function ServiceDetailsPage() {
 
             {/* CTA */}
             <div className="mt-8 flex flex-col gap-3">
-              {service.type === "one_shot" && (
+              {unavail ? (
+                <Button size="lg" fullWidth disabled className="opacity-40 cursor-not-allowed">
+                  SERVICE INDISPONIBLE
+                </Button>
+              ) : service.type === "one_shot" ? (
                 <Button
                   size="lg"
                   fullWidth
@@ -242,7 +347,7 @@ export default function ServiceDetailsPage() {
                       description: service.description ?? "",
                       priceMonthly: service.priceMonthly,
                       cycle: "monthly",
-                      image: imageSrc || undefined,
+                      image: mainImg || undefined,
                     });
                     navigate("/checkout");
                   }}
@@ -250,13 +355,24 @@ export default function ServiceDetailsPage() {
                   <ShoppingCart className="h-4 w-4" />
                   Commander maintenant
                 </Button>
-              )}
-
-              {service.type === "saas" && (
-                <Button size="lg" fullWidth onClick={handleSubscribe}>
-                  <Sparkles className="h-4 w-4" />
-                  S'abonner maintenant
-                </Button>
+              ) : (
+                <>
+                  {service.trialAvailable && (
+                    <Button
+                      size="lg"
+                      fullWidth
+                      variant="outline"
+                      onClick={() => doSubscribe("monthly")}
+                    >
+                      <FlaskConical className="h-4 w-4" />
+                      Essayer maintenant
+                    </Button>
+                  )}
+                  <Button size="lg" fullWidth onClick={() => doSubscribe()}>
+                    <Sparkles className="h-4 w-4" />
+                    S'abonner maintenant
+                  </Button>
+                </>
               )}
 
               <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-600 mt-1">
@@ -267,12 +383,14 @@ export default function ServiceDetailsPage() {
           </div>
         </div>
 
-        {/* Similar services */}
+        {/* Services similaires */}
         {similar.length > 0 && (
           <section className="mt-20 pt-12 border-t border-gray-800">
             <h2 className="text-xl font-bold text-white mb-6">Services similaires</h2>
-            <div className="grid gap-5 md:grid-cols-3">
-              {similar.map((s) => <ServiceCard key={s.id} service={s} />)}
+            <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3">
+              {similar.map((s) => (
+                <ServiceCard key={s.id} service={s} />
+              ))}
             </div>
           </section>
         )}

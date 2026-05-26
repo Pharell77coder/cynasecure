@@ -5,11 +5,15 @@ namespace App\Controller;
 use App\Entity\Order;
 use App\Entity\OrderItem;
 use App\Entity\Payment;
+use App\Entity\PromoCode;
+use App\Entity\PromoCodeUsage;
 use App\Entity\Service;
 use App\Entity\Subscription;
 use App\Entity\User;
 use App\Repository\OrderRepository;
 use App\Repository\PaymentRepository;
+use App\Repository\PromoCodeRepository;
+use App\Service\FraudDetectionService;
 use App\Service\InvoiceService;
 use App\Service\PayPalService;
 use App\Service\StripeService;
@@ -28,7 +32,9 @@ class CheckoutController extends AbstractController
         Request $request,
         EntityManagerInterface $em,
         StripeService $stripe,
-        PayPalService $paypal
+        PayPalService $paypal,
+        PromoCodeRepository $promoRepo,
+        FraudDetectionService $fraud
     ): JsonResponse {
         if (!$this->rateLimit($request, 10, 60)) {
             return new JsonResponse(['message' => 'Trop de requêtes. Attendez une minute.'], 429);
@@ -36,13 +42,18 @@ class CheckoutController extends AbstractController
 
         /** @var User|null $user */
         $user = $this->getUser();
-        if (!$user) {
-            return new JsonResponse(['message' => 'Authentification requise.'], 401);
-        }
 
-        $data     = json_decode($request->getContent(), true) ?? [];
-        $rawItems = $data['items'] ?? [];
-        $address  = $data['address'] ?? [];
+        $data       = json_decode($request->getContent(), true) ?? [];
+        $rawItems   = $data['items'] ?? [];
+        $address    = $data['address'] ?? [];
+        $guestEmail = isset($data['guestEmail']) ? trim((string) $data['guestEmail']) : null;
+        $promoCode  = isset($data['promoCode']) ? trim((string) $data['promoCode']) : null;
+
+        if (!$user) {
+            if (!$guestEmail || !filter_var($guestEmail, FILTER_VALIDATE_EMAIL)) {
+                return new JsonResponse(['message' => 'Une adresse e-mail valide est requise pour continuer en tant qu\'invité.'], 400);
+            }
+        }
 
         if (empty($rawItems)) {
             return new JsonResponse(['message' => 'Le panier est vide.'], 400);
@@ -79,11 +90,32 @@ class CheckoutController extends AbstractController
 
         $total = round($total, 2);
 
+        // Apply promo code if provided
+        $promo    = null;
+        $discount = 0.0;
+        if ($promoCode) {
+            $promo = $promoRepo->findActiveByCode($promoCode);
+            if ($promo && $promo->isValid($total, new \DateTimeImmutable())) {
+                $discount = $promo->computeDiscount($total);
+                $total    = max(0, round($total - $discount, 2));
+            } else {
+                $promo    = null;
+                $discount = 0.0;
+            }
+        }
+
         // Create pending Order
         $order = new Order();
         $order->setUser($user);
+        if (!$user && $guestEmail) {
+            $order->setGuestEmail($guestEmail);
+        }
         $order->setStatus('PENDING');
         $order->setTotal($total);
+        $order->setDiscount($discount);
+        if ($promo) {
+            $order->setPromoCode($promo);
+        }
         $order->setBillingAddress($address);
         $order->setCreatedAt(new \DateTimeImmutable());
         $em->persist($order);
@@ -99,6 +131,15 @@ class CheckoutController extends AbstractController
         }
 
         $em->flush();
+
+        // Fraud detection
+        $fraudResult = $fraud->assess($order, $request);
+        $em->flush();
+        if ($fraudResult['level'] === 'blocked') {
+            $em->remove($order);
+            $em->flush();
+            return new JsonResponse(['message' => 'Votre commande n\'a pas pu être traitée. Veuillez contacter le support.'], 403);
+        }
 
         // Stripe PaymentIntent
         try {
@@ -137,6 +178,8 @@ class CheckoutController extends AbstractController
             'paypalOrderId' => $order->getPaypalOrderId(),
             'orderId'       => $order->getId(),
             'total'         => $total,
+            'discount'      => $discount,
+            'promoCode'     => $promo?->getCode(),
             'items'         => $responseItems,
         ]);
     }
@@ -150,24 +193,31 @@ class CheckoutController extends AbstractController
         PayPalService $paypal,
         PaymentRepository $paymentRepo
     ): JsonResponse {
+        // paymentMethodId captured from Stripe for future off-session renewals
         if (!$this->rateLimit($request, 10, 60)) {
             return new JsonResponse(['message' => 'Trop de requêtes. Attendez une minute.'], 429);
         }
 
         /** @var User|null $user */
         $user = $this->getUser();
-        if (!$user) {
-            return new JsonResponse(['message' => 'Authentification requise.'], 401);
-        }
 
         $data    = json_decode($request->getContent(), true) ?? [];
         $orderId = (int) ($data['orderId'] ?? 0);
         $gateway = $data['gateway'] ?? '';
 
         $order = $orderRepo->find($orderId);
-        if (!$order || $order->getUser()->getId() !== $user->getId()) {
+        if (!$order) {
             return new JsonResponse(['message' => 'Commande introuvable.'], 404);
         }
+
+        $orderUser = $order->getUser();
+        if ($orderUser !== null) {
+            // Commande authentifiée : l'utilisateur connecté doit être le propriétaire
+            if (!$user || $orderUser->getId() !== $user->getId()) {
+                return new JsonResponse(['message' => 'Commande introuvable.'], 404);
+            }
+        }
+        // Commande invité : l'orderId suffit comme preuve (généré juste avant dans la même session)
 
         if ($order->getStatus() === 'PAID') {
             return new JsonResponse(['message' => 'Cette commande est déjà payée.'], 409);
@@ -177,7 +227,8 @@ class CheckoutController extends AbstractController
             return new JsonResponse(['message' => 'Passerelle de paiement invalide.'], 400);
         }
 
-        $last4 = null;
+        $last4           = null;
+        $paymentMethodId = null;
 
         if ($gateway === 'stripe') {
             $piId = trim($data['paymentIntentId'] ?? '');
@@ -194,6 +245,8 @@ class CheckoutController extends AbstractController
             if ($pi->status !== 'succeeded') {
                 return new JsonResponse(['message' => 'Le paiement Stripe n\'est pas confirmé (status: ' . $pi->status . ').'], 402);
             }
+
+            $paymentMethodId = $pi->payment_method ? (string) $pi->payment_method : null;
 
             if ($pi->latest_charge) {
                 try {
@@ -247,28 +300,47 @@ class CheckoutController extends AbstractController
         // Flush now to get the Payment ID before creating subscriptions
         $em->flush();
 
-        // Subscriptions
-        $now = new \DateTimeImmutable();
-        foreach ($order->getOrderItems() as $item) {
-            $sub = new Subscription();
-            $sub->setUser($user);
-            $sub->setService($item->getService());
-            $sub->setCycle($item->getBilling() === 'yearly' ? 'yearly' : 'monthly');
-            $sub->setPrice($item->getPrice());
-            $sub->setStatus('ACTIVE');
-            $sub->setStartDate($now);
-            $sub->setUserEmail($user->getEmail());
-            $sub->setInvoicePaymentId($payment->getId());
+        // Subscriptions — uniquement pour les utilisateurs connectés
+        $orderOwner = $order->getUser();
+        if ($orderOwner !== null) {
+            $now = new \DateTimeImmutable();
+            foreach ($order->getOrderItems() as $item) {
+                $sub = new Subscription();
+                $sub->setUser($orderOwner);
+                $sub->setService($item->getService());
+                $sub->setCycle($item->getBilling() === 'yearly' ? 'yearly' : 'monthly');
+                $sub->setPrice($item->getPrice());
+                $sub->setStatus('ACTIVE');
+                $sub->setStartDate($now);
+                $sub->setUserEmail($orderOwner->getEmail());
+                $sub->setInvoicePaymentId($payment->getId());
+                if ($paymentMethodId) {
+                    $sub->setPaymentMethodId($paymentMethodId);
+                }
 
-            if ($item->getBilling() === 'yearly') {
-                $sub->setNextBillingAt($now->add(new \DateInterval('P1Y')));
-                $sub->setEndDate($now->add(new \DateInterval('P1Y')));
-            } else {
-                $sub->setNextBillingAt($now->add(new \DateInterval('P1M')));
-                $sub->setEndDate($now->add(new \DateInterval('P1M')));
+                if ($item->getBilling() === 'yearly') {
+                    $sub->setNextBillingAt($now->add(new \DateInterval('P1Y')));
+                    $sub->setEndDate($now->add(new \DateInterval('P1Y')));
+                } else {
+                    $sub->setNextBillingAt($now->add(new \DateInterval('P1M')));
+                    $sub->setEndDate($now->add(new \DateInterval('P1M')));
+                }
+
+                $em->persist($sub);
             }
+        }
 
-            $em->persist($sub);
+        // Record promo code usage
+        $promo = $order->getPromoCode();
+        if ($promo && $order->getDiscount() > 0) {
+            $usage = new PromoCodeUsage();
+            $usage->setPromoCode($promo);
+            $usage->setUser($order->getUser());
+            $usage->setOrderRef($order);
+            $usage->setDiscount($order->getDiscount());
+            $usage->setUsedAt(new \DateTimeImmutable());
+            $em->persist($usage);
+            $promo->incrementUsedCount();
         }
 
         $order->setStatus('PAID');
@@ -301,7 +373,7 @@ class CheckoutController extends AbstractController
         }
 
         $order   = $payment->getOrderRef();
-        $isOwner = $order && $order->getUser()->getId() === $user->getId();
+        $isOwner = $order && $order->getUser() !== null && $order->getUser()->getId() === $user->getId();
         $isAdmin = in_array('ROLE_ADMIN', $user->getRoles(), true);
 
         if (!$isOwner && !$isAdmin) {

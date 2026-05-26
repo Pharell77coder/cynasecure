@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -17,20 +17,20 @@ import {
   Lock,
   ChevronRight,
   Download,
+  User,
+  LogIn,
+  UserPlus,
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { useCart } from "../../hooks/useCart";
+import { useAuth } from "../../hooks/useAuth";
 import { checkoutApi, CheckoutAddress } from "../../api/checkout";
 import { formatPrice } from "../../lib/utils";
 
-const stripePromise = loadStripe(
-  "pk_test_51TS5b8DFgnX1nPxzMeiFIgK7OvfPBznElje4b3k5o2Dp2RExMbEehds6QEfSWa71BqHOyG3ix5e1fG1ADQ4y6n3Q00mKwgoz4W"
-);
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
 
-const PAYPAL_CLIENT_ID =
-  "AUE1dCpprDICo1hGWm0WfZ7LOnvUI6gWbQd_MOojLw3j4TO-oDqcSYGwl1Qy7QXoc5JZf939OuujYkln";
-
-type Step = "address" | "payment" | "confirmation";
+type Step = "auth" | "address" | "payment" | "confirmation";
 
 interface AddressFormData {
   firstName: string;
@@ -55,18 +55,23 @@ const EMPTY_ADDRESS: AddressFormData = {
 };
 
 /* ── Step indicator ─────────────────────────────── */
-function StepIndicator({ step }: { step: Step }) {
-  const steps: { key: Step; label: string }[] = [
+function StepIndicator({ step, isAuthenticated }: { step: Step; isAuthenticated: boolean }) {
+  const allSteps: { key: Step; label: string }[] = [
+    { key: "auth", label: "Compte" },
     { key: "address", label: "Adresse" },
     { key: "payment", label: "Paiement" },
     { key: "confirmation", label: "Confirmation" },
   ];
 
-  const idx = steps.findIndex((s) => s.key === step);
+  const visibleSteps = isAuthenticated
+    ? allSteps.filter((s) => s.key !== "auth")
+    : allSteps;
+
+  const idx = visibleSteps.findIndex((s) => s.key === step);
 
   return (
     <div className="flex items-center gap-0 mb-10">
-      {steps.map((s, i) => (
+      {visibleSteps.map((s, i) => (
         <React.Fragment key={s.key}>
           <div className="flex items-center gap-2">
             <div
@@ -88,13 +93,92 @@ function StepIndicator({ step }: { step: Step }) {
               {s.label.toUpperCase()}
             </span>
           </div>
-          {i < steps.length - 1 && (
+          {i < visibleSteps.length - 1 && (
             <div
               className={`flex-1 mx-3 h-px ${i < idx ? "bg-blue-600" : "bg-gray-800"}`}
             />
           )}
         </React.Fragment>
       ))}
+    </div>
+  );
+}
+
+/* ── Auth step ───────────────────────────────────── */
+function AuthStep({ onGuest }: { onGuest: (email: string) => void }) {
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  const handleGuest = () => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setEmailError("Adresse e-mail invalide.");
+      return;
+    }
+    setEmailError(null);
+    onGuest(email.trim());
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-8">
+        <User className="h-4 w-4 text-blue-500" />
+        <h2 className="text-lg font-bold text-white">Identification</h2>
+      </div>
+
+      <div className="space-y-4 mb-8">
+        <Link
+          to="/connexion?redirect=/checkout"
+          className="flex items-center justify-between bg-gray-900 border border-gray-700 px-5 py-4 hover:border-blue-500 transition-colors group"
+        >
+          <div>
+            <p className="text-white text-sm font-medium">J'ai déjà un compte</p>
+            <p className="text-gray-500 text-xs mt-0.5">Me connecter pour continuer</p>
+          </div>
+          <LogIn className="h-4 w-4 text-gray-500 group-hover:text-blue-400 transition-colors" />
+        </Link>
+
+        <Link
+          to="/inscription?redirect=/checkout"
+          className="flex items-center justify-between bg-gray-900 border border-gray-700 px-5 py-4 hover:border-blue-500 transition-colors group"
+        >
+          <div>
+            <p className="text-white text-sm font-medium">Créer un compte</p>
+            <p className="text-gray-500 text-xs mt-0.5">Gérez vos abonnements depuis votre espace</p>
+          </div>
+          <UserPlus className="h-4 w-4 text-gray-500 group-hover:text-blue-400 transition-colors" />
+        </Link>
+      </div>
+
+      <div className="flex items-center gap-4 mb-8">
+        <div className="flex-1 h-px bg-gray-800" />
+        <span className="text-xs font-mono text-gray-600 tracking-widest">OU</span>
+        <div className="flex-1 h-px bg-gray-800" />
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-mono tracking-widest text-gray-500 uppercase">
+            Adresse e-mail <span className="text-blue-500">*</span>
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => { setEmail(e.target.value); setEmailError(null); }}
+            placeholder="votre@email.com"
+            className="bg-gray-900 border border-gray-700 text-white text-sm px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-colors placeholder:text-gray-600"
+          />
+          {emailError && (
+            <p className="text-red-400 text-xs flex items-center gap-1 mt-0.5">
+              <AlertCircle className="h-3 w-3" />
+              {emailError}
+            </p>
+          )}
+        </div>
+
+        <Button onClick={handleGuest} fullWidth className="gap-2 mt-1">
+          Continuer en tant qu'invité <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 }
@@ -177,7 +261,7 @@ function StripePaymentForm({
 }: {
   clientSecret: string;
   orderId: number;
-  onSuccess: (paymentIntentId: string, last4?: string) => void;
+  onSuccess: (paymentIntentId: string) => void;
 }) {
   const stripe   = useStripe();
   const elements = useElements();
@@ -249,14 +333,18 @@ function PaymentStep({
   address,
   items,
   total,
+  guestEmail,
+  promoCode,
   onSuccess,
 }: {
   address: CheckoutAddress;
   items: { id: number; cycle: string }[];
   total: number;
+  guestEmail?: string;
+  promoCode?: string;
   onSuccess: (paymentId: number, invoiceNumber: string, total: number) => void;
 }) {
-  const [intent, setIntent]   = useState<{ clientSecret: string; paypalOrderId: string; orderId: number } | null>(null);
+  const [intent, setIntent]   = useState<{ clientSecret: string; paypalOrderId: string; orderId: number; discount?: number; promoCode?: string | null } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
   const [tab, setTab]         = useState<"stripe" | "paypal">("stripe");
@@ -270,7 +358,7 @@ function PaymentStep({
       billing:   (it.cycle === "yearly" ? "yearly" : "monthly") as "monthly" | "yearly",
     }));
 
-    checkoutApi.intent(cartItems, address)
+    checkoutApi.intent(cartItems, address, guestEmail, promoCode)
       .then(setIntent)
       .catch((e) => setError(e.message ?? "Erreur de connexion."))
       .finally(() => setLoading(false));
@@ -285,8 +373,8 @@ function PaymentStep({
         paymentIntentId,
       });
       onSuccess(res.paymentId, res.invoiceNumber, res.total);
-    } catch (e: any) {
-      setError(e.message ?? "Erreur de confirmation.");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Erreur de confirmation.");
     }
   };
 
@@ -294,13 +382,13 @@ function PaymentStep({
     if (!intent) return;
     try {
       const res = await checkoutApi.confirm({
-        orderId:      intent.orderId,
-        gateway:      "paypal",
+        orderId:       intent.orderId,
+        gateway:       "paypal",
         paypalOrderId: ppOrderId,
       });
       onSuccess(res.paymentId, res.invoiceNumber, res.total);
-    } catch (e: any) {
-      setError(e.message ?? "Erreur de confirmation.");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Erreur de confirmation.");
     }
   };
 
@@ -331,7 +419,6 @@ function PaymentStep({
 
       {intent && !loading && (
         <>
-          {/* Tabs */}
           <div className="flex border-b border-gray-800 mb-6">
             {(["stripe", "paypal"] as const).map((t) => (
               <button
@@ -387,10 +474,12 @@ function ConfirmationStep({
   paymentId,
   invoiceNumber,
   total,
+  isGuest,
 }: {
   paymentId: number;
   invoiceNumber: string;
   total: number;
+  isGuest: boolean;
 }) {
   const navigate = useNavigate();
 
@@ -406,41 +495,71 @@ function ConfirmationStep({
       </p>
       <p className="text-gray-600 text-xs font-mono mb-8">{invoiceNumber}</p>
 
-      <p className="text-gray-400 text-sm mb-8 max-w-sm mx-auto">
-        Vos abonnements sont maintenant actifs. Retrouvez-les dans votre tableau de bord.
-      </p>
+      {isGuest ? (
+        <>
+          <div className="bg-blue-500/10 border border-blue-500/20 px-5 py-4 mb-8 max-w-sm mx-auto text-left">
+            <p className="text-blue-300 text-sm font-medium mb-1">Créez un compte pour gérer votre abonnement</p>
+            <p className="text-gray-400 text-xs">
+              Retrouvez vos factures, suivez vos abonnements et gérez votre renouvellement depuis votre espace personnel.
+            </p>
+            <Link
+              to="/inscription"
+              className="inline-flex items-center gap-1.5 text-blue-400 text-xs font-mono mt-3 hover:text-blue-300 transition-colors"
+            >
+              Créer un compte <ChevronRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <Button onClick={() => navigate("/")} className="gap-2">
+            Retour à l'accueil <ChevronRight className="h-4 w-4" />
+          </Button>
+        </>
+      ) : (
+        <>
+          <p className="text-gray-400 text-sm mb-8 max-w-sm mx-auto">
+            Vos abonnements sont maintenant actifs. Retrouvez-les dans votre tableau de bord.
+          </p>
 
-      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <a
-          href={checkoutApi.invoiceUrl(paymentId)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 px-5 py-2.5 text-sm font-medium transition-colors"
-        >
-          <Download className="h-4 w-4" />
-          Télécharger la facture
-        </a>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <a
+              href={checkoutApi.invoiceUrl(paymentId)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 px-5 py-2.5 text-sm font-medium transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              Télécharger la facture
+            </a>
 
-        <Button onClick={() => navigate("/dashboard")} className="gap-2">
-          Mon tableau de bord <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
+            <Button onClick={() => navigate("/dashboard")} className="gap-2">
+              Mon tableau de bord <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
 /* ── Main CheckoutPage ───────────────────────────── */
 export default function CheckoutPage() {
-  const { items, total, clearCart } = useCart();
+  const { items, total, clearCart, promo } = useCart();
+  const { isAuthenticated }                = useAuth();
   const navigate                    = useNavigate();
-  const [step, setStep]             = useState<Step>("address");
-  const [address, setAddress]       = useState<AddressFormData>(EMPTY_ADDRESS);
-  const [result, setResult]         = useState<{ paymentId: number; invoiceNumber: string; total: number } | null>(null);
+
+  const [step, setStep]           = useState<Step>(isAuthenticated ? "address" : "auth");
+  const [address, setAddress]     = useState<AddressFormData>(EMPTY_ADDRESS);
+  const [guestEmail, setGuestEmail] = useState<string>("");
+  const [result, setResult]       = useState<{ paymentId: number; invoiceNumber: string; total: number } | null>(null);
 
   if (items.length === 0 && step !== "confirmation") {
     navigate("/panier");
     return null;
   }
+
+  const handleGuestContinue = (email: string) => {
+    setGuestEmail(email);
+    setStep("address");
+  };
 
   const handleAddressNext = () => setStep("payment");
 
@@ -462,6 +581,8 @@ export default function CheckoutPage() {
     phone:     address.phone || undefined,
   };
 
+  const isGuest = !isAuthenticated;
+
   return (
     <PayPalScriptProvider options={{ clientId: PAYPAL_CLIENT_ID, currency: "EUR" }}>
       <div className="container py-12 pb-20">
@@ -472,7 +593,11 @@ export default function CheckoutPage() {
 
         <div className="grid gap-8 lg:grid-cols-[1fr_300px]">
           <div className="border border-gray-800 bg-gray-900 p-8">
-            <StepIndicator step={step} />
+            <StepIndicator step={step} isAuthenticated={isAuthenticated} />
+
+            {step === "auth" && (
+              <AuthStep onGuest={handleGuestContinue} />
+            )}
 
             {step === "address" && (
               <AddressStep
@@ -488,6 +613,8 @@ export default function CheckoutPage() {
                 address={checkoutAddress}
                 items={cartItems}
                 total={total}
+                guestEmail={isGuest ? guestEmail : undefined}
+                promoCode={promo?.code}
                 onSuccess={handlePaymentSuccess}
               />
             )}
@@ -497,11 +624,11 @@ export default function CheckoutPage() {
                 paymentId={result.paymentId}
                 invoiceNumber={result.invoiceNumber}
                 total={result.total}
+                isGuest={isGuest}
               />
             )}
           </div>
 
-          {/* Cart summary */}
           {step !== "confirmation" && (
             <aside>
               <div className="border border-gray-800 bg-gray-900 p-5 sticky top-24">
@@ -518,9 +645,17 @@ export default function CheckoutPage() {
                     </div>
                   ))}
                 </div>
+                {promo && (
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-green-400 text-xs font-mono">{promo.code}</span>
+                    <span className="text-green-400 text-xs">−{formatPrice(promo.discount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-baseline">
                   <span className="text-gray-400 text-sm">Total TTC</span>
-                  <span className="text-2xl font-black text-white">{formatPrice(total)}</span>
+                  <span className="text-2xl font-black text-white">
+                    {formatPrice(promo ? promo.discountedTotal : total)}
+                  </span>
                 </div>
               </div>
             </aside>

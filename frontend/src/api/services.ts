@@ -24,10 +24,30 @@ export interface Service {
 
   badge?: string | null;
   image: string | null;
+  images?: string[];
 
   features: ServiceFeature[];
+  technicalSpecs?: { label: string; value: string }[];
 
   type: "saas" | "one_shot";
+  isAvailable?: boolean;
+  availability?: "available" | "maintenance" | "unavailable";
+  trialAvailable?: boolean;
+}
+
+export interface SearchCriteria {
+  q?: string;
+  cats?: string;
+  pmin?: number;
+  pmax?: number;
+  dispo?: boolean;
+  sort?: "relevance" | "price_asc" | "price_desc" | "newest";
+  type?: "all" | "saas" | "one_shot";
+}
+
+export interface SearchResult {
+  total: number;
+  items: Service[];
 }
 
 export interface CreateServicePayload {
@@ -39,8 +59,12 @@ export interface CreateServicePayload {
   priceYearly?: number | null;
   badge?: string | null;
   image: string | null;
+  images?: string[];
   features: ServiceFeature[];
+  technicalSpecs?: { label: string; value: string }[];
   type: "saas" | "one_shot";
+  availability?: "available" | "maintenance" | "unavailable";
+  trialAvailable?: boolean;
 }
 
 export interface UpdateServicePayload extends Partial<CreateServicePayload> {}
@@ -53,13 +77,33 @@ export const servicesApi = {
   // LISTE PUBLIQUE
   getAll: () => apiFetch<Service[]>("/api/services"),
 
+  search: (c: SearchCriteria) => {
+    const qs = new URLSearchParams();
+    if (c.q)    qs.set("q", c.q);
+    if (c.cats) qs.set("categories", c.cats);
+    if (c.pmin !== undefined) qs.set("priceMin", String(c.pmin));
+    if (c.pmax !== undefined) qs.set("priceMax", String(c.pmax));
+    if (c.dispo) qs.set("onlyAvailable", "1");
+    if (c.sort)  qs.set("sort", c.sort);
+    if (c.type && c.type !== "all") qs.set("type", c.type);
+    return apiFetch<SearchResult>(`/api/services/search?${qs}`);
+  },
+
   // GET ONE PUBLIC
   getById: (id: string | number) =>
     apiFetch<Service>(`/api/services/${id}`),
 
+  getSimilar: (id: string | number, limit = 6) =>
+    apiFetch<Service[]>(`/api/services/${id}/similar?limit=${limit}`),
+
   /* ─────────────────────────────────────────────── */
   /* API ADMIN SERVICES                              */
   /* ─────────────────────────────────────────────── */
+
+  adminList: (page = 1, perPage = 20) =>
+    apiFetch<{ items: Service[]; total: number; page: number; perPage: number; totalPages: number }>(
+      `/api/admin/services?page=${page}&perPage=${perPage}`
+    ),
 
   create: (data: CreateServicePayload) =>
     apiFetch("/api/admin/services", {

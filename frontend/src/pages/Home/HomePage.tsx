@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -22,16 +22,17 @@ import {
   Users,
   Clock,
   ChevronRight,
+  ChevronLeft,
   Fingerprint,
   Binary,
   Layers,
   ScanLine,
+  ImageOff,
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
-import { Card } from "../../components/ui/Card";
-import { CategoryCard } from "../../components/shared/CategoryCard";
 import { ServiceCard } from "../../components/shared/ServiceCard";
-import { servicesApi, type Service } from "../../api/services";
+import { homeApi, type CarouselSlide, type HomeCategory, type HomeService } from "../../api/home";
+import { type Service } from "../../api/services";
 import React from "react";
 
 /* ─── Ticker de menaces (simulation live) ─────────────────────────────── */
@@ -212,130 +213,165 @@ const TESTIMONIALS = [
 /* ─── Certifications ───────────────────────────────────────────────────── */
 const CERTIFICATIONS = ["ISO 27001", "SOC 2 Type II", "ANSSI PRIS", "HDS", "PCI DSS", "RGPD"];
 
-/* ════════════════════════════════════════════════════════════════════════ */
-export default function HomePage() {
-  const [services, setServices] = useState<Service[]>([]);
-  const [loading, setLoading] = useState(true);
+/* ─── Carousel principal ──────────────────────────────────────────────── */
+function HeroCarousel({ slides }: { slides: CarouselSlide[] }) {
+  const [idx, setIdx] = useState(0);
+  const [fade, setFade] = useState(true);
+  const total = slides.length;
+
+  const go = (next: number) => {
+    setFade(false);
+    setTimeout(() => {
+      setIdx((next + total) % total);
+      setFade(true);
+    }, 200);
+  };
 
   useEffect(() => {
-    servicesApi
-      .getAll()
-      .then((data) => setServices(Array.isArray(data) ? data : []))
-      .finally(() => setLoading(false));
+    if (total < 2) return;
+    const t = setInterval(() => go(idx + 1), 5000);
+    return () => clearInterval(t);
+  }, [idx, total]);
+
+  if (total === 0) return null;
+
+  const slide = slides[idx];
+
+  return (
+    <div className="relative w-full overflow-hidden" style={{ minHeight: "92vh" }}>
+      {/* Background image */}
+      {slide.imagePath ? (
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-opacity duration-300"
+          style={{ backgroundImage: `url(/${slide.imagePath})`, opacity: fade ? 1 : 0 }}
+        />
+      ) : null}
+      <div className="absolute inset-0 bg-gray-950/80" />
+
+      {/* Grid deco */}
+      <div
+        className="absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage: "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+        }}
+      />
+
+      {/* Content */}
+      <div
+        className="relative container flex flex-col justify-center pt-28 pb-24"
+        style={{ minHeight: "92vh", transition: "opacity 0.3s", opacity: fade ? 1 : 0 }}
+      >
+        <div className="max-w-3xl space-y-6 mb-10">
+          <h1 className="text-white font-black leading-none tracking-tight" style={{ fontSize: "clamp(2.8rem, 6vw, 5rem)", letterSpacing: "-0.03em" }}>
+            {slide.title}
+          </h1>
+          {slide.subtitle && (
+            <p className="text-gray-300 text-xl max-w-2xl leading-relaxed font-light">{slide.subtitle}</p>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4">
+          {slide.ctaLabel && slide.ctaUrl ? (
+            <Link to={slide.ctaUrl}>
+              <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 gap-2 rounded-none">
+                {slide.ctaLabel}
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          ) : (
+            <Link to="/inscription">
+              <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 gap-2 rounded-none">
+                Démarrer un POC gratuit
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          )}
+          <Link to="/catalogue">
+            <Button variant="ghost" size="lg" className="text-white border border-white/20 hover:bg-white/10 rounded-none gap-2 font-mono text-sm tracking-wide">
+              Explorer la plateforme
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+
+        {/* Certifications */}
+        <div className="mt-16 flex flex-wrap items-center gap-2">
+          <span className="text-gray-600 text-xs font-mono tracking-widest mr-2">CERTIFIÉ</span>
+          {CERTIFICATIONS.map((c) => (
+            <span key={c} className="text-gray-500 border border-gray-800 text-xs font-mono px-2 py-0.5 rounded">{c}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* Navigation dots + arrows */}
+      {total > 1 && (
+        <>
+          <button onClick={() => go(idx - 1)} className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center border border-white/20 bg-black/30 text-white hover:bg-black/50 transition-colors">
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button onClick={() => go(idx + 1)} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center border border-white/20 bg-black/30 text-white hover:bg-black/50 transition-colors">
+            <ChevronRight className="h-5 w-5" />
+          </button>
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
+            {slides.map((_, i) => (
+              <button key={i} onClick={() => go(i)} className={`w-2 h-2 rounded-full transition-colors ${i === idx ? "bg-blue-400" : "bg-white/30 hover:bg-white/60"}`} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════ */
+export default function HomePage() {
+  const [slides, setSlides] = useState<CarouselSlide[]>([]);
+  const [categories, setCategories] = useState<HomeCategory[]>([]);
+  const [topProducts, setTopProducts] = useState<HomeService[]>([]);
+  const [loadingSlides, setLoadingSlides] = useState(true);
+  const [loadingCats, setLoadingCats] = useState(true);
+  const [loadingTop, setLoadingTop] = useState(true);
+
+  useEffect(() => {
+    homeApi.getCarousel().then((d) => setSlides(Array.isArray(d) ? d : [])).finally(() => setLoadingSlides(false));
+    homeApi.getCategories().then((d) => setCategories(Array.isArray(d) ? d : [])).finally(() => setLoadingCats(false));
+    homeApi.getTopProducts().then((d) => setTopProducts(Array.isArray(d) ? d : [])).finally(() => setLoadingTop(false));
   }, []);
-
-  const categories = useMemo(() => {
-    const map = new Map();
-    services.forEach((s) => {
-      if (!map.has(s.categorySlug)) {
-        map.set(s.categorySlug, {
-          slug: s.categorySlug,
-          name: s.category,
-          description: s.description,
-          count: 1,
-          icon: Shield,
-        });
-      } else {
-        map.get(s.categorySlug).count++;
-      }
-    });
-    return Array.from(map.values());
-  }, [services]);
-
-  const popular = useMemo(() => services.filter((s) => s.badge).slice(0, 3), [services]);
 
   return (
     <div className="space-y-0">
 
       {/* ══════════════════════════════════════════════════════════════════
-          HERO — fond sombre, grille technique, ticker live
+          HERO — carrousel éditable
       ══════════════════════════════════════════════════════════════════ */}
-      <section
-        className="relative bg-gray-950 overflow-hidden"
-        style={{ minHeight: "92vh" }}
-      >
-        {/* Grille décorative */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-          }}
-        />
-
-        {/* Glow asymétrique */}
-        <div
-          className="absolute right-[-10%] top-[-20%] w-[700px] h-[700px] rounded-full opacity-20 pointer-events-none"
-          style={{ background: "radial-gradient(circle, #2563eb 0%, transparent 70%)" }}
-        />
-
-        <div className="relative container flex flex-col justify-center pt-28 pb-24" style={{ minHeight: "92vh" }}>
-
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 mb-8 border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs font-mono tracking-widest px-3 py-1.5 rounded w-fit">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-            PLATEFORME XDR DE NOUVELLE GÉNÉRATION
+      {loadingSlides ? (
+        <section className="bg-gray-950" style={{ minHeight: "92vh" }}>
+          <div className="container flex items-center justify-center" style={{ minHeight: "92vh" }}>
+            <span className="text-gray-700 font-mono text-sm animate-pulse">Chargement…</span>
           </div>
-
-          {/* Titre — asymétrique, large */}
-          <div className="max-w-4xl space-y-4 mb-6">
-            <h1
-              className="text-white font-black leading-none tracking-tight"
-              style={{ fontSize: "clamp(2.8rem, 6vw, 5rem)", letterSpacing: "-0.03em" }}
-            >
+        </section>
+      ) : slides.length > 0 ? (
+        <HeroCarousel slides={slides} />
+      ) : (
+        /* Fallback statique si aucune slide */
+        <section className="relative bg-gray-950 overflow-hidden" style={{ minHeight: "92vh" }}>
+          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
+          <div className="relative container flex flex-col justify-center pt-28 pb-24" style={{ minHeight: "92vh" }}>
+            <h1 className="text-white font-black leading-none tracking-tight mb-6" style={{ fontSize: "clamp(2.8rem, 6vw, 5rem)", letterSpacing: "-0.03em" }}>
               Stopper les attaques
-              <br />
-              <span className="text-blue-400">avant qu'elles frappent.</span>
+              <br /><span className="text-blue-400">avant qu'elles frappent.</span>
             </h1>
-            <p className="text-gray-400 text-lg max-w-2xl leading-relaxed font-light">
-              Une plateforme de cybersécurité unifiée — XDR, CSPM, Zero Trust, NDR — opérationnelle
-              en 48 heures. Conçue pour les organisations qui ne peuvent pas se permettre d'échouer.
-            </p>
+            <div className="flex flex-wrap items-center gap-4">
+              <Link to="/inscription">
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 gap-2 rounded-none">
+                  Démarrer un POC gratuit <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
           </div>
-
-          {/* Ticker live */}
-          <div className="mb-10">
-            <ThreatTicker />
-          </div>
-
-          {/* CTAs — primaire + secondaire */}
-          <div className="flex flex-wrap items-center gap-4">
-            <Link to="/inscription">
-              <Button
-                size="lg"
-                className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 gap-2 rounded-none"
-              >
-                Démarrer un POC gratuit
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link to="/catalogue">
-              <Button
-                variant="ghost"
-                size="lg"
-                className="text-white border border-white/20 hover:bg-white/10 rounded-none gap-2 font-mono text-sm tracking-wide"
-              >
-                Explorer la plateforme
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-
-          {/* Certifications inline */}
-          <div className="mt-16 flex flex-wrap items-center gap-2">
-            <span className="text-gray-600 text-xs font-mono tracking-widest mr-2">CERTIFIÉ</span>
-            {CERTIFICATIONS.map((c) => (
-              <span
-                key={c}
-                className="text-gray-500 border border-gray-800 text-xs font-mono px-2 py-0.5 rounded"
-              >
-                {c}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════════
           STATS — bandeau sombre
@@ -535,65 +571,100 @@ export default function HomePage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════
-          DOMAINES — couverture complète
+          DOMAINES — couverture complète (éditable depuis admin)
       ══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-gray-900 py-28 border-y border-gray-800">
-        <div className="container space-y-12">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-            <div>
-              <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">COUVERTURE</div>
-              <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
-                Domaines de protection
-              </h2>
-              <p className="mt-3 text-gray-500 text-sm max-w-lg">
-                Du poste de travail à l'OT industriel, chaque couche de votre infrastructure
-                est couverte par un capteur natif.
-              </p>
+      {(loadingCats || categories.length > 0) && (
+        <section className="bg-gray-900 py-28 border-y border-gray-800">
+          <div className="container space-y-12">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+              <div>
+                <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">COUVERTURE</div>
+                <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+                  Domaines de protection
+                </h2>
+                <p className="mt-3 text-gray-500 text-sm max-w-lg">
+                  Du poste de travail à l'OT industriel, chaque couche de votre infrastructure
+                  est couverte par un capteur natif.
+                </p>
+              </div>
+            </div>
+
+            <div className={`grid gap-px bg-gray-800 ${categories.length <= 3 ? "md:grid-cols-3" : "md:grid-cols-3 lg:grid-cols-5"}`}>
+              {loadingCats ? (
+                <p className="col-span-full text-center text-gray-600 py-12 font-mono text-sm">
+                  Chargement des domaines…
+                </p>
+              ) : (
+                categories.map((c) => (
+                  <Link key={c.id} to={`/catalogue?cat=${c.slug}`} className="group bg-gray-900 hover:bg-gray-800/60 transition-colors p-8 flex flex-col gap-4">
+                    {c.imagePath ? (
+                      <img src={`/${c.imagePath}`} alt={c.name} className="w-12 h-12 object-cover" />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-800 border border-gray-700 flex items-center justify-center">
+                        <Shield className="h-5 w-5 text-blue-500" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-white font-bold text-sm">{c.name}</p>
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
           </div>
-
-          <div className="grid gap-px md:grid-cols-3 lg:grid-cols-5 bg-gray-800">
-            {loading ? (
-              <p className="col-span-full text-center text-gray-600 py-12 font-mono text-sm">
-                Chargement des domaines…
-              </p>
-            ) : (
-              categories.map((c) => <CategoryCard key={c.slug} item={c} />)
-            )}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════════
-          SOLUTIONS POPULAIRES
+          SOLUTIONS POPULAIRES (éditables depuis admin)
       ══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-gray-950 py-28">
-        <div className="container space-y-12">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-            <div>
-              <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">DÉPLOYÉ EN PRODUCTION</div>
-              <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
-                Solutions les plus adoptées
-              </h2>
+      {(loadingTop || topProducts.length > 0) && (
+        <section className="bg-gray-950 py-28">
+          <div className="container space-y-12">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+              <div>
+                <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">DÉPLOYÉ EN PRODUCTION</div>
+                <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+                  Solutions les plus adoptées
+                </h2>
+              </div>
+              <Link to="/catalogue">
+                <Button variant="ghost" className="text-blue-400 border border-blue-500/30 hover:bg-blue-500/10 rounded-none font-mono text-xs tracking-wide gap-2 flex-shrink-0">
+                  Toutes les solutions <ArrowRight className="h-3 w-3" />
+                </Button>
+              </Link>
             </div>
-            <Link to="/catalogue">
-              <Button variant="ghost" className="text-blue-400 border border-blue-500/30 hover:bg-blue-500/10 rounded-none font-mono text-xs tracking-wide gap-2 flex-shrink-0">
-                Toutes les solutions <ArrowRight className="h-3 w-3" />
-              </Button>
-            </Link>
-          </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {loading ? (
-              <p className="col-span-full text-center text-gray-600 py-12 font-mono text-sm">
-                Chargement…
-              </p>
-            ) : (
-              popular.map((s) => <ServiceCard key={s.id} service={s} />)
-            )}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {loadingTop ? (
+                <p className="col-span-full text-center text-gray-600 py-12 font-mono text-sm">
+                  Chargement…
+                </p>
+              ) : (
+                topProducts.map((s) => (
+                  <ServiceCard
+                    key={s.id}
+                    service={{
+                      id: s.id,
+                      name: s.name,
+                      description: s.description ?? "",
+                      priceMonthly: s.priceMonthly ?? 0,
+                      priceYearly: null,
+                      image: s.image,
+                      category: s.category ?? "",
+                      categorySlug: s.categorySlug ?? "",
+                      type: s.type ?? "saas",
+                      badge: undefined,
+                      features: [],
+                      isAvailable: true,
+                    } as Service}
+                  />
+                ))
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════════
           TÉMOIGNAGES

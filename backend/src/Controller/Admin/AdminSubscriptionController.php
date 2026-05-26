@@ -6,6 +6,7 @@ use App\Entity\Subscription;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -13,37 +14,56 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_ADMIN')]
 class AdminSubscriptionController extends AbstractController
 {
+    private const SORT_FIELDS = ['startDate', 'price', 'status', 'id'];
+
     #[Route('', name: 'admin_subscriptions_list', methods: ['GET'])]
-    public function list(EntityManagerInterface $em): JsonResponse
+    public function list(Request $request, EntityManagerInterface $em): JsonResponse
     {
-        $subs = $em->getRepository(Subscription::class)->findAll();
+        $page    = max(1, (int) $request->query->get('page', 1));
+        $perPage = min(100, max(1, (int) $request->query->get('perPage', 20)));
+        $sort    = in_array($request->query->get('sort'), self::SORT_FIELDS, true) ? $request->query->get('sort') : 'startDate';
+        $order   = strtoupper($request->query->get('order', 'desc')) === 'ASC' ? 'ASC' : 'DESC';
 
-        $data = array_map(fn(Subscription $s) => [
-            'id' => $s->getId(),
+        $repo = $em->getRepository(Subscription::class);
 
-            // ✔ USER
-            'user' => [
-                'id' => $s->getUser()->getId(),
-                'email' => $s->getUser()->getEmail(),
+        $total = (int) $repo->createQueryBuilder('s')
+            ->select('COUNT(s.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $subs = $repo->createQueryBuilder('s')
+            ->orderBy("s.{$sort}", $order)
+            ->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage)
+            ->getQuery()
+            ->getResult();
+
+        $items = array_map(fn(Subscription $s) => [
+            'id'      => $s->getId(),
+            'user'    => [
+                'id'          => $s->getUser()->getId(),
+                'email'       => $s->getUser()->getEmail(),
                 'displayName' => $s->getUser()->getDisplayName(),
             ],
-
-            // ✔ SERVICE
             'service' => [
-                'id' => $s->getService()->getId(),
+                'id'   => $s->getService()->getId(),
                 'name' => $s->getService()->getName(),
             ],
-
-            // ✔ SUBSCRIPTION DATA
-            'cycle' => $s->getCycle(),
-            'price' => $s->getPrice(),
-            'status' => $s->getStatus(),
-            'startDate' => $s->getStartDate()?->format('Y-m-d'),
-            'nextBillingAt' => $s->getNextBillingAt()?->format('Y-m-d'),
+            'cycle'            => $s->getCycle(),
+            'price'            => $s->getPrice(),
+            'status'           => $s->getStatus(),
+            'startDate'        => $s->getStartDate()?->format('Y-m-d'),
+            'nextBillingAt'    => $s->getNextBillingAt()?->format('Y-m-d'),
             'invoicePaymentId' => $s->getInvoicePaymentId(),
         ], $subs);
 
-        return $this->json($data);
+        return $this->json([
+            'items'      => $items,
+            'total'      => $total,
+            'page'       => $page,
+            'perPage'    => $perPage,
+            'totalPages' => (int) ceil($total / $perPage),
+        ]);
     }
 
     #[Route('/{id}/cancel', name: 'admin_subscriptions_cancel', methods: ['PUT'])]
@@ -64,7 +84,7 @@ class AdminSubscriptionController extends AbstractController
         return $this->json([
             'success' => true,
             'message' => 'Abonnement annulé avec succès.',
-            'id' => $subscription->getId(),
+            'id'      => $subscription->getId(),
         ]);
     }
 }

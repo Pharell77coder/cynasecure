@@ -21,6 +21,8 @@ export interface IntentResponse {
   paypalOrderId: string;
   orderId: number;
   total: number;
+  discount: number;
+  promoCode: string | null;
   items: { name: string; price: number; billing: string }[];
 }
 
@@ -32,10 +34,15 @@ export interface ConfirmResponse {
 }
 
 export const checkoutApi = {
-  intent: (items: CheckoutItem[], address: CheckoutAddress) =>
+  intent: (items: CheckoutItem[], address: CheckoutAddress, guestEmail?: string, promoCode?: string) =>
     apiFetch<IntentResponse>("/api/checkout/intent", {
       method: "POST",
-      body: JSON.stringify({ items, address }),
+      body: JSON.stringify({
+        items,
+        address,
+        ...(guestEmail ? { guestEmail } : {}),
+        ...(promoCode ? { promoCode } : {}),
+      }),
     }),
 
   confirm: (payload: {

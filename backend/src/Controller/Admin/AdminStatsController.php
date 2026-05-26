@@ -6,8 +6,10 @@ use App\Repository\ServiceRepository;
 use App\Repository\SubscriptionRepository;
 use App\Repository\UserRepository;
 use App\Repository\PaymentRepository;
+use App\Service\AdminStatsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -27,6 +29,16 @@ class AdminStatsController extends AbstractController
             'subscriptions' => $subs->countActive(),
             'mrr' => $subs->calculateMRR(),
         ]);
+    }
+
+    #[Route('/charts', name: 'admin_stats_charts', methods: ['GET'])]
+    public function charts(Request $request, AdminStatsService $statsService): JsonResponse
+    {
+        $period = $request->query->getString('period', 'days');
+        if (!in_array($period, ['days', 'weeks'], true)) {
+            return $this->json(['message' => 'Le paramètre period doit être "days" ou "weeks".'], 400);
+        }
+        return $this->json($statsService->getChartData($period));
     }
 
     #[Route('/recent', name: 'admin_recent_activity', methods: ['GET'])]

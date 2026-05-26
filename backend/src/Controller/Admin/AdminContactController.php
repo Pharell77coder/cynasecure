@@ -19,15 +19,21 @@ class AdminContactController extends AbstractController
     #[Route('/api/admin/contact-messages', name: 'admin_contact_list', methods: ['GET'])]
     public function listMessages(Request $request, ContactMessageRepository $repo): JsonResponse
     {
-        $page  = max(1, (int) $request->query->get('page', 1));
-        $limit = 20;
+        $page    = max(1, (int) $request->query->get('page', 1));
+        $perPage = min(100, max(1, (int) $request->query->get('perPage', 20)));
 
-        $items = $repo->findPaginated($page, $limit);
+        $items = $repo->findPaginated($page, $perPage);
         $total = $repo->count([]);
 
         $data = array_map(fn(ContactMessage $m) => $this->serializeMessage($m), $items);
 
-        return new JsonResponse(['items' => $data, 'total' => $total, 'page' => $page]);
+        return new JsonResponse([
+            'items'      => $data,
+            'total'      => $total,
+            'page'       => $page,
+            'perPage'    => $perPage,
+            'totalPages' => (int) ceil($total / $perPage),
+        ]);
     }
 
     #[Route('/api/admin/contact-messages/{id}', name: 'admin_contact_update', methods: ['PATCH'])]
@@ -98,9 +104,13 @@ class AdminContactController extends AbstractController
     }
 
     #[Route('/api/admin/chatbot-conversations', name: 'admin_chatbot_list', methods: ['GET'])]
-    public function listConversations(ChatbotConversationRepository $repo): JsonResponse
+    public function listConversations(Request $request, ChatbotConversationRepository $repo): JsonResponse
     {
-        $convs = $repo->findBy([], ['createdAt' => 'DESC'], 50);
+        $page    = max(1, (int) $request->query->get('page', 1));
+        $perPage = min(100, max(1, (int) $request->query->get('perPage', 20)));
+
+        $total = $repo->count([]);
+        $convs = $repo->findBy([], ['createdAt' => 'DESC'], $perPage, ($page - 1) * $perPage);
 
         $data = array_map(fn(ChatbotConversation $c) => [
             'id'        => $c->getId(),
@@ -110,7 +120,13 @@ class AdminContactController extends AbstractController
             'createdAt' => $c->getCreatedAt()->format('c'),
         ], $convs);
 
-        return new JsonResponse($data);
+        return new JsonResponse([
+            'items'      => $data,
+            'total'      => $total,
+            'page'       => $page,
+            'perPage'    => $perPage,
+            'totalPages' => (int) ceil($total / $perPage),
+        ]);
     }
 
     #[Route('/api/admin/chatbot-conversations/{id}', name: 'admin_chatbot_show', methods: ['GET'])]

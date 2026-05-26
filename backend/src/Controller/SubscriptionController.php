@@ -104,6 +104,7 @@ class SubscriptionController extends AbstractController
             'startDate' => $s->getStartDate()->format('Y-m-d'),
             'nextBillingAt' => $s->getNextBillingAt()?->format('Y-m-d'),
             'endDate' => $s->getEndDate()?->format('Y-m-d'),
+            'autoRenew' => $s->isAutoRenew(),
         ], $subscriptions);
 
         return new JsonResponse($data);
@@ -148,10 +149,106 @@ class SubscriptionController extends AbstractController
         }
 
         $subscription->setStatus('CANCELLED');
-        $subscription->setEndDate(new \DateTimeImmutable());
+        // End date = end of current billing period, not now
+        $subscription->setEndDate($subscription->getNextBillingAt() ?? new \DateTimeImmutable());
 
         $em->flush();
 
         return new JsonResponse(['message' => 'Subscription cancelled successfully']);
+    }
+
+    // RENEW SUBSCRIPTION (reactivate cancelled before end date)
+    #[Route('/{id}/renew', name: 'subscription_renew', methods: ['PUT'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function renew(Subscription $subscription, EntityManagerInterface $em): JsonResponse
+    {
+        if ($subscription->getUser() !== $this->getUser()) {
+            return new JsonResponse(['message' => 'Access denied'], 403);
+        }
+
+        if ($subscription->getStatus() !== 'CANCELLED') {
+            return new JsonResponse(['message' => 'Subscription is not cancelled'], 400);
+        }
+
+        $now = new \DateTimeImmutable();
+        // Can only renew if end date hasn't passed yet
+        if ($subscription->getEndDate() && $subscription->getEndDate() < $now) {
+            return new JsonResponse(['message' => 'La période d\'accès est expirée, impossible de renouveler.'], 400);
+        }
+
+        $subscription->setStatus('ACTIVE');
+        $subscription->setEndDate(null);
+
+        $em->flush();
+
+        return new JsonResponse(['message' => 'Abonnement réactivé avec succès.']);
+    }
+
+    // TOGGLE AUTO-RENEW
+    #[Route('/{id}/auto-renew', name: 'subscription_auto_renew', methods: ['PUT'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function autoRenew(Subscription $subscription, EntityManagerInterface $em): JsonResponse
+    {
+        if ($subscription->getUser() !== $this->getUser()) {
+            return new JsonResponse(['message' => 'Access denied'], 403);
+        }
+
+        $subscription->setAutoRenew(!$subscription->isAutoRenew());
+        $em->flush();
+
+        return new JsonResponse([
+            'autoRenew' => $subscription->isAutoRenew(),
+            'message'   => $subscription->isAutoRenew()
+                ? 'Renouvellement automatique activé.'
+                : 'Renouvellement automatique désactivé.',
+        ]);
+    }
+
+    // UPGRADE/DOWNGRADE SUBSCRIPTION CYCLE
+    #[Route('/{id}/upgrade', name: 'subscription_upgrade', methods: ['PUT'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function upgrade(Subscription $subscription, Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        if ($subscription->getUser() !== $this->getUser()) {
+            return new JsonResponse(['message' => 'Access denied'], 403);
+        }
+
+        if ($subscription->getStatus() !== 'ACTIVE') {
+            return new JsonResponse(['message' => 'Seul un abonnement actif peut être modifié.'], 400);
+        }
+
+        $data = json_decode($request->getContent(), true) ?? [];
+        $newCycle = $data['cycle'] ?? null;
+
+        if (!in_array($newCycle, ['monthly', 'yearly'], true)) {
+            return new JsonResponse(['message' => 'Cycle invalide (monthly ou yearly).'], 400);
+        }
+
+        if ($subscription->getCycle() === $newCycle) {
+            return new JsonResponse(['message' => 'Vous êtes déjà sur ce cycle.'], 400);
+        }
+
+        $service = $subscription->getService();
+        $newPrice = $newCycle === 'monthly'
+            ? $service->getPriceMonthly()
+            : ($service->getPriceYearly() ?? $service->getPriceMonthly() * 12);
+
+        $now = new \DateTimeImmutable();
+        $nextBilling = $newCycle === 'monthly'
+            ? $now->modify('+1 month')
+            : $now->modify('+1 year');
+
+        $subscription->setCycle($newCycle);
+        $subscription->setPrice($newPrice);
+        $subscription->setNextBillingAt($nextBilling);
+        $subscription->setStartDate($now);
+
+        $em->flush();
+
+        return new JsonResponse([
+            'message' => 'Formule mise à jour avec succès.',
+            'cycle'   => $newCycle,
+            'price'   => $newPrice,
+        ]);
     }
 }

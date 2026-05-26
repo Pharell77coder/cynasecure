@@ -6,11 +6,15 @@ use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface as TotpTwoFactorInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Doctrine\DBAL\Types\Types;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwoFactorInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -47,15 +51,49 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $resetTokenExpiresAt = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $emailVerifiedAt = null;
+
+    #[ORM\Column(length: 64, nullable: true)]
+    private ?string $emailVerificationToken = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $emailVerificationExpiresAt = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $totpSecret = null;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $totpEnabled = false;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $stripeCustomerId = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $pendingEmail = null;
+
+    #[ORM\Column(length: 64, nullable: true)]
+    private ?string $pendingEmailToken = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $pendingEmailExpiresAt = null;
+
     /**
      * @var Collection<int, Subscription>
      */
     #[ORM\OneToMany(targetEntity: Subscription::class, mappedBy: 'user')]
     private Collection $subscriptions;
 
+    /**
+     * @var Collection<int, Address>
+     */
+    #[ORM\OneToMany(targetEntity: Address::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private Collection $addresses;
+
     public function __construct()
     {
         $this->subscriptions = new ArrayCollection();
+        $this->addresses = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -221,6 +259,64 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             }
         }
 
+        return $this;
+    }
+
+    public function getEmailVerifiedAt(): ?\DateTimeImmutable { return $this->emailVerifiedAt; }
+    public function setEmailVerifiedAt(?\DateTimeImmutable $v): static { $this->emailVerifiedAt = $v; return $this; }
+
+    public function getEmailVerificationToken(): ?string { return $this->emailVerificationToken; }
+    public function setEmailVerificationToken(?string $v): static { $this->emailVerificationToken = $v; return $this; }
+
+    public function getEmailVerificationExpiresAt(): ?\DateTimeImmutable { return $this->emailVerificationExpiresAt; }
+    public function setEmailVerificationExpiresAt(?\DateTimeImmutable $v): static { $this->emailVerificationExpiresAt = $v; return $this; }
+
+    public function getTotpSecret(): ?string { return $this->totpSecret; }
+    public function setTotpSecret(?string $v): static { $this->totpSecret = $v; return $this; }
+
+    public function isTotpEnabled(): bool { return $this->totpEnabled; }
+    public function setTotpEnabled(bool $v): static { $this->totpEnabled = $v; return $this; }
+
+    public function isTotpAuthenticationEnabled(): bool { return $this->totpEnabled && $this->totpSecret !== null; }
+    public function getTotpAuthenticationUsername(): string { return $this->email ?? ''; }
+    public function getTotpAuthenticationConfiguration(): TotpConfigurationInterface
+    {
+        return new TotpConfiguration($this->totpSecret ?? '', TotpConfiguration::ALGORITHM_SHA1, 30, 6);
+    }
+
+    public function getStripeCustomerId(): ?string { return $this->stripeCustomerId; }
+    public function setStripeCustomerId(?string $stripeCustomerId): static { $this->stripeCustomerId = $stripeCustomerId; return $this; }
+
+    public function getPendingEmail(): ?string { return $this->pendingEmail; }
+    public function setPendingEmail(?string $pendingEmail): static { $this->pendingEmail = $pendingEmail; return $this; }
+
+    public function getPendingEmailToken(): ?string { return $this->pendingEmailToken; }
+    public function setPendingEmailToken(?string $pendingEmailToken): static { $this->pendingEmailToken = $pendingEmailToken; return $this; }
+
+    public function getPendingEmailExpiresAt(): ?\DateTimeImmutable { return $this->pendingEmailExpiresAt; }
+    public function setPendingEmailExpiresAt(?\DateTimeImmutable $pendingEmailExpiresAt): static { $this->pendingEmailExpiresAt = $pendingEmailExpiresAt; return $this; }
+
+    /**
+     * @return Collection<int, Address>
+     */
+    public function getAddresses(): Collection { return $this->addresses; }
+
+    public function addAddress(Address $address): static
+    {
+        if (!$this->addresses->contains($address)) {
+            $this->addresses->add($address);
+            $address->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeAddress(Address $address): static
+    {
+        if ($this->addresses->removeElement($address)) {
+            if ($address->getUser() === $this) {
+                $address->setUser(null);
+            }
+        }
         return $this;
     }
 }

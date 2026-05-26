@@ -21,7 +21,7 @@ class SubscriptionRepository extends ServiceEntityRepository
         return (int) $this->createQueryBuilder('sub')
             ->select('COUNT(sub.id)')
             ->where('sub.status = :active')
-            ->setParameter('active', 'active')
+            ->setParameter('active', 'ACTIVE')
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -36,9 +36,22 @@ class SubscriptionRepository extends ServiceEntityRepository
             ->select('COALESCE(SUM(s.priceMonthly), 0)')
             ->join('sub.service', 's')
             ->where('sub.status = :active')
-            ->setParameter('active', 'active')
+            ->setParameter('active', 'ACTIVE')
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    /** @return Subscription[] */
+    public function findDueForRenewal(\DateTimeImmutable $now): array
+    {
+        return $this->createQueryBuilder('s')
+            ->where('s.status = :active')
+            ->andWhere('s.autoRenew = true')
+            ->andWhere('s.nextBillingAt <= :now')
+            ->setParameter('active', 'ACTIVE')
+            ->setParameter('now', $now)
+            ->getQuery()
+            ->getResult();
     }
 
 }

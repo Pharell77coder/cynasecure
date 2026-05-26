@@ -3,17 +3,19 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Validator\StrongPassword;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class AuthController extends AbstractController
 {
-    // json_login intercepts this route — the method body never executes
     #[Route('/api/login', name: 'api_login', methods: ['POST'])]
     public function login(): never
     {
@@ -24,8 +26,9 @@ class AuthController extends AbstractController
     public function register(
         Request $request,
         EntityManagerInterface $em,
-        UserPasswordHasherInterface $passwordHasher,
-        Security $security
+        UserPasswordHasherInterface $hasher,
+        ValidatorInterface $validator,
+        MailerInterface $mailer
     ): JsonResponse {
         $data = json_decode($request->getContent(), true) ?? [];
 
@@ -41,28 +44,105 @@ class AuthController extends AbstractController
             return new JsonResponse(['message' => 'Adresse email invalide. Utilisez le format exemple@domaine.com'], 400);
         }
 
+        $violations = $validator->validate($password, [new StrongPassword()]);
+        if (count($violations) > 0) {
+            return new JsonResponse(['message' => $violations[0]->getMessage()], 400);
+        }
+
         if ($em->getRepository(User::class)->findOneBy(['email' => $email])) {
             return new JsonResponse(['message' => 'Email déjà utilisé'], 400);
         }
 
         $user = new User();
         $user->setEmail($email);
-        $user->setPassword($passwordHasher->hashPassword($user, $password));
+        $user->setPassword($hasher->hashPassword($user, $password));
         $user->setDisplayName($displayName ?: $email);
         $user->setRole('ROLE_USER');
         $user->setCreatedAt(new \DateTimeImmutable());
         $user->setUpdatedAt(new \DateTime());
 
+        $raw  = bin2hex(random_bytes(32));
+        $user->setEmailVerificationToken(hash('sha256', $raw));
+        $user->setEmailVerificationExpiresAt(new \DateTimeImmutable('+24 hours'));
+
         $em->persist($user);
         $em->flush();
 
-        // Programmatic login — creates the Symfony security token in session
-        $security->login($user, 'json_login', 'api');
+        $this->sendVerificationEmail($mailer, $user, $raw);
 
         return new JsonResponse([
-            'token' => 'session',
-            'user'  => $this->serializeUser($user),
+            'needsVerification' => true,
+            'message'           => 'Un email de vérification a été envoyé à ' . $email . '.',
         ], 201);
+    }
+
+    #[Route('/api/auth/verify-email', name: 'api_verify_email', methods: ['POST'])]
+    public function verifyEmail(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $token = trim(json_decode($request->getContent(), true)['token'] ?? '');
+
+        if (!$token) {
+            return new JsonResponse(['message' => 'Token manquant.'], 400);
+        }
+
+        $hash = hash('sha256', $token);
+        $user = $em->getRepository(User::class)->findOneBy(['emailVerificationToken' => $hash]);
+
+        if (!$user) {
+            return new JsonResponse(['message' => 'Lien invalide.'], 400);
+        }
+
+        if ($user->getEmailVerificationExpiresAt() < new \DateTimeImmutable()) {
+            $user->setEmailVerificationToken(null);
+            $user->setEmailVerificationExpiresAt(null);
+            $em->flush();
+            return new JsonResponse(['message' => 'Lien expiré. Demandez un nouveau lien.'], 400);
+        }
+
+        $user->setEmailVerifiedAt(new \DateTimeImmutable());
+        $user->setEmailVerificationToken(null);
+        $user->setEmailVerificationExpiresAt(null);
+        $em->flush();
+
+        return new JsonResponse(['message' => 'Votre compte est vérifié. Vous pouvez vous connecter.']);
+    }
+
+    #[Route('/api/auth/resend-verification', name: 'api_resend_verification', methods: ['POST'])]
+    public function resendVerification(Request $request, EntityManagerInterface $em, MailerInterface $mailer): JsonResponse
+    {
+        $generic = ['message' => 'Si cet email est associé à un compte non vérifié, un nouveau lien vous a été envoyé.'];
+
+        $email = trim(json_decode($request->getContent(), true)['email'] ?? '');
+
+        if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return new JsonResponse($generic);
+        }
+
+        $session = $request->getSession();
+        $key     = 'resend_rl_' . hash('sha256', $email);
+        $rl      = $session->get($key, ['count' => 0, 'start' => time()]);
+
+        if (time() - $rl['start'] < 3600) {
+            if ($rl['count'] >= 3) {
+                return new JsonResponse($generic);
+            }
+            $rl['count']++;
+        } else {
+            $rl = ['count' => 1, 'start' => time()];
+        }
+        $session->set($key, $rl);
+
+        $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
+
+        if ($user && $user->getEmailVerifiedAt() === null) {
+            $raw = bin2hex(random_bytes(32));
+            $user->setEmailVerificationToken(hash('sha256', $raw));
+            $user->setEmailVerificationExpiresAt(new \DateTimeImmutable('+24 hours'));
+            $em->flush();
+            $this->sendVerificationEmail($mailer, $user, $raw);
+        }
+
+        return new JsonResponse($generic);
     }
 
     #[Route('/api/me', name: 'api_me', methods: ['GET'])]
@@ -114,7 +194,8 @@ class AuthController extends AbstractController
     public function changePassword(
         Request $request,
         EntityManagerInterface $em,
-        UserPasswordHasherInterface $passwordHasher
+        UserPasswordHasherInterface $passwordHasher,
+        ValidatorInterface $validator
     ): JsonResponse {
         /** @var User $authUser */
         $authUser = $this->getUser();
@@ -133,8 +214,9 @@ class AuthController extends AbstractController
             return new JsonResponse(['message' => 'Mot de passe actuel incorrect'], 400);
         }
 
-        if (mb_strlen($new) < 6) {
-            return new JsonResponse(['message' => 'Le nouveau mot de passe doit contenir au moins 6 caractères'], 400);
+        $violations = $validator->validate($new, [new StrongPassword()]);
+        if (count($violations) > 0) {
+            return new JsonResponse(['message' => $violations[0]->getMessage()], 400);
         }
 
         $user->setPassword($passwordHasher->hashPassword($user, $new));
@@ -149,6 +231,23 @@ class AuthController extends AbstractController
     {
         // Handled by Symfony's logout listener (security.yaml)
         throw new \LogicException('This should never be reached.');
+    }
+
+    private function sendVerificationEmail(MailerInterface $mailer, User $user, string $rawToken): void
+    {
+        $frontendUrl = $_ENV['FRONTEND_URL'] ?? 'http://localhost:5173';
+        $url = $frontendUrl . '/verifier-email?token=' . $rawToken;
+
+        $email = (new Email())
+            ->from('noreply@cynasecure.com')
+            ->to($user->getEmail())
+            ->subject('Confirmez votre adresse email — CynaSecure')
+            ->html($this->renderView('email/verify_email.html.twig', [
+                'name' => $user->getDisplayName(),
+                'url'  => $url,
+            ]));
+
+        $mailer->send($email);
     }
 
     private function serializeUser(User $user): array

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { adminApi } from "../../api/admin";
 import { Pagination } from "../../components/ui/Pagination";
@@ -15,7 +16,6 @@ import {
   Download,
 } from "lucide-react";
 
-/* TYPES */
 export interface Subscription {
   id: number;
   user: { id: number; displayName: string; email: string };
@@ -29,64 +29,61 @@ export interface Subscription {
 }
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
-const PER_PAGE = 10;
 
-/* STAT CARD */
 function StatCard({ label, value, icon: Icon }: any) {
   return (
     <div className="p-6 bg-gray-900 border border-gray-800 hover:bg-gray-800 transition-colors">
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-400">{label}</p>
-        <Icon className="h-5 w-5 text-blue-500" />
+        <Icon className="h-5 w-5 text-blue-500" aria-hidden="true" />
       </div>
       <p className="text-4xl font-black text-white mt-3">{value}</p>
     </div>
   );
 }
 
-/* PAGE */
 export default function AdminSubscriptionsPage() {
-  const [subs, setSubs]     = useState<Subscription[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const page    = Math.max(1, Number(searchParams.get("page") || 1));
+  const perPage = Number(searchParams.get("perPage") || 20);
+
+  const [items, setItems]     = useState<Subscription[]>([]);
+  const [total, setTotal]     = useState(0);
   const [loading, setLoading] = useState(true);
-  const [page, setPage]     = useState(1);
+
+  const [statsAll, setStatsAll] = useState<{ active: number; expired: number; mrr: number; cycle: string } | null>(null);
 
   useEffect(() => {
+    setLoading(true);
     adminApi
-      .getSubscriptions()
-      .then((data: Subscription[]) => setSubs(data))
+      .getSubscriptions(page, perPage)
+      .then((data) => {
+        setItems(data.items);
+        setTotal(data.total);
+        if (!statsAll) {
+          const active  = data.items.filter((s) => s.status === "ACTIVE").length;
+          const expired = data.items.filter((s) => s.status !== "ACTIVE").length;
+          const mrr     = data.items.filter((s) => s.status === "ACTIVE").reduce((sum, s) => sum + s.price, 0);
+          const cycles  = data.items.reduce<Record<string, number>>((acc, s) => { acc[s.cycle] = (acc[s.cycle] || 0) + 1; return acc; }, {});
+          const cycle   = Object.keys(cycles).length ? Object.entries(cycles).sort((a, b) => b[1] - a[1])[0][0] : "—";
+          setStatsAll({ active, expired, mrr, cycle });
+        }
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [page, perPage]);
 
-  const paginated = subs.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-  const active = subs.filter((s) => s.status === "ACTIVE").length;
-  const expired = subs.filter((s) => s.status !== "ACTIVE").length;
-
-  const mrr = subs
-    .filter((s) => s.status === "ACTIVE")
-    .reduce((sum, s) => sum + s.price, 0);
-
-  const mostUsedCycle =
-    subs.length > 0
-      ? Object.entries(
-          subs.reduce<Record<string, number>>((acc, s) => {
-            acc[s.cycle] = (acc[s.cycle] || 0) + 1;
-            return acc;
-          }, {})
-        ).sort((a, b) => b[1] - a[1])[0][0]
-      : "—";
+  const setPage    = (p: number) => setSearchParams((prev) => { prev.set("page", String(p)); return prev; });
+  const setPerPage = (pp: number) => setSearchParams({ page: "1", perPage: String(pp) });
 
   return (
     <div className="relative">
 
-      {/* Glow bleu */}
       <div
         className="absolute top-0 right-0 w-[600px] h-[600px] opacity-10 pointer-events-none"
-        style={{
-          background: "radial-gradient(circle, #2563eb 0%, transparent 70%)",
-        }}
+        style={{ background: "radial-gradient(circle, #2563eb 0%, transparent 70%)" }}
+        aria-hidden="true"
       />
 
-      {/* Grille technique */}
       <div
         className="absolute inset-0 opacity-[0.03] pointer-events-none"
         style={{
@@ -94,13 +91,13 @@ export default function AdminSubscriptionsPage() {
             "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
           backgroundSize: "48px 48px",
         }}
+        aria-hidden="true"
       />
 
-      {/* HEADER */}
       <section className="relative py-10 border-b border-gray-900">
         <div className="container space-y-4">
           <div className="inline-flex items-center gap-2 border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs font-mono tracking-widest px-3 py-1.5 rounded">
-            <Radar className="h-3 w-3" />
+            <Radar className="h-3 w-3" aria-hidden="true" />
             GESTION DES ABONNEMENTS
           </div>
 
@@ -114,29 +111,26 @@ export default function AdminSubscriptionsPage() {
         </div>
       </section>
 
-      {/* STATS */}
-      {!loading && (
+      {!loading && statsAll && (
         <section className="container mt-10 grid gap-6 md:grid-cols-4">
-          <StatCard label="Actifs" value={active} icon={CheckCircle} />
-          <StatCard label="Expirés" value={expired} icon={XCircle} />
-          <StatCard label="MRR" value={`${mrr.toLocaleString()} €`} icon={TrendingUp} />
-          <StatCard label="Cycle le plus utilisé" value={mostUsedCycle} icon={Calendar} />
+          <StatCard label="Actifs" value={statsAll.active} icon={CheckCircle} />
+          <StatCard label="Expirés" value={statsAll.expired} icon={XCircle} />
+          <StatCard label="MRR" value={`${statsAll.mrr.toLocaleString()} €`} icon={TrendingUp} />
+          <StatCard label="Cycle le plus utilisé" value={statsAll.cycle} icon={Calendar} />
         </section>
       )}
 
-      {/* TABLE */}
       <section className="container mt-10 mb-20">
         <div className="bg-gray-900 border border-gray-800 overflow-hidden">
 
-          {/* Header */}
           <div className="px-6 py-5 border-b border-gray-800 flex items-center gap-3">
-            <Database className="h-5 w-5 text-blue-500" />
+            <Database className="h-5 w-5 text-blue-500" aria-hidden="true" />
             <h2 className="font-semibold text-white">Liste des abonnements</h2>
           </div>
 
           {loading ? (
             <p className="p-6 text-gray-500">Chargement…</p>
-          ) : subs.length === 0 ? (
+          ) : items.length === 0 ? (
             <p className="p-6 text-gray-500">Aucun abonnement trouvé.</p>
           ) : (
             <table className="w-full text-sm align-middle">
@@ -154,7 +148,7 @@ export default function AdminSubscriptionsPage() {
               </thead>
 
               <tbody>
-                {paginated.map((s) => (
+                {items.map((s) => (
                   <motion.tr
                     key={s.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -164,14 +158,14 @@ export default function AdminSubscriptionsPage() {
                   >
                     <td className="px-6 py-4 font-medium text-white">
                       <div className="flex items-center gap-2">
-                        <User size={16} className="text-blue-500" />
+                        <User size={16} className="text-blue-500" aria-hidden="true" />
                         {s.user.displayName}
                       </div>
                     </td>
 
                     <td className="px-6 py-4 text-gray-400">
                       <div className="flex items-center gap-2">
-                        <Activity size={16} className="text-blue-500" />
+                        <Activity size={16} className="text-blue-500" aria-hidden="true" />
                         {s.service.name}
                       </div>
                     </td>
@@ -211,8 +205,9 @@ export default function AdminSubscriptionsPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors font-mono"
+                          aria-label="Télécharger la facture PDF"
                         >
-                          <Download className="h-3.5 w-3.5" />
+                          <Download className="h-3.5 w-3.5" aria-hidden="true" />
                           PDF
                         </a>
                       ) : (
@@ -224,9 +219,16 @@ export default function AdminSubscriptionsPage() {
               </tbody>
             </table>
           )}
-          {!loading && subs.length > PER_PAGE && (
+
+          {!loading && (
             <div className="px-6 pb-4 border-t border-gray-800 pt-3">
-              <Pagination page={page} total={subs.length} perPage={PER_PAGE} onChange={setPage} />
+              <Pagination
+                page={page}
+                total={total}
+                perPage={perPage}
+                onChange={setPage}
+                onPerPageChange={setPerPage}
+              />
             </div>
           )}
         </div>

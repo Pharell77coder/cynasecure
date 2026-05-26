@@ -82,6 +82,7 @@ class OrderController extends AbstractController
         return new JsonResponse($data);
     }
 
+
     // GET ORDER BY ID
     #[Route('/{id}', name: 'order_show', methods: ['GET'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]

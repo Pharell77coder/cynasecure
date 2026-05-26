@@ -1,89 +1,88 @@
-import React, { createContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useState, useEffect, useContext, ReactNode } from "react";
 import { authApi, User } from "../api/auth";
 
 export interface AuthContextType {
   user: User | null;
+  setUser: (user: User | null) => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (displayName: string, email: string, password: string) => Promise<void>;
+  isLoading: boolean;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<{ requires2fa?: boolean; emailUnverified?: boolean }>;
+  register: (displayName: string, email: string, password: string) => Promise<{ needsVerification?: boolean }>;
   updateProfile: (data: Partial<User>) => Promise<void>;
   logout: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+export function useAuth(): AuthContextType {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  /* ────────────────────────────────────────────────
-     🔐 Chargement du user au démarrage
-     ──────────────────────────────────────────────── */
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     authApi
       .me()
       .then((u) => setUser(u))
-      .catch(() => {
-        localStorage.removeItem("token");
-        setUser(null);
-      });
+      .catch(() => setUser(null))
+      .finally(() => setIsLoading(false));
   }, []);
 
-  /* ────────────────────────────────────────────────
-     🔑 Login
-     ──────────────────────────────────────────────── */
-  const login = async (email: string, password: string) => {
-    const { token, user } = await authApi.login(email, password);
-    localStorage.setItem("token", token);
-    setUser(user);
+  const login = async (email: string, password: string, rememberMe = false) => {
+    try {
+      const res = await authApi.login(email, password, rememberMe);
+      if (res.requires2fa) {
+        return { requires2fa: true };
+      }
+      if (res.emailUnverified) {
+        return { emailUnverified: true };
+      }
+      if (res.user) {
+        setUser(res.user);
+      }
+      return {};
+    } catch (err: unknown) {
+      const data = (err as { data?: { emailUnverified?: boolean } })?.data;
+      if (data?.emailUnverified) {
+        return { emailUnverified: true };
+      }
+      throw err;
+    }
   };
 
-  /* ────────────────────────────────────────────────
-     🆕 Register
-     ──────────────────────────────────────────────── */
   const register = async (displayName: string, email: string, password: string) => {
-    const { token, user } = await authApi.register(displayName, email, password);
-    localStorage.setItem("token", token);
-    setUser(user);
+    const res = await authApi.register(displayName, email, password);
+    return { needsVerification: res.needsVerification };
   };
 
-  /* ────────────────────────────────────────────────
-     🛠 Update profile
-     ──────────────────────────────────────────────── */
   const updateProfile = async (data: Partial<User>) => {
     const updated = await authApi.updateProfile(data);
     setUser(updated);
   };
 
-  /* ────────────────────────────────────────────────
-     🚪 Logout
-     ──────────────────────────────────────────────── */
   const logout = () => {
     authApi.logout().catch(() => {});
-    localStorage.removeItem("token");
     setUser(null);
   };
 
-  /* ────────────────────────────────────────────────
-     🛡 Détection admin robuste
-     ──────────────────────────────────────────────── */
   const isAdmin =
     !!user &&
     typeof user.role === "string" &&
     user.role.toUpperCase().includes("ADMIN");
 
-  /* ────────────────────────────────────────────────
-     🚀 Provider final
-     ──────────────────────────────────────────────── */
   return (
     <AuthContext.Provider
       value={{
         user,
+        setUser,
         isAuthenticated: !!user,
         isAdmin,
+        isLoading,
         login,
         register,
         updateProfile,

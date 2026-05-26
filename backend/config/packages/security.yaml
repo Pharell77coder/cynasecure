@@ -1,7 +1,7 @@
 security:
     password_hashers:
         App\Entity\User:
-            algorithm: auto
+            algorithm: argon2id
 
     providers:
         app_user_provider:
@@ -19,6 +19,8 @@ security:
             provider: app_user_provider
             stateless: false
             lazy: true
+            user_checker: App\Security\UserChecker
+            entry_point: App\Security\ApiAuthenticationEntryPoint
 
             json_login:
                 check_path: /api/login
@@ -27,6 +29,22 @@ security:
                 success_handler: App\Security\LoginSuccessHandler
                 failure_handler: App\Security\LoginFailureHandler
 
+            two_factor:
+                auth_form_path: /api/auth/2fa-prompt
+                check_path: /api/auth/2fa/check
+                auth_code_parameter_name: code
+                prepare_on_login: true
+                prepare_on_access_denied: false
+                success_handler: App\Security\TwoFactorSuccessHandler
+                failure_handler: App\Security\TwoFactorFailureHandler
+                authentication_required_handler: App\Security\TwoFactorRequiredHandler
+
+            remember_me:
+                secret: '%kernel.secret%'
+                lifetime: 2592000
+                path: /
+                samesite: lax
+
             logout:
                 path: /api/logout
 
@@ -34,9 +52,9 @@ security:
             security: false
 
     access_control:
-        # 🔓 Routes publiques
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/home, roles: PUBLIC_ACCESS }
         - { path: ^/api/services, roles: PUBLIC_ACCESS }
         - { path: ^/api/logout, roles: PUBLIC_ACCESS }
         - { path: ^/api/password-reset, roles: PUBLIC_ACCESS }
@@ -44,10 +62,13 @@ security:
         - { path: ^/api/chatbot, roles: PUBLIC_ACCESS }
         - { path: ^/api/stripe/webhook, roles: PUBLIC_ACCESS }
         - { path: ^/api/paypal/webhook, roles: PUBLIC_ACCESS }
+        - { path: ^/api/email/verify-change, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/verify-email, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/resend-verification, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/2fa-prompt, roles: PUBLIC_ACCESS }
+        - { path: ^/api/webhooks, roles: PUBLIC_ACCESS }
 
-        # 🔐 Routes admin
         - { path: ^/api/admin, roles: ROLE_ADMIN }
 
-        # 🔐 Routes authentifiées
         - { path: ^/api/me, roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }

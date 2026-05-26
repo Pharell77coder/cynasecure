@@ -5,7 +5,10 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Card } from "../../components/ui/Card";
 import { adminApi } from "../../api/admin";
+import type { ChartData } from "../../api/admin";
 import type { Subscription } from "./AdminSubscriptionsPage";
+import { toast } from "../../hooks/useToast";
+import { SalesBarChart, StackedCategoryChart, CategoryPieChart } from "./dashboard/Charts";
 
 function fmt(d: string) {
   try { return format(new Date(d), "dd MMM yyyy", { locale: fr }); }
@@ -44,6 +47,10 @@ export default function AdminDashboardPage() {
   const [recentSubs, setRecentSubs] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [period, setPeriod] = useState<"days" | "weeks">("days");
+  const [chartData, setChartData] = useState<ChartData | null>(null);
+  const [chartLoading, setChartLoading] = useState(true);
+
   useEffect(() => {
     Promise.all([adminApi.getStats(), adminApi.getSubscriptions()])
       .then(([s, subs]) => {
@@ -52,8 +59,17 @@ export default function AdminDashboardPage() {
           [...subs].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()).slice(0, 6)
         );
       })
+      .catch(() => toast("Erreur lors du chargement des statistiques", "error"))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    setChartLoading(true);
+    adminApi.getChartData(period)
+      .then(setChartData)
+      .catch(() => toast("Erreur lors du chargement des graphiques", "error"))
+      .finally(() => setChartLoading(false));
+  }, [period]);
 
   if (loading) {
     return (
@@ -97,6 +113,44 @@ export default function AdminDashboardPage() {
           borderCls="border-amber-500/20" iconCls="bg-amber-500/10 text-amber-400"
           gradCls="from-amber-500/10 to-transparent"
         />
+      </div>
+
+      {/* Charts */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-white">Statistiques de ventes</h2>
+          <div role="tablist" className="flex border border-gray-800">
+            {(["days", "weeks"] as const).map((p) => (
+              <button
+                key={p}
+                role="tab"
+                aria-current={period === p ? "true" : undefined}
+                onClick={() => setPeriod(p)}
+                className={`px-4 py-1.5 text-[10px] font-mono tracking-widest transition-colors ${
+                  period === p ? "bg-blue-600 text-white" : "text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                {p === "days" ? "7 JOURS" : "5 SEMAINES"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {chartLoading ? (
+          <div className="grid md:grid-cols-2 gap-6 animate-pulse">
+            <div className="md:col-span-2 h-[320px] bg-gray-800" />
+            <div className="h-[320px] bg-gray-800" />
+            <div className="h-[320px] bg-gray-800" />
+          </div>
+        ) : chartData && (
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="md:col-span-2">
+              <SalesBarChart data={chartData.salesOverTime} period={period} />
+            </div>
+            <StackedCategoryChart data={chartData.salesByCategory} />
+            <CategoryPieChart data={chartData.categoryDistribution} />
+          </div>
+        )}
       </div>
 
       {/* Recent subscriptions */}

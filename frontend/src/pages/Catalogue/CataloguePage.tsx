@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Search,
-  SlidersHorizontal,
   X,
   ChevronDown,
   ArrowUpDown,
@@ -12,23 +11,23 @@ import {
   Zap,
   RefreshCw,
 } from "lucide-react";
-import { Input } from "../../components/ui/Input";
 import { ServiceCard } from "../../components/shared/ServiceCard";
-import { apiFetch } from "../../api/apiFetch";
-import { type Service } from "../../api/services";
+import { servicesApi, type Service, type SearchCriteria } from "../../api/services";
+import { toast } from "../../hooks/useToast";
 import { cn } from "../../lib/utils";
 import React from "react";
 
 /* ─── Types ────────────────────────────────────────────────────────────── */
-type SortMode = "default" | "asc" | "desc";
+type SortMode = "relevance" | "price_asc" | "price_desc" | "newest";
 type TypeFilter = "all" | "saas" | "one_shot";
 type ViewMode = "grid" | "list";
 
 /* ─── Constantes ───────────────────────────────────────────────────────── */
 const SORT_LABELS: Record<SortMode, string> = {
-  default: "Pertinence",
-  asc: "Prix croissant",
-  desc: "Prix décroissant",
+  relevance: "Pertinence",
+  price_asc: "Prix croissant",
+  price_desc: "Prix décroissant",
+  newest: "Nouveauté",
 };
 
 const TYPE_OPTIONS: { value: TypeFilter; label: string; tag: string }[] = [
@@ -38,6 +37,17 @@ const TYPE_OPTIONS: { value: TypeFilter; label: string; tag: string }[] = [
 ];
 
 const PAGE_SIZE = 9;
+
+function validSort(v: string | null): SortMode {
+  return (["relevance", "price_asc", "price_desc", "newest"] as SortMode[]).includes(v as SortMode)
+    ? (v as SortMode)
+    : "relevance";
+}
+function validType(v: string | null): TypeFilter {
+  return (["all", "saas", "one_shot"] as TypeFilter[]).includes(v as TypeFilter)
+    ? (v as TypeFilter)
+    : "all";
+}
 
 /* ─── Skeleton card ────────────────────────────────────────────────────── */
 function SkeletonCard() {
@@ -56,22 +66,14 @@ function SkeletonCard() {
 }
 
 /* ─── Sort dropdown ────────────────────────────────────────────────────── */
-function SortDropdown({
-  value,
-  onChange,
-}: {
-  value: SortMode;
-  onChange: (v: SortMode) => void;
-}) {
+function SortDropdown({ value, onChange }: { value: SortMode; onChange: (v: SortMode) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    function h(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); }
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
   }, []);
 
   return (
@@ -84,7 +86,6 @@ function SortDropdown({
         {SORT_LABELS[value]}
         <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
       </button>
-
       {open && (
         <div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] border border-gray-700 bg-gray-900 shadow-xl">
           {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
@@ -93,9 +94,7 @@ function SortDropdown({
               onClick={() => { onChange(mode); setOpen(false); }}
               className={cn(
                 "w-full text-left px-4 py-2.5 text-xs font-mono tracking-wide transition-colors",
-                value === mode
-                  ? "bg-blue-600/20 text-blue-400"
-                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                value === mode ? "bg-blue-600/20 text-blue-400" : "text-gray-400 hover:bg-gray-800 hover:text-white"
               )}
             >
               {SORT_LABELS[mode]}
@@ -110,47 +109,30 @@ function SortDropdown({
 /* ─── Pagination ───────────────────────────────────────────────────────── */
 function Pagination({ page, total, onChange }: { page: number; total: number; onChange: (p: number) => void }) {
   if (total <= 1) return null;
-
   const pages = Array.from({ length: total }, (_, i) => i + 1);
   const visible = pages.filter((p) => p === 1 || p === total || Math.abs(p - page) <= 1);
-
   return (
     <div className="flex items-center justify-center gap-1 mt-8 pt-6 border-t border-gray-800">
-      <button
-        onClick={() => onChange(page - 1)}
-        disabled={page === 1}
-        className="px-3 py-2 text-xs font-mono text-gray-400 border border-gray-700 hover:text-white hover:border-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-      >
+      <button onClick={() => onChange(page - 1)} disabled={page === 1}
+        className="px-3 py-2 text-xs font-mono text-gray-400 border border-gray-700 hover:text-white hover:border-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-colors">
         ← Précédent
       </button>
-
       {visible.map((p, i) => {
         const prev = visible[i - 1];
         return (
           <React.Fragment key={p}>
-            {prev && p - prev > 1 && (
-              <span className="px-2 text-gray-600 text-xs select-none">…</span>
-            )}
-            <button
-              onClick={() => onChange(p)}
-              className={cn(
-                "w-9 h-9 text-xs font-mono border transition-colors",
-                p === page
-                  ? "bg-blue-600 border-blue-600 text-white"
-                  : "border-gray-700 text-gray-400 hover:text-white hover:border-gray-600"
-              )}
-            >
+            {prev && p - prev > 1 && <span className="px-2 text-gray-600 text-xs select-none">…</span>}
+            <button onClick={() => onChange(p)}
+              className={cn("w-9 h-9 text-xs font-mono border transition-colors",
+                p === page ? "bg-blue-600 border-blue-600 text-white" : "border-gray-700 text-gray-400 hover:text-white hover:border-gray-600"
+              )}>
               {p}
             </button>
           </React.Fragment>
         );
       })}
-
-      <button
-        onClick={() => onChange(page + 1)}
-        disabled={page === total}
-        className="px-3 py-2 text-xs font-mono text-gray-400 border border-gray-700 hover:text-white hover:border-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-      >
+      <button onClick={() => onChange(page + 1)} disabled={page === total}
+        className="px-3 py-2 text-xs font-mono text-gray-400 border border-gray-700 hover:text-white hover:border-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-colors">
         Suivant →
       </button>
     </div>
@@ -160,153 +142,141 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
 /* ════════════════════════════════════════════════════════════════════════ */
 export default function CataloguePage() {
   const [params, setParams] = useSearchParams();
-  const initialCategory = params.get("cat") ?? "all";
 
-  const [active, setActive] = useState<string>(initialCategory);
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<SortMode>("default");
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  /* ── Filtres ── */
+  const [q, setQ]             = useState(params.get("q") ?? "");
+  const [debouncedQ, setDQ]   = useState(q);
+  const [cats, setCats]       = useState<Set<string>>(new Set(params.get("cats")?.split(",").filter(Boolean) ?? []));
+  const [pmin, setPmin]       = useState<number | "">(params.get("pmin") ? Number(params.get("pmin")) : "");
+  const [pmax, setPmax]       = useState<number | "">(params.get("pmax") ? Number(params.get("pmax")) : "");
+  const [dPmin, setDPmin]     = useState(pmin);
+  const [dPmax, setDPmax]     = useState(pmax);
+  const [dispo, setDispo]     = useState(params.get("dispo") === "1");
+  const [sort, setSort]       = useState<SortMode>(validSort(params.get("sort")));
+  const [type, setType]       = useState<TypeFilter>(validType(params.get("type")));
+
+  /* ── UI ── */
+  const [viewMode, setViewMode]     = useState<ViewMode>("grid");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [page, setPage] = useState(1);
+  const [page, setPage]             = useState(1);
 
-  const [services, setServices] = useState<Service[]>([]);
-  const [loading, setLoading] = useState(true);
+  /* ── Données ── */
+  const [allCategories, setAllCategories] = useState<{ slug: string; name: string }[]>([]);
+  const [results, setResults]             = useState<Service[]>([]);
+  const [total, setTotal]                 = useState(0);
+  const [loading, setLoading]             = useState(true);
+  const [fetching, setFetching]           = useState(false);
 
-  /* ── Reset catégorie quand on change de type ── */
+  /* ── Debounce q 250 ms ── */
   useEffect(() => {
-    setActive("all");
-    params.delete("cat");
-    setParams(params, { replace: true });
-  }, [typeFilter]);
+    const t = setTimeout(() => setDQ(q), 250);
+    return () => clearTimeout(t);
+  }, [q]);
 
-  /* ── Fetch services ── */
+  /* ── Debounce prix 300 ms ── */
   useEffect(() => {
-    setLoading(true);
-    const url = typeFilter === "all" ? "/api/services" : `/api/services?type=${typeFilter}`;
-    apiFetch<Service[]>(url)
-      .then((data) => setServices(Array.isArray(data) ? data : []))
-      .catch(() => setServices([]))
-      .finally(() => setLoading(false));
-  }, [typeFilter]);
+    const t = setTimeout(() => setDPmin(pmin), 300);
+    return () => clearTimeout(t);
+  }, [pmin]);
+  useEffect(() => {
+    const t = setTimeout(() => setDPmax(pmax), 300);
+    return () => clearTimeout(t);
+  }, [pmax]);
 
-  /* ── Catégories dynamiques ── */
-  const categories = useMemo(() => {
-    const map = new Map<string, { name: string; count: number }>();
-    services.forEach((s) => {
-      if (!s.categorySlug) return;
-      const cur = map.get(s.categorySlug);
-      map.set(s.categorySlug, {
-        name: s.category ?? "Sans catégorie",
-        count: cur ? cur.count + 1 : 1,
-      });
+  /* ── Chargement des catégories au démarrage ── */
+  useEffect(() => {
+    servicesApi.getAll().then((data) => {
+      const map = new Map<string, string>();
+      data.forEach((s) => { if (s.categorySlug) map.set(s.categorySlug, s.category ?? ""); });
+      setAllCategories([...map.entries()].map(([slug, name]) => ({ slug, name })));
     });
-    return Array.from(map.entries()).map(([slug, v]) => ({ slug, ...v }));
-  }, [services]);
+  }, []);
+
+  /* ── Recherche ── */
+  useEffect(() => {
+    const criteria: SearchCriteria = {
+      q: debouncedQ || undefined,
+      cats: cats.size ? [...cats].join(",") : undefined,
+      pmin: dPmin !== "" ? dPmin : undefined,
+      pmax: dPmax !== "" ? dPmax : undefined,
+      dispo: dispo || undefined,
+      sort,
+      type: type !== "all" ? type : undefined,
+    };
+    setFetching(true);
+    servicesApi.search(criteria)
+      .then((res) => { setResults(res.items); setTotal(res.total); })
+      .catch(() => toast("Erreur lors du chargement des services", "error"))
+      .finally(() => { setLoading(false); setFetching(false); });
+  }, [debouncedQ, cats, dPmin, dPmax, dispo, sort, type]);
 
   /* ── Sync URL ── */
   useEffect(() => {
-    setActive(params.get("cat") ?? "all");
-  }, [params]);
+    const p = new URLSearchParams();
+    if (q)            p.set("q", q);
+    if (cats.size)    p.set("cats", [...cats].join(","));
+    if (pmin !== "")  p.set("pmin", String(pmin));
+    if (pmax !== "")  p.set("pmax", String(pmax));
+    if (dispo)        p.set("dispo", "1");
+    if (sort !== "relevance") p.set("sort", sort);
+    if (type !== "all")       p.set("type", type);
+    setParams(p, { replace: true });
+  }, [q, cats, pmin, pmax, dispo, sort, type]);
 
-  /* ── Filtrage + tri ── */
-  const filtered = useMemo(() => {
-    let list = [...services];
-    if (active !== "all") list = list.filter((s) => s.categorySlug === active);
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      list = list.filter(
-        (s) =>
-          s.name.toLowerCase().includes(q) ||
-          s.description?.toLowerCase().includes(q)
-      );
-    }
-    if (sort === "asc") list.sort((a, b) => a.priceMonthly - b.priceMonthly);
-    if (sort === "desc") list.sort((a, b) => b.priceMonthly - a.priceMonthly);
-    return list;
-  }, [services, active, query, sort]);
+  /* ── Reset page sur changement de filtres ── */
+  useEffect(() => { setPage(1); }, [debouncedQ, cats, dPmin, dPmax, dispo, sort, type]);
 
-  /* ── Reset page quand les filtres changent ── */
-  useEffect(() => { setPage(1); }, [active, query, sort, typeFilter]);
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const setCat = (slug: string) => {
-    setActive(slug);
-    if (slug === "all") params.delete("cat");
-    else params.set("cat", slug);
-    setParams(params, { replace: true });
-  };
+  /* ── Helpers ── */
+  const toggleCat = (slug: string) =>
+    setCats((prev) => { const n = new Set(prev); n.has(slug) ? n.delete(slug) : n.add(slug); return n; });
 
   const resetAll = () => {
-    setActive("all");
-    setQuery("");
-    setSort("default");
-    setTypeFilter("all");
-    params.delete("cat");
-    setParams(params, { replace: true });
+    setQ(""); setDQ("");
+    setCats(new Set());
+    setPmin(""); setPmax(""); setDPmin(""); setDPmax("");
+    setDispo(false);
+    setSort("relevance");
+    setType("all");
   };
 
-  const hasFilters = active !== "all" || query.trim() !== "" || sort !== "default" || typeFilter !== "all";
-
-  /* ── Compte par catégorie dans les résultats filtrés (hors cat filter) ── */
-  const countForCat = (slug: string) => {
-    return services.filter((s) => {
-      const matchType = typeFilter === "all" || s.type === typeFilter;
-      const matchQuery = !query.trim() || s.name.toLowerCase().includes(query.toLowerCase());
-      const matchCat = slug === "all" || s.categorySlug === slug;
-      return matchType && matchQuery && matchCat;
-    }).length;
-  };
+  const hasFilters = q.trim() !== "" || cats.size > 0 || pmin !== "" || pmax !== "" || dispo || sort !== "relevance" || type !== "all";
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const paginated  = results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const hasPriceFilter = pmin !== "" || pmax !== "";
 
   return (
     <div className="min-h-screen bg-gray-950">
 
-      {/* ── Header de page ─────────────────────────────────────────────── */}
+      {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="bg-gray-950 border-b border-gray-800">
         <div className="container py-12">
-          {/* Breadcrumb */}
           <div className="flex items-center gap-2 font-mono text-xs text-gray-600 mb-6">
-            <span>Accueil</span>
-            <span>/</span>
-            <span className="text-blue-500">Catalogue</span>
+            <span>Accueil</span><span>/</span><span className="text-blue-500">Catalogue</span>
           </div>
-
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
             <div>
-              <div className="text-blue-500 font-mono text-xs tracking-widest mb-3">
-                SOLUTIONS DE SÉCURITÉ
-              </div>
-              <h1
-                className="text-white font-black leading-none tracking-tight"
-                style={{ fontSize: "clamp(2rem, 4vw, 3.5rem)", letterSpacing: "-0.03em" }}
-              >
+              <div className="text-blue-500 font-mono text-xs tracking-widest mb-3">SOLUTIONS DE SÉCURITÉ</div>
+              <h1 className="text-white font-black leading-none tracking-tight"
+                style={{ fontSize: "clamp(2rem, 4vw, 3.5rem)", letterSpacing: "-0.03em" }}>
                 Catalogue des solutions
               </h1>
               <p className="mt-3 text-gray-500 text-sm max-w-xl leading-relaxed">
-                {loading
-                  ? "Chargement…"
-                  : `${services.length} solutions disponibles — XDR, CSPM, Zero Trust, NDR, Audit et plus.`}
+                {loading ? "Chargement…" : `${total} solution${total !== 1 ? "s" : ""} — XDR, CSPM, Zero Trust, NDR, Audit et plus.`}
               </p>
             </div>
-
-            {/* Barre de recherche principale */}
             <div className="w-full lg:w-96">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                 <input
                   type="text"
                   placeholder="Rechercher une solution..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
                   className="w-full bg-gray-900 border border-gray-700 text-white placeholder-gray-600 text-sm pl-10 pr-10 py-3 focus:outline-none focus:border-blue-500 transition-colors font-mono"
                 />
-                {query && (
-                  <button
-                    onClick={() => setQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
-                  >
+                {q && (
+                  <button onClick={() => setQ("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
                     <X className="h-3.5 w-3.5" />
                   </button>
                 )}
@@ -319,78 +289,40 @@ export default function CataloguePage() {
       {/* ── Toolbar ─────────────────────────────────────────────────────── */}
       <div className="border-b border-gray-800 bg-gray-900 sticky top-0 z-30">
         <div className="container flex items-center justify-between gap-4 py-3">
-
-          {/* Filtres type — inline */}
           <div className="flex items-center gap-1">
             {TYPE_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setTypeFilter(opt.value)}
-                className={cn(
-                  "px-3 py-1.5 text-xs font-mono tracking-widest transition-colors border",
-                  typeFilter === opt.value
-                    ? "bg-blue-600 border-blue-600 text-white"
-                    : "border-gray-700 text-gray-500 hover:text-gray-300 hover:border-gray-600"
-                )}
-              >
+              <button key={opt.value} onClick={() => setType(opt.value)}
+                className={cn("px-3 py-1.5 text-xs font-mono tracking-widest transition-colors border",
+                  type === opt.value ? "bg-blue-600 border-blue-600 text-white" : "border-gray-700 text-gray-500 hover:text-gray-300 hover:border-gray-600"
+                )}>
                 {opt.tag}
               </button>
             ))}
           </div>
-
-          {/* Droite : résultats + sort + view */}
           <div className="flex items-center gap-3">
-            {/* Compteur */}
             <span className="text-gray-600 text-xs font-mono hidden sm:block">
-              {loading ? "…" : filtered.length === 0 ? "0 résultat" : `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, filtered.length)} sur ${filtered.length}`}
+              {loading ? "…" : total === 0 ? "0 résultat" : `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} sur ${total}`}
             </span>
-
-            {/* Reset */}
             {hasFilters && (
-              <button
-                onClick={resetAll}
-                className="flex items-center gap-1.5 text-xs font-mono text-blue-400 hover:text-blue-300 transition-colors border border-blue-500/30 px-2 py-1.5"
-              >
-                <RefreshCw className="h-3 w-3" />
-                Réinitialiser
+              <button onClick={resetAll}
+                className="flex items-center gap-1.5 text-xs font-mono text-blue-400 hover:text-blue-300 transition-colors border border-blue-500/30 px-2 py-1.5">
+                <RefreshCw className="h-3 w-3" /> Réinitialiser
               </button>
             )}
-
-            {/* Sort */}
             <SortDropdown value={sort} onChange={setSort} />
-
-            {/* Sidebar toggle */}
-            <button
-              onClick={() => setSidebarOpen((o) => !o)}
-              className={cn(
-                "flex items-center gap-2 px-3 py-2.5 text-xs font-mono tracking-wide border transition-colors",
-                sidebarOpen
-                  ? "bg-blue-600/20 border-blue-500/40 text-blue-400"
-                  : "border-gray-700 text-gray-500 hover:text-gray-300"
-              )}
-            >
-              <Filter className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Filtres</span>
+            <button onClick={() => setSidebarOpen((o) => !o)}
+              className={cn("flex items-center gap-2 px-3 py-2.5 text-xs font-mono tracking-wide border transition-colors",
+                sidebarOpen ? "bg-blue-600/20 border-blue-500/40 text-blue-400" : "border-gray-700 text-gray-500 hover:text-gray-300"
+              )}>
+              <Filter className="h-3.5 w-3.5" /><span className="hidden sm:inline">Filtres</span>
             </button>
-
-            {/* View mode */}
             <div className="flex border border-gray-700">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={cn(
-                  "px-2.5 py-2.5 transition-colors",
-                  viewMode === "grid" ? "bg-gray-700 text-white" : "text-gray-600 hover:text-gray-400"
-                )}
-              >
+              <button onClick={() => setViewMode("grid")}
+                className={cn("px-2.5 py-2.5 transition-colors", viewMode === "grid" ? "bg-gray-700 text-white" : "text-gray-600 hover:text-gray-400")}>
                 <LayoutGrid className="h-3.5 w-3.5" />
               </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={cn(
-                  "px-2.5 py-2.5 border-l border-gray-700 transition-colors",
-                  viewMode === "list" ? "bg-gray-700 text-white" : "text-gray-600 hover:text-gray-400"
-                )}
-              >
+              <button onClick={() => setViewMode("list")}
+                className={cn("px-2.5 py-2.5 border-l border-gray-700 transition-colors", viewMode === "list" ? "bg-gray-700 text-white" : "text-gray-600 hover:text-gray-400")}>
                 <List className="h-3.5 w-3.5" />
               </button>
             </div>
@@ -398,97 +330,92 @@ export default function CataloguePage() {
         </div>
       </div>
 
-      {/* ── Corps principal : sidebar + grille ─────────────────────────── */}
+      {/* ── Corps principal ──────────────────────────────────────────────── */}
       <div className="container py-10">
         <div className={cn("flex gap-8", !sidebarOpen && "block")}>
 
-          {/* ── Sidebar catégories ─────────────────────────────────────── */}
+          {/* ── Sidebar ─────────────────────────────────────────────────── */}
           {sidebarOpen && (
             <aside className="w-56 flex-shrink-0">
               <div className="sticky top-20 space-y-1">
-                <div className="text-gray-600 font-mono text-[10px] tracking-widest px-2 mb-3">
-                  CATÉGORIES
-                </div>
 
-                {/* Toutes */}
-                <button
-                  onClick={() => setCat("all")}
-                  className={cn(
-                    "w-full flex items-center justify-between px-3 py-2.5 text-sm transition-colors border-l-2",
-                    active === "all"
-                      ? "border-blue-500 bg-blue-500/10 text-white"
-                      : "border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-900"
-                  )}
-                >
-                  <span className="font-mono text-xs tracking-wide">Toutes catégories</span>
-                  <span className={cn(
-                    "text-[10px] font-mono px-1.5 py-0.5 rounded-sm",
-                    active === "all" ? "bg-blue-600 text-white" : "bg-gray-800 text-gray-500"
-                  )}>
-                    {countForCat("all")}
-                  </span>
-                </button>
-
-                {categories.map((c) => (
-                  <button
-                    key={c.slug}
-                    onClick={() => setCat(c.slug)}
-                    className={cn(
-                      "w-full flex items-center justify-between px-3 py-2.5 text-sm transition-colors border-l-2",
-                      active === c.slug
-                        ? "border-blue-500 bg-blue-500/10 text-white"
-                        : "border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-900"
-                    )}
-                  >
-                    <span className="font-mono text-xs tracking-wide truncate text-left">{c.name}</span>
-                    <span className={cn(
-                      "text-[10px] font-mono px-1.5 py-0.5 rounded-sm flex-shrink-0 ml-2",
-                      active === c.slug ? "bg-blue-600 text-white" : "bg-gray-800 text-gray-500"
-                    )}>
-                      {countForCat(c.slug)}
+                {/* Catégories */}
+                <div className="text-gray-600 font-mono text-[10px] tracking-widest px-2 mb-3">CATÉGORIES</div>
+                {allCategories.map((c) => (
+                  <label key={c.slug}
+                    className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-gray-900 transition-colors group">
+                    <input
+                      type="checkbox"
+                      checked={cats.has(c.slug)}
+                      onChange={() => toggleCat(c.slug)}
+                      className="accent-blue-500 w-3.5 h-3.5 flex-shrink-0"
+                    />
+                    <span className={cn("font-mono text-xs tracking-wide truncate",
+                      cats.has(c.slug) ? "text-white" : "text-gray-500 group-hover:text-gray-300")}>
+                      {c.name}
                     </span>
-                  </button>
+                  </label>
                 ))}
 
-                {/* Séparateur */}
-                <div className="pt-6 border-t border-gray-800 mt-4">
-                  <div className="text-gray-600 font-mono text-[10px] tracking-widest px-2 mb-3">
-                    TYPE
+                {/* Prix */}
+                <div className="pt-5 border-t border-gray-800 mt-4">
+                  <div className="text-gray-600 font-mono text-[10px] tracking-widest px-2 mb-3">PRIX MENSUEL (€)</div>
+                  <div className="px-3 flex gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="Min"
+                      value={pmin}
+                      onChange={(e) => setPmin(e.target.value === "" ? "" : Number(e.target.value))}
+                      className="w-full bg-gray-900 border border-gray-700 text-white text-xs font-mono px-2 py-1.5 focus:outline-none focus:border-blue-500 placeholder-gray-700"
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="Max"
+                      value={pmax}
+                      onChange={(e) => setPmax(e.target.value === "" ? "" : Number(e.target.value))}
+                      className="w-full bg-gray-900 border border-gray-700 text-white text-xs font-mono px-2 py-1.5 focus:outline-none focus:border-blue-500 placeholder-gray-700"
+                    />
                   </div>
+                </div>
+
+                {/* Disponibilité */}
+                <div className="pt-5 border-t border-gray-800 mt-4 px-3">
+                  <label className="flex items-center gap-2.5 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={dispo}
+                      onChange={(e) => setDispo(e.target.checked)}
+                      className="accent-blue-500 w-3.5 h-3.5 flex-shrink-0"
+                    />
+                    <span className={cn("font-mono text-xs tracking-wide", dispo ? "text-white" : "text-gray-500 group-hover:text-gray-300")}>
+                      Uniquement disponibles
+                    </span>
+                  </label>
+                </div>
+
+                {/* Type */}
+                <div className="pt-5 border-t border-gray-800 mt-4">
+                  <div className="text-gray-600 font-mono text-[10px] tracking-widest px-2 mb-3">TYPE</div>
                   {TYPE_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setTypeFilter(opt.value)}
-                      className={cn(
-                        "w-full flex items-center gap-2 px-3 py-2.5 text-xs font-mono tracking-wide transition-colors border-l-2",
-                        typeFilter === opt.value
-                          ? "border-blue-500 bg-blue-500/10 text-white"
-                          : "border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-900"
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "w-1.5 h-1.5 rounded-full flex-shrink-0",
-                          typeFilter === opt.value ? "bg-blue-400" : "bg-gray-700"
-                        )}
-                      />
+                    <button key={opt.value} onClick={() => setType(opt.value)}
+                      className={cn("w-full flex items-center gap-2 px-3 py-2.5 text-xs font-mono tracking-wide transition-colors border-l-2",
+                        type === opt.value ? "border-blue-500 bg-blue-500/10 text-white" : "border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-900"
+                      )}>
+                      <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", type === opt.value ? "bg-blue-400" : "bg-gray-700")} />
                       {opt.label}
                     </button>
                   ))}
                 </div>
 
-                {/* CTA compact */}
+                {/* CTA */}
                 <div className="pt-6 mt-4 border-t border-gray-800 px-3">
                   <div className="bg-blue-600/10 border border-blue-500/20 p-4">
                     <Zap className="h-4 w-4 text-blue-500 mb-2" />
                     <p className="text-white text-xs font-semibold mb-1">Besoin d'un conseil ?</p>
-                    <p className="text-gray-500 text-xs leading-relaxed mb-3">
-                      Un expert vous oriente vers la bonne solution.
-                    </p>
-                    <a
-                      href="/contact"
-                      className="inline-flex items-center gap-1 text-blue-400 text-xs font-mono hover:text-blue-300 transition-colors"
-                    >
+                    <p className="text-gray-500 text-xs leading-relaxed mb-3">Un expert vous oriente vers la bonne solution.</p>
+                    <a href="/contact" className="inline-flex items-center gap-1 text-blue-400 text-xs font-mono hover:text-blue-300 transition-colors">
                       Contacter →
                     </a>
                   </div>
@@ -497,112 +424,100 @@ export default function CataloguePage() {
             </aside>
           )}
 
-          {/* ── Grille de services ──────────────────────────────────────── */}
+          {/* ── Grille ──────────────────────────────────────────────────── */}
           <div className="flex-1 min-w-0">
 
-            {/* Filtres actifs — pills */}
+            {/* Pills filtres actifs */}
             {hasFilters && (
               <div className="flex flex-wrap items-center gap-2 mb-6 pb-6 border-b border-gray-800">
                 <span className="text-gray-600 text-xs font-mono">Filtres actifs :</span>
-
-                {active !== "all" && (
+                {[...cats].map((slug) => (
+                  <span key={slug} className="flex items-center gap-1.5 bg-blue-600/15 border border-blue-500/30 text-blue-400 text-xs font-mono px-2 py-1">
+                    {allCategories.find((c) => c.slug === slug)?.name ?? slug}
+                    <button onClick={() => toggleCat(slug)} className="hover:text-white"><X className="h-2.5 w-2.5" /></button>
+                  </span>
+                ))}
+                {type !== "all" && (
                   <span className="flex items-center gap-1.5 bg-blue-600/15 border border-blue-500/30 text-blue-400 text-xs font-mono px-2 py-1">
-                    {categories.find((c) => c.slug === active)?.name ?? active}
-                    <button onClick={() => setCat("all")} className="hover:text-white">
-                      <X className="h-2.5 w-2.5" />
-                    </button>
+                    {TYPE_OPTIONS.find((o) => o.value === type)?.label}
+                    <button onClick={() => setType("all")} className="hover:text-white"><X className="h-2.5 w-2.5" /></button>
                   </span>
                 )}
-
-                {typeFilter !== "all" && (
+                {q && (
                   <span className="flex items-center gap-1.5 bg-blue-600/15 border border-blue-500/30 text-blue-400 text-xs font-mono px-2 py-1">
-                    {TYPE_OPTIONS.find((o) => o.value === typeFilter)?.label}
-                    <button onClick={() => setTypeFilter("all")} className="hover:text-white">
-                      <X className="h-2.5 w-2.5" />
-                    </button>
+                    "{q}"
+                    <button onClick={() => setQ("")} className="hover:text-white"><X className="h-2.5 w-2.5" /></button>
                   </span>
                 )}
-
-                {query && (
+                {hasPriceFilter && (
                   <span className="flex items-center gap-1.5 bg-blue-600/15 border border-blue-500/30 text-blue-400 text-xs font-mono px-2 py-1">
-                    "{query}"
-                    <button onClick={() => setQuery("")} className="hover:text-white">
-                      <X className="h-2.5 w-2.5" />
-                    </button>
+                    Prix : {pmin !== "" ? `${pmin}€` : "0€"} – {pmax !== "" ? `${pmax}€` : "∞"}
+                    <button onClick={() => { setPmin(""); setPmax(""); }} className="hover:text-white"><X className="h-2.5 w-2.5" /></button>
                   </span>
                 )}
-
-                {sort !== "default" && (
+                {dispo && (
+                  <span className="flex items-center gap-1.5 bg-blue-600/15 border border-blue-500/30 text-blue-400 text-xs font-mono px-2 py-1">
+                    Disponibles
+                    <button onClick={() => setDispo(false)} className="hover:text-white"><X className="h-2.5 w-2.5" /></button>
+                  </span>
+                )}
+                {sort !== "relevance" && (
                   <span className="flex items-center gap-1.5 bg-gray-800 border border-gray-700 text-gray-400 text-xs font-mono px-2 py-1">
                     {SORT_LABELS[sort]}
-                    <button onClick={() => setSort("default")} className="hover:text-white">
-                      <X className="h-2.5 w-2.5" />
-                    </button>
+                    <button onClick={() => setSort("relevance")} className="hover:text-white"><X className="h-2.5 w-2.5" /></button>
                   </span>
                 )}
               </div>
             )}
 
             {/* Grille / liste */}
-            <div
-              className={cn(
-                "gap-px",
-                viewMode === "grid"
-                  ? "grid md:grid-cols-2 xl:grid-cols-3 bg-gray-800"
-                  : "flex flex-col divide-y divide-gray-800"
-              )}
-            >
-              {loading &&
-                Array.from({ length: 6 }).map((_, i) => (
-                  <SkeletonCard key={i} />
-                ))}
-
-              {!loading &&
-                paginated.map((s) => (
-                  <div
-                    key={s.id}
-                    className={cn(
-                      "bg-gray-950",
-                      viewMode === "list" && "hover:bg-gray-900 transition-colors"
-                    )}
-                  >
+            {loading ? (
+              <div className={cn("gap-px", viewMode === "grid" ? "grid md:grid-cols-2 xl:grid-cols-3 bg-gray-800" : "flex flex-col divide-y divide-gray-800")}>
+                {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+              </div>
+            ) : (
+              <div className={cn("gap-px transition-opacity duration-200", fetching && "opacity-60",
+                viewMode === "grid" ? "grid md:grid-cols-2 xl:grid-cols-3 bg-gray-800" : "flex flex-col divide-y divide-gray-800"
+              )}>
+                {paginated.map((s) => (
+                  <div key={s.id} className={cn("bg-gray-950", viewMode === "list" && "hover:bg-gray-900 transition-colors")}>
                     <ServiceCard service={s} />
                   </div>
                 ))}
-            </div>
+              </div>
+            )}
 
             {/* État vide */}
-            {!loading && filtered.length === 0 && (
+            {!loading && total === 0 && (
               <div className="flex flex-col items-center justify-center py-24 text-center">
                 <div className="border border-gray-800 p-6 mb-6">
                   <Search className="h-8 w-8 text-gray-700 mx-auto" />
                 </div>
                 <p className="text-white font-semibold mb-2">Aucune solution trouvée</p>
-                <p className="text-gray-500 text-sm max-w-xs mb-6">
+                <p className="text-gray-500 text-sm max-w-xs mb-2">
                   Essayez d'élargir vos critères ou de réinitialiser les filtres.
                 </p>
-                <button
-                  onClick={resetAll}
-                  className="flex items-center gap-2 text-xs font-mono text-blue-400 border border-blue-500/30 px-4 py-2 hover:bg-blue-500/10 transition-colors"
-                >
-                  <RefreshCw className="h-3 w-3" />
-                  Réinitialiser tous les filtres
+                {hasPriceFilter && (
+                  <p className="text-gray-600 text-xs mb-4">
+                    Suggestion : élargir la fourchette de prix.
+                  </p>
+                )}
+                <button onClick={resetAll}
+                  className="flex items-center gap-2 text-xs font-mono text-blue-400 border border-blue-500/30 px-4 py-2 hover:bg-blue-500/10 transition-colors">
+                  <RefreshCw className="h-3 w-3" /> Réinitialiser tous les filtres
                 </button>
               </div>
             )}
 
-            {/* Pagination + footer */}
-            {!loading && filtered.length > 0 && (
+            {/* Pagination */}
+            {!loading && total > 0 && (
               <>
                 <Pagination page={page} total={totalPages} onChange={setPage} />
                 <div className="mt-6 flex items-center justify-between">
                   <span className="text-gray-600 text-xs font-mono">
-                    {filtered.length} solution{filtered.length !== 1 ? "s" : ""} au total
+                    {total} solution{total !== 1 ? "s" : ""} au total
                   </span>
-                  <a
-                    href="/contact"
-                    className="text-blue-400 text-xs font-mono hover:text-blue-300 transition-colors"
-                  >
+                  <a href="/contact" className="text-blue-400 text-xs font-mono hover:text-blue-300 transition-colors">
                     Solution manquante ? Contactez-nous →
                   </a>
                 </div>

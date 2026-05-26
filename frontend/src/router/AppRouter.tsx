@@ -12,20 +12,26 @@ import CartPage from "../pages/Cart/CartPage";
 import LoginPage from "../pages/Auth/LoginPage";
 import RegisterPage from "../pages/Auth/RegisterPage";
 import ForgotPasswordPage from "../pages/Auth/ForgotPasswordPage";
+import VerifyEmailPage from "../pages/Auth/VerifyEmailPage";
+import TwoFactorPage from "../pages/Auth/TwoFactorPage";
 
 import ProfilePage from "../pages/Profile/ProfilePage";
 import MySubscriptionsPage from "../pages/Profile/MySubscriptionsPage";
-import MyPaymentsPage from "../pages/Profile/MyPaymentsPage";
+import MyOrdersPage from "../pages/Profile/MyOrdersPage";
 import UserDashboardPage from "../pages/Profile/UserDashboardPage";
+import VerifyEmailChangePage from "../pages/Auth/VerifyEmailChangePage";
 
 import AdminDashboardPage from "../pages/Admin/AdminDashboardPage";
 import AdminServicesPage from "../pages/Admin/AdminServicesPage";
 import AdminUsersPage from "../pages/Admin/AdminUsersPage";
 import AdminSubscriptionsPage from "../pages/Admin/AdminSubscriptionsPage";
+import AdminPaiementsPage from "../pages/Admin/AdminPaiementsPage";
 
 // 🔥 AJOUT : formulaire création / édition
 import AdminServiceFormPage from "../pages/Admin/AdminServiceFormPage";
 import AdminContactPage from "../pages/Admin/AdminContactPage";
+import AdminHomePage from "../pages/Admin/AdminHomePage";
+import AdminPromoPage from "../pages/Admin/AdminPromoPage";
 
 import CheckoutPage from "../pages/Checkout/CheckoutPage";
 import NotFoundPage from "../pages/NotFound/NotFoundPage";
@@ -40,7 +46,7 @@ import { AdminProtectedRoute } from "./AdminProtectedRoute";
 import { useAuth } from "../hooks/useAuth";
 
 export function AppRouter() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   return (
     <BrowserRouter>
@@ -57,14 +63,14 @@ export function AppRouter() {
           <Route
             path="/connexion"
             element={
-              isAuthenticated ? <Navigate to="/profil" replace /> : <LoginPage />
+              isLoading ? null : isAuthenticated ? <Navigate to="/profil" replace /> : <LoginPage />
             }
           />
 
           <Route
             path="/inscription"
             element={
-              isAuthenticated ? (
+              isLoading ? null : isAuthenticated ? (
                 <Navigate to="/profil" replace />
               ) : (
                 <RegisterPage />
@@ -73,17 +79,13 @@ export function AppRouter() {
           />
 
           <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
+          <Route path="/verifier-email" element={<VerifyEmailPage />} />
+          <Route path="/2fa" element={<TwoFactorPage />} />
+          <Route path="/verify-email-change" element={<VerifyEmailChangePage />} />
 
           <Route path="/contact" element={<ContactPage />} />
 
-          <Route
-            path="/checkout"
-            element={
-              <ProtectedRoute>
-                <CheckoutPage />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/checkout" element={<CheckoutPage />} />
 
           {/* Pages légales */}
           <Route path="/a-propos" element={<AProposPage />} />
@@ -120,10 +122,10 @@ export function AppRouter() {
           />
 
           <Route
-            path="/mes-paiements"
+            path="/mes-commandes"
             element={
               <ProtectedRoute>
-                <MyPaymentsPage />
+                <MyOrdersPage />
               </ProtectedRoute>
             }
           />
@@ -147,8 +149,11 @@ export function AppRouter() {
 
             {/* AUTRES */}
             <Route path="abonnements" element={<AdminSubscriptionsPage />} />
+            <Route path="paiements" element={<AdminPaiementsPage />} />
+            <Route path="home" element={<AdminHomePage />} />
             <Route path="contact" element={<AdminContactPage />} />
             <Route path="utilisateurs" element={<AdminUsersPage />} />
+            <Route path="promos" element={<AdminPromoPage />} />
           </Route>
         </Route>
 
