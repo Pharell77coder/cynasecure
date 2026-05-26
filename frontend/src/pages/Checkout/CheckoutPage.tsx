@@ -482,6 +482,18 @@ function ConfirmationStep({
   isGuest: boolean;
 }) {
   const navigate = useNavigate();
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      await checkoutApi.downloadInvoice(paymentId, `${invoiceNumber}.pdf`);
+    } catch {
+      // toast non importé ici — l'erreur est silencieuse, le PDF n'ouvre pas
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div className="text-center py-6">
@@ -520,15 +532,14 @@ function ConfirmationStep({
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <a
-              href={checkoutApi.invoiceUrl(paymentId)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 px-5 py-2.5 text-sm font-medium transition-colors"
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="inline-flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
             >
               <Download className="h-4 w-4" />
-              Télécharger la facture
-            </a>
+              {downloading ? "Téléchargement…" : "Télécharger la facture"}
+            </button>
 
             <Button onClick={() => navigate("/dashboard")} className="gap-2">
               Mon tableau de bord <ChevronRight className="h-4 w-4" />

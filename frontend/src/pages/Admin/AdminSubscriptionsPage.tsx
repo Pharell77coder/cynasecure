@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { adminApi } from "../../api/admin";
 import { Pagination } from "../../components/ui/Pagination";
+import { checkoutApi } from "../../api/checkout";
 
 import {
   Activity,
@@ -27,8 +28,6 @@ export interface Subscription {
   nextBillingAt: string | null;
   invoicePaymentId: number | null;
 }
-
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
 
 function StatCard({ label, value, icon: Icon }: any) {
   return (
@@ -200,16 +199,14 @@ export default function AdminSubscriptionsPage() {
 
                     <td className="px-6 py-4">
                       {s.invoicePaymentId ? (
-                        <a
-                          href={`${API_BASE}/api/checkout/invoice/${s.invoicePaymentId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          onClick={() => checkoutApi.downloadInvoice(s.invoicePaymentId!, `facture-${s.invoicePaymentId}.pdf`)}
                           className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors font-mono"
                           aria-label="Télécharger la facture PDF"
                         >
                           <Download className="h-3.5 w-3.5" aria-hidden="true" />
                           PDF
-                        </a>
+                        </button>
                       ) : (
                         <span className="text-gray-700 text-xs">—</span>
                       )}

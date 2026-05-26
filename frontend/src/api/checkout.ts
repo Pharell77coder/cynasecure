@@ -56,6 +56,20 @@ export const checkoutApi = {
       body: JSON.stringify(payload),
     }),
 
-  invoiceUrl: (paymentId: number) =>
-    `${import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000"}/api/checkout/invoice/${paymentId}`,
+  downloadInvoice: async (paymentId: number, filename = "facture.pdf") => {
+    const res = await fetch(`/api/checkout/invoice/${paymentId}`, {
+      credentials: "include",
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      throw new Error(data?.message ?? `Erreur ${res.status}`);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
 };
