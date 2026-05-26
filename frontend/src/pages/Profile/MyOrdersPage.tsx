@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 
 import { apiFetch } from "../../api/apiFetch";
+import { checkoutApi } from "../../api/checkout";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { UserNav } from "../../components/layout/UserNav";
@@ -28,10 +29,8 @@ interface Order {
   createdAt: string;
   year: number;
   items: OrderItem[];
-  invoiceUrl: string;
+  paymentId: number | null;
 }
-
-const VITE_API_URL = import.meta.env.VITE_API_URL as string ?? "";
 
 function fmt(d: string) {
   try { return format(new Date(d), "dd MMM yyyy", { locale: fr }); }
@@ -217,18 +216,19 @@ export default function MyOrdersPage() {
                           ))}
                         </div>
 
-                        <div className="flex justify-end pt-2 border-t border-gray-800">
-                          <a
-                            href={`${VITE_API_URL}${order.invoiceUrl}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <Button variant="outline" size="sm" className="gap-1.5">
+                        {order.paymentId && (
+                          <div className="flex justify-end pt-2 border-t border-gray-800">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1.5"
+                              onClick={() => checkoutApi.downloadInvoice(order.paymentId!, `facture-${order.id}.pdf`)}
+                            >
                               <FileText className="h-3.5 w-3.5" />
                               Télécharger la facture
                             </Button>
-                          </a>
-                        </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </Card>

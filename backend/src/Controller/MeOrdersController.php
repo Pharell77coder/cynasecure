@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Order;
+use App\Entity\Payment;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -41,6 +42,22 @@ class MeOrdersController extends AbstractController
 
         $orders = $qb->getQuery()->getResult();
 
+        // Index payments by order ID for O(1) lookup
+        $orderIds = array_map(fn(Order $o) => $o->getId(), $orders);
+        $payments = [];
+        if ($orderIds) {
+            $rows = $em->createQueryBuilder()
+                ->select('p')
+                ->from(Payment::class, 'p')
+                ->where('p.orderRef IN (:ids)')
+                ->setParameter('ids', $orderIds)
+                ->orderBy('p.id', 'ASC')
+                ->getQuery()->getResult();
+            foreach ($rows as $p) {
+                $payments[$p->getOrderRef()->getId()] = $p;
+            }
+        }
+
         $q = strtolower(trim($request->query->get('q', '')));
 
         $serialized = [];
@@ -75,7 +92,7 @@ class MeOrdersController extends AbstractController
                 'createdAt'  => $o->getCreatedAt()->format('c'),
                 'year'       => (int) $o->getCreatedAt()->format('Y'),
                 'items'      => $items,
-                'invoiceUrl' => '/api/checkout/invoice/' . $o->getId(),
+                'paymentId'  => isset($payments[$o->getId()]) ? $payments[$o->getId()]->getId() : null,
             ];
         }
 
