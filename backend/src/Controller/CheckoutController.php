@@ -372,8 +372,10 @@ class CheckoutController extends AbstractController
             return new JsonResponse(['message' => 'Facture introuvable.'], 404);
         }
 
-        $order   = $payment->getOrderRef();
-        $isOwner = $order && $order->getUser() !== null && $order->getUser()->getId() === $user->getId();
+        $order        = $payment->getOrderRef();
+        $subscription = $payment->getSubscription();
+        $isOwner = ($order && $order->getUser() !== null && $order->getUser()->getId() === $user->getId())
+                || ($subscription && $subscription->getUser()->getId() === $user->getId());
         $isAdmin = in_array('ROLE_ADMIN', $user->getRoles(), true);
 
         if (!$isOwner && !$isAdmin) {
