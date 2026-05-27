@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { CheckCircle2, XCircle, Loader2, Shield } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { authApi } from "../../api/auth";
 import { Button } from "../../components/ui/Button";
 
 export default function VerifyEmailChangePage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") ?? "";
 
@@ -14,7 +16,7 @@ export default function VerifyEmailChangePage() {
   useEffect(() => {
     if (!token) {
       setState("error");
-      setMessage("Token manquant dans l'URL.");
+      setMessage(t("auth.verifyChangeMissingToken"));
       return;
     }
     authApi
@@ -25,7 +27,7 @@ export default function VerifyEmailChangePage() {
       })
       .catch((err: unknown) => {
         setState("error");
-        setMessage(err instanceof Error ? err.message : "Lien invalide ou expiré.");
+        setMessage(err instanceof Error ? err.message : t("auth.verifyChangeExpired"));
       });
   }, [token]);
 
@@ -40,17 +42,17 @@ export default function VerifyEmailChangePage() {
         {state === "loading" && (
           <>
             <Loader2 className="h-12 w-12 mx-auto text-blue-500 animate-spin" />
-            <p className="text-gray-400">Vérification en cours…</p>
+            <p className="text-gray-400">{t("auth.verifyChangeLoading")}</p>
           </>
         )}
 
         {state === "success" && (
           <>
             <CheckCircle2 className="h-12 w-12 mx-auto text-emerald-400" />
-            <h1 className="text-2xl font-black text-white">Email confirmé !</h1>
+            <h1 className="text-2xl font-black text-white">{t("auth.verifyChangeTitle")}</h1>
             <p className="text-gray-400">{message}</p>
             <Link to="/profil">
-              <Button className="mt-2">Retour au profil</Button>
+              <Button className="mt-2">{t("auth.backToProfile")}</Button>
             </Link>
           </>
         )}
@@ -58,10 +60,10 @@ export default function VerifyEmailChangePage() {
         {state === "error" && (
           <>
             <XCircle className="h-12 w-12 mx-auto text-red-400" />
-            <h1 className="text-2xl font-black text-white">Lien invalide</h1>
+            <h1 className="text-2xl font-black text-white">{t("auth.verifyChangeError")}</h1>
             <p className="text-gray-400">{message}</p>
             <Link to="/profil">
-              <Button variant="outline" className="mt-2">Retour au profil</Button>
+              <Button variant="outline" className="mt-2">{t("auth.backToProfile")}</Button>
             </Link>
           </>
         )}

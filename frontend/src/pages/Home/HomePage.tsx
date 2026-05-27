@@ -27,41 +27,45 @@ import {
   Binary,
   Layers,
   ScanLine,
-  ImageOff,
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { ServiceCard } from "../../components/shared/ServiceCard";
 import { homeApi, type CarouselSlide, type HomeCategory, type HomeService } from "../../api/home";
 import { type Service } from "../../api/services";
+import { useTranslation } from "react-i18next";
 import React from "react";
 
-/* ─── Ticker de menaces (simulation live) ─────────────────────────────── */
-const THREAT_EVENTS = [
-  { type: "BLOQUÉ", label: "Tentative d'intrusion — AS45102 (CN)", severity: "high" },
-  { type: "DÉTECTÉ", label: "Mouvement latéral réseau — endpoint #4812", severity: "med" },
-  { type: "BLOQUÉ", label: "Exfiltration DNS — domaine suspect", severity: "high" },
-  { type: "ANALYSÉ", label: "Payload chiffré — sandbox détonation", severity: "low" },
-  { type: "BLOQUÉ", label: "Credential stuffing — 3 412 tentatives/min", severity: "high" },
-  { type: "DÉTECTÉ", label: "Élévation de privilèges — compte service", severity: "med" },
-  { type: "BLOQUÉ", label: "C2 callback — Cobalt Strike beacon", severity: "high" },
-];
+/* ─── Ticker de menaces ───────────────────────────────────────────── */
+function getThreatEvents(t: (k: string) => string) {
+  return [
+    { type: t("home.threatBlocked"), label: t("home.threat1Label"), severity: "high" },
+    { type: t("home.threatDetected"), label: t("home.threat2Label"), severity: "med" },
+    { type: t("home.threatBlocked"), label: t("home.threat3Label"), severity: "high" },
+    { type: t("home.threatAnalyzed"), label: t("home.threat4Label"), severity: "low" },
+    { type: t("home.threatBlocked"), label: t("home.threat5Label"), severity: "high" },
+    { type: t("home.threatDetected"), label: t("home.threat6Label"), severity: "med" },
+    { type: t("home.threatBlocked"), label: t("home.threat7Label"), severity: "high" },
+  ];
+}
 
 function ThreatTicker() {
+  const { t } = useTranslation();
   const [idx, setIdx] = useState(0);
   const [visible, setVisible] = useState(true);
+  const events = getThreatEvents(t);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setVisible(false);
       setTimeout(() => {
-        setIdx((i) => (i + 1) % THREAT_EVENTS.length);
+        setIdx((i) => (i + 1) % events.length);
         setVisible(true);
       }, 400);
     }, 2800);
     return () => clearInterval(interval);
-  }, []);
+  }, [events.length]);
 
-  const ev = THREAT_EVENTS[idx];
+  const ev = events[idx];
   const color =
     ev.severity === "high"
       ? "text-red-400"
@@ -125,96 +129,12 @@ function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
   );
 }
 
-/* ─── Timeline d'incident ─────────────────────────────────────────────── */
-const INCIDENT_STEPS = [
-  { icon: AlertTriangle, label: "Détection", time: "T+0s", desc: "Anomalie comportementale identifiée par l'IA" },
-  { icon: ScanLine, label: "Corrélation", time: "T+4s", desc: "Croisement avec 140+ flux de renseignement" },
-  { icon: Zap, label: "Confinement", time: "T+12s", desc: "Isolation automatique de l'asset compromis" },
-  { icon: Terminal, label: "Forensique", time: "T+45s", desc: "Reconstruction de la chaîne d'attaque" },
-  { icon: CheckCircle, label: "Remédiation", time: "T+2min", desc: "Patch et restauration à l'état sain" },
-];
-
-/* ─── Stats principales ───────────────────────────────────────────────── */
-const STATS = [
-  { value: 500, suffix: "+", label: "Entreprises protégées", icon: Shield },
-  { value: 99, suffix: ".9%", label: "Disponibilité SLA", icon: Activity },
-  { value: 14, suffix: "s", label: "MTTD moyen", icon: Clock },
-  { value: 3200000, suffix: "", label: "Événements / jour analysés", icon: Database },
-];
-
-/* ─── Capacités ───────────────────────────────────────────────────────── */
-const CAPABILITIES = [
-  {
-    icon: Eye,
-    title: "XDR unifié",
-    tag: "Détection étendue",
-    desc: "Corrélation native endpoints, réseau, cloud et identités. Une seule console, zéro angle mort. Réduction du MTTD de 87 % en moyenne.",
-    metrics: ["<14s MTTD", "95% faux positifs éliminés"],
-  },
-  {
-    icon: Binary,
-    title: "IA comportementale",
-    tag: "Machine Learning",
-    desc: "Modèles entraînés sur 10 ans d'attaques réelles. Détection d'anomalies sans signatures, adaptative aux environnements de chaque client.",
-    metrics: ["10B+ événements d'entraînement", "99.4% de précision"],
-  },
-  {
-    icon: Fingerprint,
-    title: "Zero Trust Network",
-    tag: "Accès conditionnel",
-    desc: "Vérification continue de chaque accès, chaque requête, chaque identité. Micro-segmentation dynamique sans refonte de l'infrastructure.",
-    metrics: ["Micro-segmentation L3/L7", "MFA adaptatif"],
-  },
-  {
-    icon: Radio,
-    title: "Threat Intelligence",
-    tag: "Renseignement",
-    desc: "Accès en temps réel aux indicateurs de compromission issus de 140 sources mondiales. Enrichissement automatique de chaque alerte.",
-    metrics: ["140+ flux CTI", "Mise à jour <5min"],
-  },
-  {
-    icon: Layers,
-    title: "Cloud Security Posture",
-    tag: "CSPM / CNAPP",
-    desc: "Audit continu de vos configurations AWS, Azure, GCP. Détection de dérives et application de politiques avant tout incident.",
-    metrics: ["AWS / Azure / GCP", "Conformité CIS / NIST"],
-  },
-  {
-    icon: Network,
-    title: "NDR réseau",
-    tag: "Trafic réseau",
-    desc: "Analyse du trafic est-ouest et nord-sud par deep packet inspection. Détection de mouvements latéraux invisibles aux outils legacy.",
-    metrics: ["DPI 100Gbps", "Protocoles OT/ICS"],
-  },
-];
-
-/* ─── Comparaison approche ─────────────────────────────────────────────── */
-const COMPARISON = [
-  { label: "SIEM traditionnel", issues: ["Règles statiques", "Fort taux de faux positifs", "Couverture endpoint nulle", "Temps de déploiement 6-12 mois"] },
-  { label: "CynaSecure XDR", advantages: ["IA comportementale", "Précision 99.4%", "Couverture unifiée XDR", "Opérationnel en 48h"] },
-];
-
-/* ─── Témoignage ───────────────────────────────────────────────────────── */
-const TESTIMONIALS = [
-  {
-    quote: "En six mois, nous avons réduit notre surface d'attaque de 60 % et éliminé la quasi-totalité des faux positifs qui paralysaient notre SOC.",
-    author: "RSSI",
-    company: "Groupe industriel CAC 40",
-    sector: "Industrie",
-  },
-  {
-    quote: "Le déploiement a pris 48 heures. Dès le lendemain, l'IA avait détecté un mouvement latéral que nos outils EDR précédents avaient manqué.",
-    author: "Directeur infrastructure",
-    company: "Banque régionale européenne",
-    sector: "Finance",
-  },
-];
-
-/* ─── Certifications ───────────────────────────────────────────────────── */
+/* ─── Certifications (noms de standards — non traduits) ─────────────── */
 const CERTIFICATIONS = ["ISO 27001", "SOC 2 Type II", "ANSSI PRIS", "HDS", "PCI DSS", "RGPD"];
 
 /* ─── Carousel principal ──────────────────────────────────────────────── */
 function HeroCarousel({ slides }: { slides: CarouselSlide[] }) {
+  const { t } = useTranslation();
   const [idx, setIdx] = useState(0);
   const [fade, setFade] = useState(true);
   const total = slides.length;
@@ -229,8 +149,8 @@ function HeroCarousel({ slides }: { slides: CarouselSlide[] }) {
 
   useEffect(() => {
     if (total < 2) return;
-    const t = setInterval(() => go(idx + 1), 5000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => go(idx + 1), 5000);
+    return () => clearInterval(timer);
   }, [idx, total]);
 
   if (total === 0) return null;
@@ -239,7 +159,6 @@ function HeroCarousel({ slides }: { slides: CarouselSlide[] }) {
 
   return (
     <div className="relative w-full overflow-hidden" style={{ minHeight: "92vh" }}>
-      {/* Background image */}
       {slide.imagePath ? (
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-300"
@@ -248,7 +167,6 @@ function HeroCarousel({ slides }: { slides: CarouselSlide[] }) {
       ) : null}
       <div className="absolute inset-0 bg-gray-950/80" />
 
-      {/* Grid deco */}
       <div
         className="absolute inset-0 opacity-[0.04]"
         style={{
@@ -257,7 +175,6 @@ function HeroCarousel({ slides }: { slides: CarouselSlide[] }) {
         }}
       />
 
-      {/* Content */}
       <div
         className="relative container flex flex-col justify-center pt-28 pb-24"
         style={{ minHeight: "92vh", transition: "opacity 0.3s", opacity: fade ? 1 : 0 }}
@@ -282,29 +199,27 @@ function HeroCarousel({ slides }: { slides: CarouselSlide[] }) {
           ) : (
             <Link to="/inscription">
               <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 gap-2 rounded-none">
-                Démarrer un POC gratuit
+                {t("home.startPoc")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           )}
           <Link to="/catalogue">
             <Button variant="ghost" size="lg" className="text-white border border-white/20 hover:bg-white/10 rounded-none gap-2 font-mono text-sm tracking-wide">
-              Explorer la plateforme
+              {t("home.explorePlatform")}
               <ChevronRight className="h-4 w-4" />
             </Button>
           </Link>
         </div>
 
-        {/* Certifications */}
         <div className="mt-16 flex flex-wrap items-center gap-2">
-          <span className="text-gray-600 text-xs font-mono tracking-widest mr-2">CERTIFIÉ</span>
+          <span className="text-gray-600 text-xs font-mono tracking-widest mr-2">{t("home.certifiedBy")}</span>
           {CERTIFICATIONS.map((c) => (
             <span key={c} className="text-gray-500 border border-gray-800 text-xs font-mono px-2 py-0.5 rounded">{c}</span>
           ))}
         </div>
       </div>
 
-      {/* Navigation dots + arrows */}
       {total > 1 && (
         <>
           <button onClick={() => go(idx - 1)} className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center border border-white/20 bg-black/30 text-white hover:bg-black/50 transition-colors">
@@ -326,6 +241,8 @@ function HeroCarousel({ slides }: { slides: CarouselSlide[] }) {
 
 /* ════════════════════════════════════════════════════════════════════════ */
 export default function HomePage() {
+  const { t } = useTranslation();
+
   const [slides, setSlides] = useState<CarouselSlide[]>([]);
   const [categories, setCategories] = useState<HomeCategory[]>([]);
   const [topProducts, setTopProducts] = useState<HomeService[]>([]);
@@ -339,33 +256,141 @@ export default function HomePage() {
     homeApi.getTopProducts().then((d) => setTopProducts(Array.isArray(d) ? d : [])).finally(() => setLoadingTop(false));
   }, []);
 
+  const STATS = [
+    { value: 500, suffix: "+", label: t("home.statsProtected"), icon: Shield },
+    { value: 99, suffix: ".9%", label: t("home.statsUptime"), icon: Activity },
+    { value: 14, suffix: "s", label: t("home.statsMttd"), icon: Clock },
+    { value: 3200000, suffix: "", label: t("home.statsEvents"), icon: Database },
+  ];
+
+  const INCIDENT_STEPS = [
+    { icon: AlertTriangle, label: t("home.incidentDetection"), time: "T+0s", desc: t("home.incidentDetectionDesc") },
+    { icon: ScanLine, label: t("home.incidentCorrelation"), time: "T+4s", desc: t("home.incidentCorrelationDesc") },
+    { icon: Zap, label: t("home.incidentConfinement"), time: "T+12s", desc: t("home.incidentConfinementDesc") },
+    { icon: Terminal, label: t("home.incidentForensics"), time: "T+45s", desc: t("home.incidentForensicsDesc") },
+    { icon: CheckCircle, label: t("home.incidentRemediation"), time: "T+2min", desc: t("home.incidentRemediationDesc") },
+  ];
+
+  const CAPABILITIES = [
+    {
+      icon: Eye,
+      title: t("home.capXdrTitle"),
+      tag: t("home.capXdrTag"),
+      desc: t("home.capXdrDesc"),
+      metrics: ["<14s MTTD", "95% faux positifs éliminés"],
+    },
+    {
+      icon: Binary,
+      title: t("home.capAiTitle"),
+      tag: t("home.capAiTag"),
+      desc: t("home.capAiDesc"),
+      metrics: ["10B+ événements d'entraînement", "99.4% de précision"],
+    },
+    {
+      icon: Fingerprint,
+      title: t("home.capZtTitle"),
+      tag: t("home.capZtTag"),
+      desc: t("home.capZtDesc"),
+      metrics: ["Micro-segmentation L3/L7", "MFA adaptatif"],
+    },
+    {
+      icon: Radio,
+      title: t("home.capTiTitle"),
+      tag: t("home.capTiTag"),
+      desc: t("home.capTiDesc"),
+      metrics: ["140+ flux CTI", "Mise à jour <5min"],
+    },
+    {
+      icon: Layers,
+      title: t("home.capCspmTitle"),
+      tag: t("home.capCspmTag"),
+      desc: t("home.capCspmDesc"),
+      metrics: ["AWS / Azure / GCP", "Conformité CIS / NIST"],
+    },
+    {
+      icon: Network,
+      title: t("home.capNdrTitle"),
+      tag: t("home.capNdrTag"),
+      desc: t("home.capNdrDesc"),
+      metrics: ["DPI 100Gbps", "Protocoles OT/ICS"],
+    },
+  ];
+
+  const COMPARISON = [
+    {
+      label: t("home.legacyLabel"),
+      issues: [
+        t("home.legacyIssue1"),
+        t("home.legacyIssue2"),
+        t("home.legacyIssue3"),
+        t("home.legacyIssue4"),
+      ],
+    },
+    {
+      label: t("home.cynasecureLabel"),
+      advantages: [
+        t("home.cynasecureAdv1"),
+        t("home.cynasecureAdv2"),
+        t("home.cynasecureAdv3"),
+        t("home.cynasecureAdv4"),
+      ],
+    },
+  ];
+
+  const TESTIMONIALS = [
+    {
+      quote: t("home.testimonial1Quote"),
+      author: t("home.testimonial1Author"),
+      company: t("home.testimonial1Company"),
+      sector: t("home.testimonial1Sector"),
+    },
+    {
+      quote: t("home.testimonial2Quote"),
+      author: t("home.testimonial2Author"),
+      company: t("home.testimonial2Company"),
+      sector: t("home.testimonial2Sector"),
+    },
+  ];
+
+  const ARCH_ITEMS = [
+    { icon: Server, title: t("home.archAgentTitle"), desc: t("home.archAgentDesc") },
+    { icon: Cloud, title: t("home.archCloudTitle"), desc: t("home.archCloudDesc") },
+    { icon: Cpu, title: t("home.archAiTitle"), desc: t("home.archAiDesc") },
+    { icon: TrendingUp, title: t("home.archScaleTitle"), desc: t("home.archScaleDesc") },
+    { icon: Lock, title: t("home.archEncryptTitle"), desc: t("home.archEncryptDesc") },
+    { icon: Globe, title: t("home.archApiTitle"), desc: t("home.archApiDesc") },
+  ];
+
+  const THREAT_STATS = [
+    { value: "19min", label: t("home.lateralizationTime") },
+    { value: "82%", label: t("home.attacksNoMalware") },
+    { value: "4.5M€", label: t("home.breachCost") },
+  ];
+
   return (
     <div className="space-y-0">
 
-      {/* ══════════════════════════════════════════════════════════════════
-          HERO — carrousel éditable
-      ══════════════════════════════════════════════════════════════════ */}
+      {/* HERO */}
       {loadingSlides ? (
         <section className="bg-gray-950" style={{ minHeight: "92vh" }}>
           <div className="container flex items-center justify-center" style={{ minHeight: "92vh" }}>
-            <span className="text-gray-700 font-mono text-sm animate-pulse">Chargement…</span>
+            <span className="text-gray-700 font-mono text-sm animate-pulse">{t("home.loading")}</span>
           </div>
         </section>
       ) : slides.length > 0 ? (
         <HeroCarousel slides={slides} />
       ) : (
-        /* Fallback statique si aucune slide */
         <section className="relative bg-gray-950 overflow-hidden" style={{ minHeight: "92vh" }}>
           <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
           <div className="relative container flex flex-col justify-center pt-28 pb-24" style={{ minHeight: "92vh" }}>
             <h1 className="text-white font-black leading-none tracking-tight mb-6" style={{ fontSize: "clamp(2.8rem, 6vw, 5rem)", letterSpacing: "-0.03em" }}>
-              Stopper les attaques
-              <br /><span className="text-blue-400">avant qu'elles frappent.</span>
+              {t("home.stopAttacks")}
+              <br /><span className="text-blue-400">{t("home.beforeTheyHit")}</span>
             </h1>
             <div className="flex flex-wrap items-center gap-4">
               <Link to="/inscription">
                 <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 gap-2 rounded-none">
-                  Démarrer un POC gratuit <ArrowRight className="h-4 w-4" />
+                  {t("home.startPoc")} <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
             </div>
@@ -373,9 +398,7 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════
-          STATS — bandeau sombre
-      ══════════════════════════════════════════════════════════════════ */}
+      {/* STATS */}
       <section className="bg-gray-900 border-y border-gray-800">
         <div className="container grid grid-cols-2 md:grid-cols-4">
           {STATS.map((s, i) => (
@@ -393,39 +416,27 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          THREAT INTELLIGENCE — contexte d'attaque
-      ══════════════════════════════════════════════════════════════════ */}
+      {/* THREAT INTELLIGENCE */}
       <section className="bg-gray-950 py-28">
         <div className="container grid lg:grid-cols-2 gap-20 items-center">
           <div>
-            <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">CONTEXTE</div>
+            <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.context")}</div>
             <h2 className="text-4xl font-black text-white leading-tight tracking-tight mb-6" style={{ letterSpacing: "-0.02em" }}>
-              Le paysage des menaces
+              {t("home.threatLandscape")}
               <br />
-              <span className="text-gray-500">a radicalement changé.</span>
+              <span className="text-gray-500">{t("home.threatLandscapeChanged")}</span>
             </h2>
             <div className="space-y-6 text-gray-400 text-sm leading-loose">
               <p>
-                Les attaquants opèrent aujourd'hui comme des entreprises : équipes spécialisées,
-                outils commerciaux loués, accès initiaux achetés sur des marchés darknet.
-                Le temps moyen de latéralisation après compromission initiale est passé sous{" "}
-                <span className="text-white font-semibold">19 minutes</span>.
+                {t("home.threatContextP1").replace(/<1>/g, "").replace(/<\/1>/g, "")}
               </p>
               <p>
-                Les outils de sécurité en silos — antivirus, SIEM legacy, EDR isolé — ne peuvent
-                plus suivre le rythme. Il faut une plateforme capable de{" "}
-                <span className="text-white font-semibold">corréler, prioriser et agir</span>{" "}
-                en quelques secondes, pas en quelques heures.
+                {t("home.threatContextP2").replace(/<1>/g, "").replace(/<\/1>/g, "")}
               </p>
             </div>
 
             <div className="mt-10 grid grid-cols-3 gap-6">
-              {[
-                { value: "19min", label: "Temps de latéralisation moyen (2024)" },
-                { value: "82%", label: "Attaques sans malware identifiable" },
-                { value: "4.5M€", label: "Coût moyen d'une violation en Europe" },
-              ].map((s) => (
+              {THREAT_STATS.map((s) => (
                 <div key={s.label} className="border-l-2 border-blue-600 pl-4">
                   <div className="text-2xl font-black text-white">{s.value}</div>
                   <div className="text-xs text-gray-500 mt-1 leading-tight">{s.label}</div>
@@ -434,13 +445,11 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Comparaison approche */}
           <div className="space-y-4">
-            {/* Legacy */}
             <div className="border border-red-500/20 bg-red-500/5 rounded-none p-6">
               <div className="flex items-center gap-2 mb-4">
                 <AlertTriangle className="h-4 w-4 text-red-400" />
-                <span className="text-red-400 font-mono text-xs tracking-widest">APPROCHE LEGACY</span>
+                <span className="text-red-400 font-mono text-xs tracking-widest">{t("home.legacyApproach")}</span>
               </div>
               <p className="text-white text-sm font-semibold mb-3">{COMPARISON[0].label}</p>
               <ul className="space-y-2">
@@ -453,11 +462,10 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* CynaSecure */}
             <div className="border border-blue-500/30 bg-blue-500/5 rounded-none p-6">
               <div className="flex items-center gap-2 mb-4">
                 <CheckCircle className="h-4 w-4 text-blue-400" />
-                <span className="text-blue-400 font-mono text-xs tracking-widest">CYNAECURE XDR</span>
+                <span className="text-blue-400 font-mono text-xs tracking-widest">{t("home.cynasecureApproach")}</span>
               </div>
               <p className="text-white text-sm font-semibold mb-3">{COMPARISON[1].label}</p>
               <ul className="space-y-2">
@@ -469,27 +477,25 @@ export default function HomePage() {
                 ))}
               </ul>
               <Link to="/catalogue" className="mt-5 inline-flex items-center gap-1 text-blue-400 text-xs font-mono hover:text-blue-300 transition-colors">
-                Voir la plateforme complète <ArrowUpRight className="h-3 w-3" />
+                {t("home.viewPlatform")} <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          CAPACITÉS — grille dense, style technique
-      ══════════════════════════════════════════════════════════════════ */}
+      {/* CAPACITÉS */}
       <section className="bg-gray-900 py-28 border-y border-gray-800">
         <div className="container">
           <div className="mb-16">
-            <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">PLATEFORME</div>
+            <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.platform")}</div>
             <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
               <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
-                Six capacités. Un seul agent.
+                {t("home.sixCapabilities")}
               </h2>
               <Link to="/catalogue">
                 <Button variant="ghost" className="text-blue-400 border border-blue-500/30 hover:bg-blue-500/10 rounded-none font-mono text-xs tracking-wide gap-2">
-                  Catalogue complet <ArrowRight className="h-3 w-3" />
+                  {t("home.fullCatalogue")} <ArrowRight className="h-3 w-3" />
                 </Button>
               </Link>
             </div>
@@ -522,31 +528,25 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          TIMELINE D'INCIDENT — réponse en temps réel
-      ══════════════════════════════════════════════════════════════════ */}
+      {/* TIMELINE D'INCIDENT */}
       <section className="bg-gray-950 py-28">
         <div className="container">
-          <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">RÉPONSE AUTOMATISÉE</div>
+          <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.automatedResponse")}</div>
           <h2 className="text-4xl font-black text-white tracking-tight mb-4" style={{ letterSpacing: "-0.02em" }}>
-            De la détection à la remédiation
+            {t("home.detectionToRemediation")}
             <br />
-            <span className="text-gray-500">en moins de deux minutes.</span>
+            <span className="text-gray-500">{t("home.inUnderTwoMin")}</span>
           </h2>
           <p className="text-gray-400 text-sm max-w-xl mb-16 leading-relaxed">
-            Notre moteur SOAR orchestre automatiquement la réponse aux incidents les plus courants
-            — sans intervention humaine pour les étapes critiques.
+            {t("home.soarDesc")}
           </p>
 
-          {/* Timeline horizontale */}
           <div className="relative">
-            {/* Ligne */}
             <div className="absolute top-8 left-0 right-0 h-px bg-gray-800 hidden lg:block" />
 
             <div className="grid lg:grid-cols-5 gap-8 lg:gap-4">
               {INCIDENT_STEPS.map((step, i) => (
                 <div key={step.label} className="relative">
-                  {/* Point */}
                   <div className="hidden lg:flex items-center justify-center w-16 h-16 border border-blue-500/30 bg-gray-950 rounded-none mb-6 mx-auto relative z-10">
                     <step.icon className="h-6 w-6 text-blue-400" />
                   </div>
@@ -570,21 +570,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          DOMAINES — couverture complète (éditable depuis admin)
-      ══════════════════════════════════════════════════════════════════ */}
+      {/* DOMAINES */}
       {(loadingCats || categories.length > 0) && (
         <section className="bg-gray-900 py-28 border-y border-gray-800">
           <div className="container space-y-12">
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
               <div>
-                <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">COUVERTURE</div>
+                <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.coverage")}</div>
                 <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
-                  Domaines de protection
+                  {t("home.protectionDomains")}
                 </h2>
                 <p className="mt-3 text-gray-500 text-sm max-w-lg">
-                  Du poste de travail à l'OT industriel, chaque couche de votre infrastructure
-                  est couverte par un capteur natif.
+                  {t("home.protectionDomainsDesc")}
                 </p>
               </div>
             </div>
@@ -592,7 +589,7 @@ export default function HomePage() {
             <div className={`grid gap-px bg-gray-800 ${categories.length <= 3 ? "md:grid-cols-3" : "md:grid-cols-3 lg:grid-cols-5"}`}>
               {loadingCats ? (
                 <p className="col-span-full text-center text-gray-600 py-12 font-mono text-sm">
-                  Chargement des domaines…
+                  {t("home.loadingDomains")}
                 </p>
               ) : (
                 categories.map((c) => (
@@ -615,22 +612,20 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════
-          SOLUTIONS POPULAIRES (éditables depuis admin)
-      ══════════════════════════════════════════════════════════════════ */}
+      {/* SOLUTIONS POPULAIRES */}
       {(loadingTop || topProducts.length > 0) && (
         <section className="bg-gray-950 py-28">
           <div className="container space-y-12">
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
               <div>
-                <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">DÉPLOYÉ EN PRODUCTION</div>
+                <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.inProduction")}</div>
                 <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
-                  Solutions les plus adoptées
+                  {t("home.mostAdopted")}
                 </h2>
               </div>
               <Link to="/catalogue">
                 <Button variant="ghost" className="text-blue-400 border border-blue-500/30 hover:bg-blue-500/10 rounded-none font-mono text-xs tracking-wide gap-2 flex-shrink-0">
-                  Toutes les solutions <ArrowRight className="h-3 w-3" />
+                  {t("home.allSolutions")} <ArrowRight className="h-3 w-3" />
                 </Button>
               </Link>
             </div>
@@ -638,7 +633,7 @@ export default function HomePage() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {loadingTop ? (
                 <p className="col-span-full text-center text-gray-600 py-12 font-mono text-sm">
-                  Chargement…
+                  {t("home.loading")}
                 </p>
               ) : (
                 topProducts.map((s) => (
@@ -666,38 +661,35 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════
-          TÉMOIGNAGES
-      ══════════════════════════════════════════════════════════════════ */}
+      {/* TÉMOIGNAGES */}
       <section className="bg-gray-900 py-28 border-y border-gray-800">
         <div className="container">
-          <div className="text-blue-500 font-mono text-xs tracking-widest mb-12">RETOURS CLIENTS</div>
+          <div className="text-blue-500 font-mono text-xs tracking-widest mb-12">{t("home.clientFeedback")}</div>
 
           <div className="grid lg:grid-cols-2 gap-px bg-gray-800">
-            {TESTIMONIALS.map((t) => (
-              <div key={t.author} className="bg-gray-900 p-10">
+            {TESTIMONIALS.map((testimonial) => (
+              <div key={testimonial.author} className="bg-gray-900 p-10">
                 <div className="text-4xl text-blue-600 font-serif leading-none mb-6 select-none">
                   "
                 </div>
                 <blockquote className="text-gray-300 text-base leading-relaxed mb-8 italic">
-                  {t.quote}
+                  {testimonial.quote}
                 </blockquote>
                 <div className="border-t border-gray-800 pt-6 flex items-center justify-between">
                   <div>
-                    <div className="text-white font-semibold text-sm">{t.author}</div>
-                    <div className="text-gray-500 text-xs mt-0.5">{t.company}</div>
+                    <div className="text-white font-semibold text-sm">{testimonial.author}</div>
+                    <div className="text-gray-500 text-xs mt-0.5">{testimonial.company}</div>
                   </div>
                   <span className="text-[10px] font-mono tracking-widest text-gray-600 border border-gray-700 px-2 py-0.5">
-                    {t.sector}
+                    {testimonial.sector}
                   </span>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Logos clients — placeholder minimaliste */}
           <div className="mt-16 flex flex-wrap items-center gap-8 justify-center">
-            <span className="text-gray-700 text-xs font-mono tracking-widest">FONT CONFIANCE</span>
+            <span className="text-gray-700 text-xs font-mono tracking-widest">{t("home.trustedBy")}</span>
             {["Groupe A", "Banque B", "Énergie C", "Infra D", "Santé E", "Défense F"].map((name) => (
               <span key={name} className="text-gray-600 font-bold text-sm tracking-wide">{name}</span>
             ))}
@@ -705,49 +697,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          ARCHITECTURE — notre approche technique
-      ══════════════════════════════════════════════════════════════════ */}
+      {/* ARCHITECTURE */}
       <section className="bg-gray-950 py-28">
         <div className="container">
-          <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">ARCHITECTURE</div>
+          <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.architecture")}</div>
           <h2 className="text-4xl font-black text-white tracking-tight mb-16" style={{ letterSpacing: "-0.02em" }}>
-            Conçue pour les environnements critiques.
+            {t("home.builtForCritical")}
           </h2>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-gray-800">
-            {[
-              {
-                icon: Server,
-                title: "Agent léger universel",
-                desc: "Un seul agent pour endpoints Windows, Linux, macOS. Empreinte mémoire < 1 %. Déployable via GPO, Ansible ou votre orchestrateur.",
-              },
-              {
-                icon: Cloud,
-                title: "Cloud-native, souverain",
-                desc: "Infrastructure hébergée en France (SecNumCloud). Aucune donnée ne quitte le territoire européen. Option air-gap disponible.",
-              },
-              {
-                icon: Cpu,
-                title: "IA embarquée sur l'agent",
-                desc: "Détection offline possible. Le modèle tourne localement — pas de dépendance au cloud pour la protection endpoint.",
-              },
-              {
-                icon: TrendingUp,
-                title: "Scalabilité instantanée",
-                desc: "De 500 à 500 000 endpoints sans changement d'architecture. Le data lake scale horizontalement sans interruption.",
-              },
-              {
-                icon: Lock,
-                title: "Chiffrement de bout en bout",
-                desc: "Chiffrement E2E des données en transit et au repos. Clés de chiffrement sous votre contrôle exclusif (BYOK).",
-              },
-              {
-                icon: Globe,
-                title: "API-first & intégrations",
-                desc: "API REST documentée, webhooks, SDK Python. Intégrations natives ITSM, SOAR, SIEM, IdP du marché.",
-              },
-            ].map((item) => (
+            {ARCH_ITEMS.map((item) => (
               <div key={item.title} className="bg-gray-950 p-8 hover:bg-gray-900/60 transition-colors">
                 <item.icon className="h-5 w-5 text-blue-500 mb-5" />
                 <h3 className="text-white font-bold text-base mb-2">{item.title}</h3>
@@ -758,11 +717,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          CTA FINAL — impact fort
-      ══════════════════════════════════════════════════════════════════ */}
+      {/* CTA FINAL */}
       <section className="relative bg-blue-700 overflow-hidden">
-        {/* Grille déco */}
         <div
           className="absolute inset-0 opacity-[0.07]"
           style={{
@@ -774,15 +730,14 @@ export default function HomePage() {
 
         <div className="relative container py-24 flex flex-col lg:flex-row items-center justify-between gap-12">
           <div>
-            <div className="text-blue-200 font-mono text-xs tracking-widest mb-4">SANS ENGAGEMENT</div>
+            <div className="text-blue-200 font-mono text-xs tracking-widest mb-4">{t("home.noCommitment")}</div>
             <h2 className="text-4xl font-black text-white leading-tight" style={{ letterSpacing: "-0.02em" }}>
-              Évaluez la plateforme sur
+              {t("home.evaluatePlatform")}
               <br />
-              votre propre infrastructure.
+              {t("home.yourInfrastructure")}
             </h2>
             <p className="mt-4 text-blue-100/70 text-sm max-w-md leading-relaxed">
-              POC de 30 jours, déploiement pris en charge par nos ingénieurs.
-              Rapport de maturité sécurité offert à l'issue.
+              {t("home.pocDesc")}
             </p>
           </div>
 
@@ -792,7 +747,7 @@ export default function HomePage() {
                 size="lg"
                 className="bg-white text-blue-700 hover:bg-blue-50 font-bold px-10 rounded-none gap-2 w-full"
               >
-                Démarrer le POC
+                {t("home.startPocBtn")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -802,12 +757,12 @@ export default function HomePage() {
                 size="lg"
                 className="text-white border border-white/30 hover:bg-white/10 rounded-none gap-2 font-mono text-sm tracking-wide w-full"
               >
-                Parler à un expert
+                {t("home.talkToExpert")}
                 <Users className="h-4 w-4" />
               </Button>
             </Link>
             <p className="text-blue-200/50 text-xs text-center font-mono">
-              Réponse sous 4h · Ingénieur dédié
+              {t("home.responseTime")}
             </p>
           </div>
         </div>

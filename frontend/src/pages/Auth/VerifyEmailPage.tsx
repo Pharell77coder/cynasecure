@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { authApi } from "../../api/auth";
 import { AuthLayout } from "./AuthLayout";
 
 export default function VerifyEmailPage() {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const token = params.get("token") ?? "";
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -12,17 +14,17 @@ export default function VerifyEmailPage() {
   useEffect(() => {
     if (!token) {
       setStatus("error");
-      setMessage("Lien invalide ou incomplet.");
+      setMessage(t("auth.verifyEmailInvalidLink"));
       return;
     }
     authApi
       .verifyEmail(token)
       .then((res) => {
-        setMessage(res.message ?? "Votre compte est vérifié.");
+        setMessage(res.message ?? t("auth.emailVerifiedDesc"));
         setStatus("success");
       })
       .catch((err) => {
-        setMessage(err?.message ?? "Ce lien est invalide ou a expiré.");
+        setMessage(err?.message ?? t("auth.verifyEmailExpired"));
         setStatus("error");
       });
   }, [token]);
@@ -31,31 +33,31 @@ export default function VerifyEmailPage() {
     <AuthLayout>
       <div className="text-center">
         {status === "loading" && (
-          <p className="text-slate-400">Vérification en cours…</p>
+          <p className="text-slate-400">{t("auth.verifyEmailVerifying")}</p>
         )}
         {status === "success" && (
           <>
             <div className="mb-4 text-4xl">✅</div>
-            <h1 className="text-xl font-bold text-white mb-2">Email vérifié</h1>
+            <h1 className="text-xl font-bold text-white mb-2">{t("auth.verifyEmailSuccess")}</h1>
             <p className="text-slate-400 mb-6">{message}</p>
             <Link
               to="/connexion"
               className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg transition"
             >
-              Se connecter
+              {t("auth.loginBtn")}
             </Link>
           </>
         )}
         {status === "error" && (
           <>
             <div className="mb-4 text-4xl">❌</div>
-            <h1 className="text-xl font-bold text-white mb-2">Lien invalide</h1>
+            <h1 className="text-xl font-bold text-white mb-2">{t("auth.verifyEmailError")}</h1>
             <p className="text-slate-400 mb-6">{message}</p>
             <Link
               to="/connexion"
               className="text-blue-400 hover:underline text-sm"
             >
-              Retour à la connexion
+              {t("auth.backToLogin")}
             </Link>
           </>
         )}

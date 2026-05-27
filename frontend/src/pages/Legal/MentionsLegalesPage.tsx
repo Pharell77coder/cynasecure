@@ -1,4 +1,5 @@
 import { Mail, MapPin, Phone, Shield } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import React from "react";
 
 const SECTIONS = [
@@ -203,6 +204,9 @@ const SECTIONS = [
 ];
 
 export default function MentionsLegalesPage() {
+  const { t } = useTranslation();
+  const disclaimer = t("legal.unofficialTranslation");
+
   return (
     <div className="bg-gray-950 min-h-screen">
 
@@ -222,21 +226,29 @@ export default function MentionsLegalesPage() {
         />
 
         <div className="relative container max-w-4xl">
-          <div className="text-blue-500 font-mono text-xs tracking-widest mb-5">LÉGAL</div>
+          <div className="text-blue-500 font-mono text-xs tracking-widest mb-5">{t("legal.tag")}</div>
           <h1
             className="font-black text-white leading-none tracking-tight mb-4"
             style={{ fontSize: "clamp(2rem, 4vw, 3.2rem)", letterSpacing: "-0.03em" }}
           >
-            Mentions légales
+            {t("legal.mentionsTitle")}
           </h1>
           <p className="text-gray-500 text-sm font-mono">
-            Dernière mise à jour : 23 mai 2026
+            {t("legal.mentionsVersion")}
           </p>
         </div>
       </section>
 
       {/* ── Contenu ──────────────────────────────────────────────────── */}
       <div className="container max-w-4xl py-16">
+
+        {/* Unofficial translation disclaimer (EN/ES only) */}
+        {disclaimer && (
+          <div className="mb-8 border border-amber-500/30 bg-amber-500/5 px-5 py-3 text-amber-300 text-xs font-mono leading-relaxed">
+            {disclaimer}
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-[220px_1fr] gap-12 items-start">
 
           {/* Navigation latérale */}

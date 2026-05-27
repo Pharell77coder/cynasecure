@@ -22,6 +22,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { toast } from "../../hooks/useToast";
 import { servicesApi, type Service } from "../../api/services";
 import type { BillingCycle } from "../../context/CartContext";
+import { useTranslation } from "react-i18next";
 
 function Skeleton() {
   return (
@@ -45,6 +46,7 @@ function Skeleton() {
 }
 
 export default function ServiceDetailsPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { addToCart } = useCart();
   const { isAuthenticated } = useAuth() as { isAuthenticated: boolean };
@@ -75,9 +77,9 @@ export default function ServiceDetailsPage() {
   if (!service) {
     return (
       <div className="container py-20 text-center">
-        <p className="text-gray-500 mb-4">Service introuvable.</p>
+        <p className="text-gray-500 mb-4">{t("service.notFound")}</p>
         <Link to="/catalogue">
-          <Button variant="outline">Retour au catalogue</Button>
+          <Button variant="outline">{t("service.backToCatalogue")}</Button>
         </Link>
       </div>
     );
@@ -97,7 +99,7 @@ export default function ServiceDetailsPage() {
 
   const doSubscribe = (tryCycle: BillingCycle = cycle) => {
     if (!isAuthenticated) {
-      toast("Connectez-vous pour vous abonner", "error");
+      toast(t("service.loginToSubscribe"), "error");
       navigate("/connexion");
       return;
     }
@@ -129,14 +131,13 @@ export default function ServiceDetailsPage() {
           className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-white transition-colors mb-10"
         >
           <ArrowLeft className="h-4 w-4" />
-          Retour au catalogue
+          {t("service.backToCatalogue")}
         </Link>
 
         <div className="grid gap-14 lg:grid-cols-2">
 
           {/* Left — carrousel + features */}
           <div>
-            {/* Carrousel */}
             <div className="relative w-full aspect-video bg-gray-900 border border-gray-800">
               {mainImg ? (
                 <img
@@ -177,7 +178,6 @@ export default function ServiceDetailsPage() {
               )}
             </div>
 
-            {/* Miniatures */}
             {imgs.length > 1 && (
               <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
                 {imgs.map((src, i) => (
@@ -192,12 +192,11 @@ export default function ServiceDetailsPage() {
               </div>
             )}
 
-            {/* Features */}
             {service.features && service.features.length > 0 && (
               <div className="mt-6 border border-gray-800 bg-gray-900 p-6">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-5">
                   <Layers className="h-4 w-4 text-blue-500" />
-                  Fonctionnalités incluses
+                  {t("service.features")}
                 </h3>
                 <ul className="space-y-2.5">
                   {service.features.map((f, i) => (
@@ -214,12 +213,11 @@ export default function ServiceDetailsPage() {
               </div>
             )}
 
-            {/* Specs techniques */}
             {service.technicalSpecs && service.technicalSpecs.length > 0 && (
               <div className="mt-4 border border-gray-800 bg-gray-900 p-6">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-5">
                   <Cpu className="h-4 w-4 text-blue-500" />
-                  Caractéristiques techniques
+                  {t("service.technicalSpecs")}
                 </h3>
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-3">
                   {service.technicalSpecs.map((spec, i) => (
@@ -254,21 +252,19 @@ export default function ServiceDetailsPage() {
               {service.longDescription || service.description}
             </p>
 
-            {/* Bandeau indisponibilité */}
             {unavail && (
               <div className="mt-6 flex items-center gap-2 border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
                 <AlertTriangle className="h-4 w-4 flex-shrink-0" />
                 {avail === "maintenance"
-                  ? "Service en maintenance — indisponible temporairement."
-                  : "Service momentanément indisponible."}
+                  ? t("service.maintenanceBanner")
+                  : t("service.unavailableBanner")}
               </div>
             )}
 
-            {/* Pricing SaaS */}
             {service.type === "saas" && !unavail && (
               <div className="mt-8">
                 <p className="text-xs font-mono tracking-widest text-gray-500 uppercase mb-3">
-                  Choisissez votre formule
+                  {t("service.choosePlan")}
                 </p>
 
                 <div className="flex border border-gray-700">
@@ -280,7 +276,7 @@ export default function ServiceDetailsPage() {
                         : "text-gray-400 hover:text-white hover:bg-gray-800"
                     }`}
                   >
-                    Mensuel
+                    {t("service.monthly")}
                   </button>
                   <button
                     onClick={() => setCycle("yearly")}
@@ -290,7 +286,7 @@ export default function ServiceDetailsPage() {
                         : "text-gray-400 hover:text-white hover:bg-gray-800"
                     }`}
                   >
-                    Annuel
+                    {t("service.yearly")}
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
                       −17%
                     </span>
@@ -303,33 +299,31 @@ export default function ServiceDetailsPage() {
                       {cycle === "monthly" ? service.priceMonthly : yearlyPrice}€
                     </span>
                     <span className="text-gray-500 text-sm">
-                      /{cycle === "monthly" ? "mois" : "an"}
+                      {cycle === "monthly" ? t("service.perMonth") : t("service.perYear")}
                     </span>
                   </div>
                   {cycle === "yearly" && (
                     <p className="text-xs text-emerald-400 mt-1">
-                      Économie de {yearlySaving} € vs mensuel
+                      {t("service.yearlySaving", { amount: yearlySaving })}
                     </p>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Pricing one-shot */}
             {service.type === "one_shot" && !unavail && (
               <div className="mt-8">
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-black text-white">{service.priceMonthly}€</span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Paiement unique · Licence perpétuelle</p>
+                <p className="text-xs text-gray-500 mt-1">{t("service.perpetualLicense")}</p>
               </div>
             )}
 
-            {/* CTA */}
             <div className="mt-8 flex flex-col gap-3">
               {unavail ? (
                 <Button size="lg" fullWidth disabled className="opacity-40 cursor-not-allowed">
-                  SERVICE INDISPONIBLE
+                  {t("service.serviceUnavailable")}
                 </Button>
               ) : service.type === "one_shot" ? (
                 <Button
@@ -337,7 +331,7 @@ export default function ServiceDetailsPage() {
                   fullWidth
                   onClick={() => {
                     if (!isAuthenticated) {
-                      toast("Connectez-vous pour passer commande", "error");
+                      toast(t("service.loginToOrder"), "error");
                       navigate("/connexion");
                       return;
                     }
@@ -353,7 +347,7 @@ export default function ServiceDetailsPage() {
                   }}
                 >
                   <ShoppingCart className="h-4 w-4" />
-                  Commander maintenant
+                  {t("service.orderNow")}
                 </Button>
               ) : (
                 <>
@@ -365,28 +359,27 @@ export default function ServiceDetailsPage() {
                       onClick={() => doSubscribe("monthly")}
                     >
                       <FlaskConical className="h-4 w-4" />
-                      Essayer maintenant
+                      {t("service.tryNow")}
                     </Button>
                   )}
                   <Button size="lg" fullWidth onClick={() => doSubscribe()}>
                     <Sparkles className="h-4 w-4" />
-                    S'abonner maintenant
+                    {t("service.subscribeNow")}
                   </Button>
                 </>
               )}
 
               <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-600 mt-1">
                 <Lock className="h-3 w-3" />
-                Paiement sécurisé · Résiliable à tout moment
+                {t("service.securePayment")}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Services similaires */}
         {similar.length > 0 && (
           <section className="mt-20 pt-12 border-t border-gray-800">
-            <h2 className="text-xl font-bold text-white mb-6">Services similaires</h2>
+            <h2 className="text-xl font-bold text-white mb-6">{t("service.similarServices")}</h2>
             <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3">
               {similar.map((s) => (
                 <ServiceCard key={s.id} service={s} />

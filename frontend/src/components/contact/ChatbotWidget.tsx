@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MessageCircle, X, ChevronDown, CornerDownLeft } from "lucide-react";
 import { contactApi } from "../../api/contact";
+import { useTranslation } from "react-i18next";
 import React from "react";
 
 interface Message {
@@ -18,8 +19,6 @@ interface Props {
   onEscalate: (message: string) => void;
 }
 
-const WELCOME = "Bonjour ! Sélectionnez une question ci-dessous — je répondrai immédiatement.";
-
 function generateSessionId() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
@@ -28,11 +27,13 @@ function generateSessionId() {
 }
 
 export function ChatbotWidget({ onEscalate }: Props) {
+  const { t } = useTranslation();
+
   const [open, setOpen]               = useState(false);
   const [categories, setCategories]   = useState<Category[]>([]);
   const [activeTab, setActiveTab]     = useState(0);
   const [messages, setMessages]       = useState<Message[]>([
-    { sender: "bot", content: WELCOME },
+    { sender: "bot", content: t("chatbot.welcome") },
   ]);
   const [loading, setLoading]         = useState(false);
   const [loadingSugg, setLoadingSugg] = useState(false);
@@ -68,7 +69,7 @@ export function ChatbotWidget({ onEscalate }: Props) {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { sender: "bot", content: "Une erreur est survenue. Veuillez réessayer." },
+        { sender: "bot", content: t("chatbot.errorMessage") },
       ]);
     } finally {
       setLoading(false);
@@ -90,7 +91,7 @@ export function ChatbotWidget({ onEscalate }: Props) {
           className="fixed bottom-20 right-4 sm:right-6 w-[calc(100vw-2rem)] sm:w-[400px] bg-gray-950 border border-gray-800 shadow-2xl z-50 flex flex-col"
           style={{ maxHeight: "560px" }}
           role="dialog"
-          aria-label="Chat support CynaSecure"
+          aria-label={t("chatbot.ariaLabel")}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900 flex-shrink-0">
@@ -99,13 +100,13 @@ export function ChatbotWidget({ onEscalate }: Props) {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
               </span>
-              <span className="text-white text-sm font-semibold">Assistant CynaSecure</span>
-              <span className="text-gray-600 font-mono text-[10px] tracking-widest">EN LIGNE</span>
+              <span className="text-white text-sm font-semibold">{t("chatbot.title")}</span>
+              <span className="text-gray-600 font-mono text-[10px] tracking-widest">{t("chatbot.online")}</span>
             </div>
             <button
               onClick={() => setOpen(false)}
               className="text-gray-500 hover:text-white transition-colors"
-              aria-label="Fermer le chat"
+              aria-label={t("chatbot.closeChat")}
             >
               <ChevronDown className="h-5 w-5" />
             </button>
@@ -135,7 +136,7 @@ export function ChatbotWidget({ onEscalate }: Props) {
                         onClick={handleEscalate}
                         className="mt-2 text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 transition-colors font-medium"
                       >
-                        Contacter le support
+                        {t("chatbot.contactSupport")}
                       </button>
                     )}
                   </div>
@@ -162,7 +163,7 @@ export function ChatbotWidget({ onEscalate }: Props) {
                   className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors font-mono"
                 >
                   <CornerDownLeft className="h-3.5 w-3.5" />
-                  Poser une autre question
+                  {t("chatbot.backToQuestions")}
                 </button>
               </div>
             </div>
@@ -172,12 +173,12 @@ export function ChatbotWidget({ onEscalate }: Props) {
           {view === "questions" && (
             <div className="flex flex-col flex-1 min-h-0">
               <p className="px-4 pt-4 pb-3 text-gray-400 text-xs leading-relaxed flex-shrink-0">
-                {WELCOME}
+                {t("chatbot.welcome")}
               </p>
 
               {loadingSugg ? (
                 <div className="flex-1 flex items-center justify-center">
-                  <p className="text-gray-600 text-xs font-mono animate-pulse">Chargement…</p>
+                  <p className="text-gray-600 text-xs font-mono animate-pulse">{t("chatbot.loading")}</p>
                 </div>
               ) : (
                 <>
@@ -213,7 +214,7 @@ export function ChatbotWidget({ onEscalate }: Props) {
 
                     {categories[activeTab]?.questions.length === 0 && (
                       <p className="px-4 py-6 text-gray-600 text-xs text-center">
-                        Aucune question disponible.
+                        {t("chatbot.noQuestions")}
                       </p>
                     )}
                   </div>
@@ -228,10 +229,10 @@ export function ChatbotWidget({ onEscalate }: Props) {
       <button
         onClick={() => setOpen((v) => !v)}
         className="fixed bottom-4 right-4 sm:right-6 flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 shadow-lg transition-colors z-50 font-medium text-sm"
-        aria-label={open ? "Fermer le chat" : "Ouvrir le chat support"}
+        aria-label={open ? t("chatbot.closeChat") : t("chatbot.openChat")}
       >
         {open ? <X className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
-        <span className="hidden sm:inline">{open ? "Fermer" : "Contact Me"}</span>
+        <span className="hidden sm:inline">{open ? t("chatbot.close") : t("chatbot.contactMe")}</span>
       </button>
     </>
   );

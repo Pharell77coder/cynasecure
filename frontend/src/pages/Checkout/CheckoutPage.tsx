@@ -26,6 +26,7 @@ import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../hooks/useAuth";
 import { checkoutApi, CheckoutAddress } from "../../api/checkout";
 import { formatPrice } from "../../lib/utils";
+import { useTranslation } from "react-i18next";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
@@ -56,11 +57,13 @@ const EMPTY_ADDRESS: AddressFormData = {
 
 /* ── Step indicator ─────────────────────────────── */
 function StepIndicator({ step, isAuthenticated }: { step: Step; isAuthenticated: boolean }) {
+  const { t } = useTranslation();
+
   const allSteps: { key: Step; label: string }[] = [
-    { key: "auth", label: "Compte" },
-    { key: "address", label: "Adresse" },
-    { key: "payment", label: "Paiement" },
-    { key: "confirmation", label: "Confirmation" },
+    { key: "auth", label: t("checkout.stepAccount") },
+    { key: "address", label: t("checkout.stepAddress") },
+    { key: "payment", label: t("checkout.stepPayment") },
+    { key: "confirmation", label: t("checkout.stepConfirmation") },
   ];
 
   const visibleSteps = isAuthenticated
@@ -106,12 +109,13 @@ function StepIndicator({ step, isAuthenticated }: { step: Step; isAuthenticated:
 
 /* ── Auth step ───────────────────────────────────── */
 function AuthStep({ onGuest }: { onGuest: (email: string) => void }) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
 
   const handleGuest = () => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setEmailError("Adresse e-mail invalide.");
+      setEmailError(t("checkout.guestEmailInvalid"));
       return;
     }
     setEmailError(null);
@@ -122,7 +126,7 @@ function AuthStep({ onGuest }: { onGuest: (email: string) => void }) {
     <div>
       <div className="flex items-center gap-2 mb-8">
         <User className="h-4 w-4 text-blue-500" />
-        <h2 className="text-lg font-bold text-white">Identification</h2>
+        <h2 className="text-lg font-bold text-white">{t("checkout.identification")}</h2>
       </div>
 
       <div className="space-y-4 mb-8">
@@ -131,8 +135,8 @@ function AuthStep({ onGuest }: { onGuest: (email: string) => void }) {
           className="flex items-center justify-between bg-gray-900 border border-gray-700 px-5 py-4 hover:border-blue-500 transition-colors group"
         >
           <div>
-            <p className="text-white text-sm font-medium">J'ai déjà un compte</p>
-            <p className="text-gray-500 text-xs mt-0.5">Me connecter pour continuer</p>
+            <p className="text-white text-sm font-medium">{t("checkout.hasAccount")}</p>
+            <p className="text-gray-500 text-xs mt-0.5">{t("checkout.loginToContinue")}</p>
           </div>
           <LogIn className="h-4 w-4 text-gray-500 group-hover:text-blue-400 transition-colors" />
         </Link>
@@ -142,8 +146,8 @@ function AuthStep({ onGuest }: { onGuest: (email: string) => void }) {
           className="flex items-center justify-between bg-gray-900 border border-gray-700 px-5 py-4 hover:border-blue-500 transition-colors group"
         >
           <div>
-            <p className="text-white text-sm font-medium">Créer un compte</p>
-            <p className="text-gray-500 text-xs mt-0.5">Gérez vos abonnements depuis votre espace</p>
+            <p className="text-white text-sm font-medium">{t("checkout.createAccount")}</p>
+            <p className="text-gray-500 text-xs mt-0.5">{t("checkout.manageSubscriptions")}</p>
           </div>
           <UserPlus className="h-4 w-4 text-gray-500 group-hover:text-blue-400 transition-colors" />
         </Link>
@@ -151,14 +155,14 @@ function AuthStep({ onGuest }: { onGuest: (email: string) => void }) {
 
       <div className="flex items-center gap-4 mb-8">
         <div className="flex-1 h-px bg-gray-800" />
-        <span className="text-xs font-mono text-gray-600 tracking-widest">OU</span>
+        <span className="text-xs font-mono text-gray-600 tracking-widest">{t("checkout.orSeparator")}</span>
         <div className="flex-1 h-px bg-gray-800" />
       </div>
 
       <div className="space-y-3">
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-mono tracking-widest text-gray-500 uppercase">
-            Adresse e-mail <span className="text-blue-500">*</span>
+            {t("checkout.guestEmail")} <span className="text-blue-500">*</span>
           </label>
           <input
             type="email"
@@ -176,7 +180,7 @@ function AuthStep({ onGuest }: { onGuest: (email: string) => void }) {
         </div>
 
         <Button onClick={handleGuest} fullWidth className="gap-2 mt-1">
-          Continuer en tant qu'invité <ChevronRight className="h-4 w-4" />
+          {t("checkout.continueAsGuest")} <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
     </div>
@@ -195,6 +199,8 @@ function AddressStep({
   onNext: () => void;
   total: number;
 }) {
+  const { t } = useTranslation();
+
   const field = (
     label: string,
     key: keyof AddressFormData,
@@ -227,26 +233,26 @@ function AddressStep({
     <div>
       <div className="flex items-center gap-2 mb-6">
         <MapPin className="h-4 w-4 text-blue-500" />
-        <h2 className="text-lg font-bold text-white">Adresse de facturation</h2>
+        <h2 className="text-lg font-bold text-white">{t("checkout.billingAddress")}</h2>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {field("Prénom", "firstName", true, true)}
-        {field("Nom", "lastName", true, true)}
-        {field("Société", "company", false)}
-        {field("Adresse", "address", true)}
-        {field("Ville", "city", true, true)}
-        {field("Code postal", "zipCode", true, true)}
-        {field("Pays", "country", true)}
-        {field("Téléphone", "phone", false)}
+        {field(t("checkout.firstName"), "firstName", true, true)}
+        {field(t("checkout.lastName"), "lastName", true, true)}
+        {field(t("checkout.company"), "company", false)}
+        {field(t("checkout.address"), "address", true)}
+        {field(t("checkout.city"), "city", true, true)}
+        {field(t("checkout.zipCode"), "zipCode", true, true)}
+        {field(t("checkout.country"), "country", true)}
+        {field(t("checkout.phone"), "phone", false)}
       </div>
 
       <div className="mt-8 flex items-center justify-between">
         <p className="text-gray-400 text-sm">
-          Total : <span className="text-white font-bold text-lg">{formatPrice(total)}</span>
+          {t("checkout.total")} : <span className="text-white font-bold text-lg">{formatPrice(total)}</span>
         </p>
         <Button onClick={onNext} disabled={!isValid} className="gap-2">
-          Paiement <ChevronRight className="h-4 w-4" />
+          {t("checkout.stepPayment")} <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
     </div>
@@ -263,6 +269,7 @@ function StripePaymentForm({
   orderId: number;
   onSuccess: (paymentIntentId: string) => void;
 }) {
+  const { t } = useTranslation();
   const stripe   = useStripe();
   const elements = useElements();
   const [error, setError]     = useState<string | null>(null);
@@ -284,7 +291,7 @@ function StripePaymentForm({
     );
 
     if (stripeError) {
-      setError(stripeError.message ?? "Erreur de paiement.");
+      setError(stripeError.message ?? t("checkout.paymentError"));
       setLoading(false);
       return;
     }
@@ -321,7 +328,7 @@ function StripePaymentForm({
       )}
 
       <Button type="submit" fullWidth disabled={loading || !stripe} className="gap-2">
-        {loading ? "Traitement…" : "Payer par carte"}
+        {loading ? t("checkout.processing2") : t("checkout.payByCard")}
         <Lock className="h-3.5 w-3.5" />
       </Button>
     </form>
@@ -344,6 +351,7 @@ function PaymentStep({
   promoCode?: string;
   onSuccess: (paymentId: number, invoiceNumber: string, total: number) => void;
 }) {
+  const { t } = useTranslation();
   const [intent, setIntent]   = useState<{ clientSecret: string; paypalOrderId: string; orderId: number; discount?: number; promoCode?: string | null } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
@@ -360,7 +368,7 @@ function PaymentStep({
 
     checkoutApi.intent(cartItems, address, guestEmail, promoCode)
       .then(setIntent)
-      .catch((e) => setError(e.message ?? "Erreur de connexion."))
+      .catch((e) => setError(e.message ?? t("checkout.connectionError")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -374,7 +382,7 @@ function PaymentStep({
       });
       onSuccess(res.paymentId, res.invoiceNumber, res.total);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Erreur de confirmation.");
+      setError(e instanceof Error ? e.message : t("checkout.confirmationError"));
     }
   };
 
@@ -388,7 +396,7 @@ function PaymentStep({
       });
       onSuccess(res.paymentId, res.invoiceNumber, res.total);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Erreur de confirmation.");
+      setError(e instanceof Error ? e.message : t("checkout.confirmationError"));
     }
   };
 
@@ -396,17 +404,17 @@ function PaymentStep({
     <div>
       <div className="flex items-center gap-2 mb-6">
         <CreditCard className="h-4 w-4 text-blue-500" />
-        <h2 className="text-lg font-bold text-white">Paiement</h2>
+        <h2 className="text-lg font-bold text-white">{t("checkout.stepPayment")}</h2>
       </div>
 
       <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 text-xs font-mono px-4 py-2.5 mb-6 flex items-center gap-2">
         <Lock className="h-3.5 w-3.5 flex-shrink-0" />
-        Mode test — aucun paiement réel n'est effectué. Carte test : 4242 4242 4242 4242
+        {t("checkout.testMode")}
       </div>
 
       {loading && (
         <div className="text-center py-8 text-gray-500 text-sm animate-pulse">
-          Initialisation du paiement…
+          {t("checkout.initPayment")}
         </div>
       )}
 
@@ -420,17 +428,17 @@ function PaymentStep({
       {intent && !loading && (
         <>
           <div className="flex border-b border-gray-800 mb-6">
-            {(["stripe", "paypal"] as const).map((t) => (
+            {(["stripe", "paypal"] as const).map((tabKey) => (
               <button
-                key={t}
-                onClick={() => setTab(t)}
+                key={tabKey}
+                onClick={() => setTab(tabKey)}
                 className={`px-6 py-3 text-xs font-mono tracking-widest uppercase transition-colors border-b-2 -mb-px ${
-                  tab === t
+                  tab === tabKey
                     ? "text-blue-400 border-blue-500"
                     : "text-gray-500 border-transparent hover:text-gray-300"
                 }`}
               >
-                {t === "stripe" ? "Carte bancaire" : "PayPal"}
+                {tabKey === "stripe" ? t("checkout.card") : t("checkout.paypal")}
               </button>
             ))}
           </div>
@@ -453,7 +461,7 @@ function PaymentStep({
                 await handlePaypalApprove(data.orderID);
               }}
               onError={(err) => {
-                setError("Erreur PayPal. Veuillez réessayer.");
+                setError(t("checkout.paypalError"));
                 console.error(err);
               }}
             />
@@ -461,7 +469,7 @@ function PaymentStep({
 
           <div className="mt-6 flex items-center justify-center gap-1.5 text-[11px] text-gray-600">
             <Lock className="h-3 w-3" />
-            Paiement sécurisé · Données chiffrées TLS
+            {t("checkout.secureDataTls")}
           </div>
         </>
       )}
@@ -481,6 +489,7 @@ function ConfirmationStep({
   total: number;
   isGuest: boolean;
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [downloading, setDownloading] = useState(false);
 
@@ -489,7 +498,7 @@ function ConfirmationStep({
     try {
       await checkoutApi.downloadInvoice(paymentId, `${invoiceNumber}.pdf`);
     } catch {
-      // toast non importé ici — l'erreur est silencieuse, le PDF n'ouvre pas
+      // erreur silencieuse
     } finally {
       setDownloading(false);
     }
@@ -501,34 +510,34 @@ function ConfirmationStep({
         <CheckCircle2 className="h-8 w-8 text-emerald-400" />
       </div>
 
-      <h2 className="text-2xl font-black text-white mb-2">Commande confirmée</h2>
+      <h2 className="text-2xl font-black text-white mb-2">{t("checkout.orderConfirmed")}</h2>
       <p className="text-gray-400 text-sm mb-1">
-        Paiement de <span className="text-white font-bold">{formatPrice(total)}</span> reçu avec succès.
+        {t("checkout.paymentReceived").replace("<1>", "").replace("</1>", "").replace("{{amount}}", formatPrice(total))}
       </p>
       <p className="text-gray-600 text-xs font-mono mb-8">{invoiceNumber}</p>
 
       {isGuest ? (
         <>
           <div className="bg-blue-500/10 border border-blue-500/20 px-5 py-4 mb-8 max-w-sm mx-auto text-left">
-            <p className="text-blue-300 text-sm font-medium mb-1">Créez un compte pour gérer votre abonnement</p>
+            <p className="text-blue-300 text-sm font-medium mb-1">{t("checkout.createAccountGuest")}</p>
             <p className="text-gray-400 text-xs">
-              Retrouvez vos factures, suivez vos abonnements et gérez votre renouvellement depuis votre espace personnel.
+              {t("checkout.createAccountGuestDesc")}
             </p>
             <Link
               to="/inscription"
               className="inline-flex items-center gap-1.5 text-blue-400 text-xs font-mono mt-3 hover:text-blue-300 transition-colors"
             >
-              Créer un compte <ChevronRight className="h-3 w-3" />
+              {t("checkout.createAccountLink")} <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
           <Button onClick={() => navigate("/")} className="gap-2">
-            Retour à l'accueil <ChevronRight className="h-4 w-4" />
+            {t("checkout.backHome")} <ChevronRight className="h-4 w-4" />
           </Button>
         </>
       ) : (
         <>
           <p className="text-gray-400 text-sm mb-8 max-w-sm mx-auto">
-            Vos abonnements sont maintenant actifs. Retrouvez-les dans votre tableau de bord.
+            {t("checkout.subscriptionsActive")}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -538,11 +547,11 @@ function ConfirmationStep({
               className="inline-flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
             >
               <Download className="h-4 w-4" />
-              {downloading ? "Téléchargement…" : "Télécharger la facture"}
+              {downloading ? t("checkout.downloading") : t("checkout.downloadInvoice")}
             </button>
 
             <Button onClick={() => navigate("/dashboard")} className="gap-2">
-              Mon tableau de bord <ChevronRight className="h-4 w-4" />
+              {t("checkout.goToDashboard")} <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </>
@@ -553,6 +562,7 @@ function ConfirmationStep({
 
 /* ── Main CheckoutPage ───────────────────────────── */
 export default function CheckoutPage() {
+  const { t } = useTranslation();
   const { items, total, clearCart, promo } = useCart();
   const { isAuthenticated }                = useAuth();
   const navigate                    = useNavigate();
@@ -599,7 +609,7 @@ export default function CheckoutPage() {
       <div className="container py-12 pb-20">
         <div className="flex items-center gap-3 mb-8">
           <ShoppingCart className="h-5 w-5 text-blue-500" />
-          <h1 className="text-2xl font-bold text-white">Finaliser la commande</h1>
+          <h1 className="text-2xl font-bold text-white">{t("checkout.checkoutTitle")}</h1>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[1fr_300px]">
@@ -644,7 +654,7 @@ export default function CheckoutPage() {
             <aside>
               <div className="border border-gray-800 bg-gray-900 p-5 sticky top-24">
                 <h3 className="text-[10px] font-mono tracking-widest text-gray-500 uppercase mb-4">
-                  Récapitulatif
+                  {t("checkout.summary")}
                 </h3>
                 <div className="space-y-2 pb-4 border-b border-gray-800 mb-4">
                   {items.map((item) => (
@@ -663,7 +673,7 @@ export default function CheckoutPage() {
                   </div>
                 )}
                 <div className="flex justify-between items-baseline">
-                  <span className="text-gray-400 text-sm">Total TTC</span>
+                  <span className="text-gray-400 text-sm">{t("checkout.totalTtc")}</span>
                   <span className="text-2xl font-black text-white">
                     {formatPrice(promo ? promo.discountedTotal : total)}
                   </span>

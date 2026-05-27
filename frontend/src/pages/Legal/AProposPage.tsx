@@ -1,43 +1,42 @@
 import { Link } from "react-router-dom";
 import { Shield, Lock, Eye, Users, Zap, Globe, ArrowRight } from "lucide-react";
 import { Button } from "../../components/ui/Button";
+import { useTranslation } from "react-i18next";
 import React from "react";
 
-const VALEURS = [
-  {
-    icon: Eye,
-    titre: "Transparence",
-    texte:
-      "Nous ne vendons pas de sécurité obscure. Chaque détection, chaque alerte, chaque décision algorithmique est expliquée — pour que vos équipes comprennent, pas seulement qu'elles subissent.",
-  },
-  {
-    icon: Lock,
-    titre: "Souveraineté",
-    texte:
-      "Vos données restent en France, sous infrastructure SecNumCloud. Aucun accès externe, aucune revente, aucune dépendance à des acteurs non-européens.",
-  },
-  {
-    icon: Zap,
-    titre: "Efficacité réelle",
-    texte:
-      "Un outil que personne n'utilise ne protège rien. Notre obsession : réduire le bruit, prioriser le signal, et rendre les réponses actionnables en quelques secondes.",
-  },
-  {
-    icon: Users,
-    titre: "Partenariat",
-    texte:
-      "Nous n'abandonnons pas après le déploiement. Un ingénieur dédié, des revues mensuelles de posture, un support humain — pas un ticket vers nulle part.",
-  },
-];
-
-const CHIFFRES = [
-  { valeur: "2019", label: "Année de fondation", note: "Paris, France" },
-  { valeur: "140+", label: "Experts sécurité", note: "Analystes, ingénieurs, chercheurs" },
-  { valeur: "500+", label: "Organisations protégées", note: "Du PME au CAC 40" },
-  { valeur: "24/7", label: "Centre d'opérations", note: "SOC managé, toujours actif" },
-];
-
 export default function AProposPage() {
+  const { t } = useTranslation();
+
+  const VALEURS = [
+    {
+      icon: Eye,
+      titre: t("legal.valTransparenceTitle"),
+      texte: t("legal.valTransparenceText"),
+    },
+    {
+      icon: Lock,
+      titre: t("legal.valSouveraineteTitle"),
+      texte: t("legal.valSouveraineteText"),
+    },
+    {
+      icon: Zap,
+      titre: t("legal.valEfficaciteTitle"),
+      texte: t("legal.valEfficaciteText"),
+    },
+    {
+      icon: Users,
+      titre: t("legal.valPartenariatTitle"),
+      texte: t("legal.valPartenariatText"),
+    },
+  ];
+
+  const CHIFFRES = [
+    { valeur: "2019", label: t("legal.chiffreFondation"), note: t("legal.chiffreFondationNote") },
+    { valeur: "140+", label: t("legal.chiffreExperts"), note: t("legal.chiffreExpertsNote") },
+    { valeur: "500+", label: t("legal.chiffreOrgs"), note: t("legal.chiffreOrgsNote") },
+    { valeur: "24/7", label: t("legal.chiffreSoc"), note: t("legal.chiffreSocNote") },
+  ];
+
   return (
     <div className="bg-gray-950 min-h-screen">
 
@@ -57,19 +56,17 @@ export default function AProposPage() {
         />
 
         <div className="relative container max-w-3xl">
-          <div className="text-blue-500 font-mono text-xs tracking-widest mb-5">À PROPOS</div>
+          <div className="text-blue-500 font-mono text-xs tracking-widest mb-5">{t("legal.aboutTag")}</div>
           <h1
             className="font-black text-white leading-none tracking-tight mb-6"
             style={{ fontSize: "clamp(2.4rem, 5vw, 4rem)", letterSpacing: "-0.03em" }}
           >
-            Nous croyons que la cybersécurité
+            {t("legal.aboutTitle")}
             <br />
-            <span className="text-blue-400">devrait être compréhensible.</span>
+            <span className="text-blue-400">{t("legal.aboutTitleHighlight")}</span>
           </h1>
           <p className="text-gray-400 text-base leading-relaxed max-w-2xl">
-            CynaSecure est une plateforme XDR fondée à Paris en 2019 par des anciens de la DGSI
-            et des CERT européens. Notre conviction : la complexité du paysage des menaces ne
-            justifie pas la complexité des outils censés y répondre.
+            {t("legal.aboutDesc")}
           </p>
         </div>
       </section>
@@ -94,64 +91,48 @@ export default function AProposPage() {
       <section className="py-24 border-b border-gray-800">
         <div className="container grid lg:grid-cols-2 gap-16 items-start">
           <div>
-            <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">ORIGINE</div>
+            <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("legal.aboutOrigin")}</div>
             <h2
               className="text-3xl font-black text-white tracking-tight mb-8"
               style={{ letterSpacing: "-0.02em" }}
             >
-              Nés d'une frustration, construits avec méthode.
+              {t("legal.aboutOriginTitle")}
             </h2>
 
             <div className="space-y-5 text-gray-400 text-sm leading-loose">
-              <p>
-                En 2018, les fondateurs de CynaSecure travaillaient dans des SOC d'organisations
-                critiques. Chaque jour, la même réalité : des dizaines d'outils mal intégrés, des
-                alertes sans contexte, des analystes épuisés à trier du bruit.
-              </p>
-              <p>
-                CynaSecure est né de cette frustration — et d'une certitude : une plateforme
-                unifiée, construite autour de l'IA comportementale et de la corrélation native,
-                pouvait changer radicalement le rapport signal/bruit.
-              </p>
-              <p>
-                Depuis 2019, nous protégeons des infrastructures critiques en France et en Europe.
-                Nos clients vont des ETI industrielles aux établissements financiers en passant
-                par des entités de santé soumises aux exigences HDS.
-              </p>
+              <p>{t("legal.aboutOriginP1")}</p>
+              <p>{t("legal.aboutOriginP2")}</p>
+              <p>{t("legal.aboutOriginP3")}</p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="border border-gray-800 bg-gray-900 p-6">
               <div className="text-blue-500 font-mono text-xs tracking-widest mb-3">2019</div>
-              <p className="text-white font-semibold text-sm mb-1">Création à Paris</p>
+              <p className="text-white font-semibold text-sm mb-1">{t("legal.timeline2019Title")}</p>
               <p className="text-gray-500 text-xs leading-relaxed">
-                Cinq cofondateurs issus de la DGSI, de l'ANSSI et de grands CERT européens.
-                Première levée de fonds seed de 3 M€.
+                {t("legal.timeline2019Desc")}
               </p>
             </div>
             <div className="border border-gray-800 bg-gray-900 p-6">
               <div className="text-blue-500 font-mono text-xs tracking-widest mb-3">2021</div>
-              <p className="text-white font-semibold text-sm mb-1">Certification ANSSI PRIS</p>
+              <p className="text-white font-semibold text-sm mb-1">{t("legal.timeline2021Title")}</p>
               <p className="text-gray-500 text-xs leading-relaxed">
-                Première plateforme XDR native à obtenir la qualification PRIS de l'ANSSI.
-                Déploiement chez 50 organisations critiques.
+                {t("legal.timeline2021Desc")}
               </p>
             </div>
             <div className="border border-gray-800 bg-gray-900 p-6">
               <div className="text-blue-500 font-mono text-xs tracking-widest mb-3">2023</div>
-              <p className="text-white font-semibold text-sm mb-1">Série B — 28 M€</p>
+              <p className="text-white font-semibold text-sm mb-1">{t("legal.timeline2023Title")}</p>
               <p className="text-gray-500 text-xs leading-relaxed">
-                Expansion en Belgique, Allemagne et Espagne. Lancement du SOC managé 24/7
-                et de la couverture OT/ICS.
+                {t("legal.timeline2023Desc")}
               </p>
             </div>
             <div className="border border-blue-500/30 bg-blue-500/5 p-6">
               <div className="text-blue-500 font-mono text-xs tracking-widest mb-3">2025</div>
-              <p className="text-white font-semibold text-sm mb-1">500+ organisations protégées</p>
+              <p className="text-white font-semibold text-sm mb-1">{t("legal.timeline2025Title")}</p>
               <p className="text-gray-500 text-xs leading-relaxed">
-                Lancement de la plateforme en self-service. 140 experts. Infrastructure
-                hébergée en France, certifiée SecNumCloud.
+                {t("legal.timeline2025Desc")}
               </p>
             </div>
           </div>
@@ -161,12 +142,12 @@ export default function AProposPage() {
       {/* ── Valeurs ──────────────────────────────────────────────────── */}
       <section className="py-24 border-b border-gray-800 bg-gray-900">
         <div className="container">
-          <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">VALEURS</div>
+          <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("legal.aboutValues")}</div>
           <h2
             className="text-3xl font-black text-white tracking-tight mb-14"
             style={{ letterSpacing: "-0.02em" }}
           >
-            Ce qui guide chaque décision.
+            {t("legal.aboutValuesTitle")}
           </h2>
 
           <div className="grid md:grid-cols-2 gap-px bg-gray-800">
@@ -184,12 +165,12 @@ export default function AProposPage() {
       {/* ── Certifications ────────────────────────────────────────────── */}
       <section className="py-20 border-b border-gray-800">
         <div className="container">
-          <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">CONFORMITÉ</div>
+          <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("legal.aboutCompliance")}</div>
           <h2
             className="text-2xl font-black text-white tracking-tight mb-10"
             style={{ letterSpacing: "-0.02em" }}
           >
-            Certifications et reconnaissances
+            {t("legal.aboutComplianceTitle")}
           </h2>
 
           <div className="flex flex-wrap gap-3">
@@ -209,9 +190,9 @@ export default function AProposPage() {
       <section className="py-20">
         <div className="container flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div>
-            <p className="text-white font-bold text-lg">Vous voulez en savoir plus ?</p>
+            <p className="text-white font-bold text-lg">{t("legal.aboutCtaTitle")}</p>
             <p className="text-gray-500 text-sm mt-1">
-              Nos ingénieurs répondent sous 4h ouvrées.
+              {t("legal.aboutCtaDesc")}
             </p>
           </div>
           <div className="flex gap-3">
@@ -220,13 +201,13 @@ export default function AProposPage() {
                 variant="ghost"
                 className="border border-gray-700 text-gray-300 hover:bg-gray-800 rounded-none font-mono text-xs tracking-wide gap-2"
               >
-                Explorer la plateforme
+                {t("legal.aboutCtaExplore")}
                 <Globe className="h-3.5 w-3.5" />
               </Button>
             </Link>
             <Link to="/inscription">
               <Button className="bg-blue-600 hover:bg-blue-500 text-white rounded-none gap-2 font-semibold">
-                Démarrer un POC
+                {t("legal.aboutCtaPoc")}
                 <ArrowRight className="h-3.5 w-3.5" />
               </Button>
             </Link>

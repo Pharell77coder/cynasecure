@@ -15,26 +15,13 @@ import { ServiceCard } from "../../components/shared/ServiceCard";
 import { servicesApi, type Service, type SearchCriteria } from "../../api/services";
 import { toast } from "../../hooks/useToast";
 import { cn } from "../../lib/utils";
+import { useTranslation } from "react-i18next";
 import React from "react";
 
 /* ─── Types ────────────────────────────────────────────────────────────── */
 type SortMode = "relevance" | "price_asc" | "price_desc" | "newest";
 type TypeFilter = "all" | "saas" | "one_shot";
 type ViewMode = "grid" | "list";
-
-/* ─── Constantes ───────────────────────────────────────────────────────── */
-const SORT_LABELS: Record<SortMode, string> = {
-  relevance: "Pertinence",
-  price_asc: "Prix croissant",
-  price_desc: "Prix décroissant",
-  newest: "Nouveauté",
-};
-
-const TYPE_OPTIONS: { value: TypeFilter; label: string; tag: string }[] = [
-  { value: "all", label: "Tous les types", tag: "ALL" },
-  { value: "saas", label: "Abonnements SaaS", tag: "SaaS" },
-  { value: "one_shot", label: "Produits One-shot", tag: "ONE" },
-];
 
 const PAGE_SIZE = 9;
 
@@ -67,8 +54,16 @@ function SkeletonCard() {
 
 /* ─── Sort dropdown ────────────────────────────────────────────────────── */
 function SortDropdown({ value, onChange }: { value: SortMode; onChange: (v: SortMode) => void }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const SORT_LABELS: Record<SortMode, string> = {
+    relevance: t("catalogue.sortRelevance"),
+    price_asc: t("catalogue.sortPriceAsc"),
+    price_desc: t("catalogue.sortPriceDesc"),
+    newest: t("catalogue.sortNewest"),
+  };
 
   useEffect(() => {
     function h(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); }
@@ -108,6 +103,7 @@ function SortDropdown({ value, onChange }: { value: SortMode; onChange: (v: Sort
 
 /* ─── Pagination ───────────────────────────────────────────────────────── */
 function Pagination({ page, total, onChange }: { page: number; total: number; onChange: (p: number) => void }) {
+  const { t } = useTranslation();
   if (total <= 1) return null;
   const pages = Array.from({ length: total }, (_, i) => i + 1);
   const visible = pages.filter((p) => p === 1 || p === total || Math.abs(p - page) <= 1);
@@ -115,7 +111,7 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
     <div className="flex items-center justify-center gap-1 mt-8 pt-6 border-t border-gray-800">
       <button onClick={() => onChange(page - 1)} disabled={page === 1}
         className="px-3 py-2 text-xs font-mono text-gray-400 border border-gray-700 hover:text-white hover:border-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-colors">
-        ← Précédent
+        ← {t("common.previous")}
       </button>
       {visible.map((p, i) => {
         const prev = visible[i - 1];
@@ -133,7 +129,7 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
       })}
       <button onClick={() => onChange(page + 1)} disabled={page === total}
         className="px-3 py-2 text-xs font-mono text-gray-400 border border-gray-700 hover:text-white hover:border-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-colors">
-        Suivant →
+        {t("common.next")} →
       </button>
     </div>
   );
@@ -141,7 +137,14 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
 
 /* ════════════════════════════════════════════════════════════════════════ */
 export default function CataloguePage() {
+  const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
+
+  const TYPE_OPTIONS: { value: TypeFilter; label: string; tag: string }[] = [
+    { value: "all", label: t("catalogue.typeAll"), tag: "ALL" },
+    { value: "saas", label: t("catalogue.typeSaas"), tag: "SaaS" },
+    { value: "one_shot", label: t("catalogue.typeOneShot"), tag: "ONE" },
+  ];
 
   /* ── Filtres ── */
   const [q, setQ]             = useState(params.get("q") ?? "");
@@ -167,23 +170,20 @@ export default function CataloguePage() {
   const [loading, setLoading]             = useState(true);
   const [fetching, setFetching]           = useState(false);
 
-  /* ── Debounce q 250 ms ── */
   useEffect(() => {
-    const t = setTimeout(() => setDQ(q), 250);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDQ(q), 250);
+    return () => clearTimeout(timer);
   }, [q]);
 
-  /* ── Debounce prix 300 ms ── */
   useEffect(() => {
-    const t = setTimeout(() => setDPmin(pmin), 300);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDPmin(pmin), 300);
+    return () => clearTimeout(timer);
   }, [pmin]);
   useEffect(() => {
-    const t = setTimeout(() => setDPmax(pmax), 300);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDPmax(pmax), 300);
+    return () => clearTimeout(timer);
   }, [pmax]);
 
-  /* ── Chargement des catégories au démarrage ── */
   useEffect(() => {
     servicesApi.getAll().then((data) => {
       const map = new Map<string, string>();
@@ -192,7 +192,6 @@ export default function CataloguePage() {
     });
   }, []);
 
-  /* ── Recherche ── */
   useEffect(() => {
     const criteria: SearchCriteria = {
       q: debouncedQ || undefined,
@@ -206,11 +205,10 @@ export default function CataloguePage() {
     setFetching(true);
     servicesApi.search(criteria)
       .then((res) => { setResults(res.items); setTotal(res.total); })
-      .catch(() => toast("Erreur lors du chargement des services", "error"))
+      .catch(() => toast(t("common.error"), "error"))
       .finally(() => { setLoading(false); setFetching(false); });
   }, [debouncedQ, cats, dPmin, dPmax, dispo, sort, type]);
 
-  /* ── Sync URL ── */
   useEffect(() => {
     const p = new URLSearchParams();
     if (q)            p.set("q", q);
@@ -223,10 +221,8 @@ export default function CataloguePage() {
     setParams(p, { replace: true });
   }, [q, cats, pmin, pmax, dispo, sort, type]);
 
-  /* ── Reset page sur changement de filtres ── */
   useEffect(() => { setPage(1); }, [debouncedQ, cats, dPmin, dPmax, dispo, sort, type]);
 
-  /* ── Helpers ── */
   const toggleCat = (slug: string) =>
     setCats((prev) => { const n = new Set(prev); n.has(slug) ? n.delete(slug) : n.add(slug); return n; });
 
@@ -251,17 +247,19 @@ export default function CataloguePage() {
       <div className="bg-gray-950 border-b border-gray-800">
         <div className="container py-12">
           <div className="flex items-center gap-2 font-mono text-xs text-gray-600 mb-6">
-            <span>Accueil</span><span>/</span><span className="text-blue-500">Catalogue</span>
+            <span>{t("catalogue.breadcrumbHome")}</span><span>/</span><span className="text-blue-500">{t("catalogue.breadcrumbCatalogue")}</span>
           </div>
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
             <div>
-              <div className="text-blue-500 font-mono text-xs tracking-widest mb-3">SOLUTIONS DE SÉCURITÉ</div>
+              <div className="text-blue-500 font-mono text-xs tracking-widest mb-3">{t("catalogue.securitySolutions")}</div>
               <h1 className="text-white font-black leading-none tracking-tight"
                 style={{ fontSize: "clamp(2rem, 4vw, 3.5rem)", letterSpacing: "-0.03em" }}>
-                Catalogue des solutions
+                {t("catalogue.catalogTitle")}
               </h1>
               <p className="mt-3 text-gray-500 text-sm max-w-xl leading-relaxed">
-                {loading ? "Chargement…" : `${total} solution${total !== 1 ? "s" : ""} — XDR, CSPM, Zero Trust, NDR, Audit et plus.`}
+                {loading
+                  ? t("catalogue.catalogDesc_loading")
+                  : t("catalogue.catalogDesc", { total, plural: total !== 1 ? t("catalogue.catalogDescPlural") : t("catalogue.catalogDescSingular") })}
               </p>
             </div>
             <div className="w-full lg:w-96">
@@ -269,7 +267,7 @@ export default function CataloguePage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                 <input
                   type="text"
-                  placeholder="Rechercher une solution..."
+                  placeholder={t("catalogue.searchPlaceholder")}
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   className="w-full bg-gray-900 border border-gray-700 text-white placeholder-gray-600 text-sm pl-10 pr-10 py-3 focus:outline-none focus:border-blue-500 transition-colors font-mono"
@@ -301,12 +299,16 @@ export default function CataloguePage() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-gray-600 text-xs font-mono hidden sm:block">
-              {loading ? "…" : total === 0 ? "0 résultat" : `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} sur ${total}`}
+              {loading
+                ? "…"
+                : total === 0
+                ? `0 ${t("catalogue.sortRelevance").toLowerCase()}`
+                : t("catalogue.resultRange", { from: (page - 1) * PAGE_SIZE + 1, to: Math.min(page * PAGE_SIZE, total), total })}
             </span>
             {hasFilters && (
               <button onClick={resetAll}
                 className="flex items-center gap-1.5 text-xs font-mono text-blue-400 hover:text-blue-300 transition-colors border border-blue-500/30 px-2 py-1.5">
-                <RefreshCw className="h-3 w-3" /> Réinitialiser
+                <RefreshCw className="h-3 w-3" /> {t("catalogue.resetFilters")}
               </button>
             )}
             <SortDropdown value={sort} onChange={setSort} />
@@ -314,7 +316,7 @@ export default function CataloguePage() {
               className={cn("flex items-center gap-2 px-3 py-2.5 text-xs font-mono tracking-wide border transition-colors",
                 sidebarOpen ? "bg-blue-600/20 border-blue-500/40 text-blue-400" : "border-gray-700 text-gray-500 hover:text-gray-300"
               )}>
-              <Filter className="h-3.5 w-3.5" /><span className="hidden sm:inline">Filtres</span>
+              <Filter className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t("catalogue.filters")}</span>
             </button>
             <div className="flex border border-gray-700">
               <button onClick={() => setViewMode("grid")}
@@ -339,8 +341,7 @@ export default function CataloguePage() {
             <aside className="w-56 flex-shrink-0">
               <div className="sticky top-20 space-y-1">
 
-                {/* Catégories */}
-                <div className="text-gray-600 font-mono text-[10px] tracking-widest px-2 mb-3">CATÉGORIES</div>
+                <div className="text-gray-600 font-mono text-[10px] tracking-widest px-2 mb-3">{t("catalogue.filterCategories")}</div>
                 {allCategories.map((c) => (
                   <label key={c.slug}
                     className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-gray-900 transition-colors group">
@@ -357,14 +358,13 @@ export default function CataloguePage() {
                   </label>
                 ))}
 
-                {/* Prix */}
                 <div className="pt-5 border-t border-gray-800 mt-4">
-                  <div className="text-gray-600 font-mono text-[10px] tracking-widest px-2 mb-3">PRIX MENSUEL (€)</div>
+                  <div className="text-gray-600 font-mono text-[10px] tracking-widest px-2 mb-3">{t("catalogue.filterMonthlyPrice")}</div>
                   <div className="px-3 flex gap-2">
                     <input
                       type="number"
                       min={0}
-                      placeholder="Min"
+                      placeholder={t("catalogue.filterMin")}
                       value={pmin}
                       onChange={(e) => setPmin(e.target.value === "" ? "" : Number(e.target.value))}
                       className="w-full bg-gray-900 border border-gray-700 text-white text-xs font-mono px-2 py-1.5 focus:outline-none focus:border-blue-500 placeholder-gray-700"
@@ -372,7 +372,7 @@ export default function CataloguePage() {
                     <input
                       type="number"
                       min={0}
-                      placeholder="Max"
+                      placeholder={t("catalogue.filterMax")}
                       value={pmax}
                       onChange={(e) => setPmax(e.target.value === "" ? "" : Number(e.target.value))}
                       className="w-full bg-gray-900 border border-gray-700 text-white text-xs font-mono px-2 py-1.5 focus:outline-none focus:border-blue-500 placeholder-gray-700"
@@ -380,7 +380,6 @@ export default function CataloguePage() {
                   </div>
                 </div>
 
-                {/* Disponibilité */}
                 <div className="pt-5 border-t border-gray-800 mt-4 px-3">
                   <label className="flex items-center gap-2.5 cursor-pointer group">
                     <input
@@ -390,14 +389,13 @@ export default function CataloguePage() {
                       className="accent-blue-500 w-3.5 h-3.5 flex-shrink-0"
                     />
                     <span className={cn("font-mono text-xs tracking-wide", dispo ? "text-white" : "text-gray-500 group-hover:text-gray-300")}>
-                      Uniquement disponibles
+                      {t("catalogue.filterAvailable")}
                     </span>
                   </label>
                 </div>
 
-                {/* Type */}
                 <div className="pt-5 border-t border-gray-800 mt-4">
-                  <div className="text-gray-600 font-mono text-[10px] tracking-widest px-2 mb-3">TYPE</div>
+                  <div className="text-gray-600 font-mono text-[10px] tracking-widest px-2 mb-3">{t("catalogue.filterType")}</div>
                   {TYPE_OPTIONS.map((opt) => (
                     <button key={opt.value} onClick={() => setType(opt.value)}
                       className={cn("w-full flex items-center gap-2 px-3 py-2.5 text-xs font-mono tracking-wide transition-colors border-l-2",
@@ -409,14 +407,13 @@ export default function CataloguePage() {
                   ))}
                 </div>
 
-                {/* CTA */}
                 <div className="pt-6 mt-4 border-t border-gray-800 px-3">
                   <div className="bg-blue-600/10 border border-blue-500/20 p-4">
                     <Zap className="h-4 w-4 text-blue-500 mb-2" />
-                    <p className="text-white text-xs font-semibold mb-1">Besoin d'un conseil ?</p>
-                    <p className="text-gray-500 text-xs leading-relaxed mb-3">Un expert vous oriente vers la bonne solution.</p>
+                    <p className="text-white text-xs font-semibold mb-1">{t("catalogue.ctaAdvice")}</p>
+                    <p className="text-gray-500 text-xs leading-relaxed mb-3">{t("catalogue.ctaAdviceDesc")}</p>
                     <a href="/contact" className="inline-flex items-center gap-1 text-blue-400 text-xs font-mono hover:text-blue-300 transition-colors">
-                      Contacter →
+                      {t("catalogue.ctaContact")}
                     </a>
                   </div>
                 </div>
@@ -427,10 +424,9 @@ export default function CataloguePage() {
           {/* ── Grille ──────────────────────────────────────────────────── */}
           <div className="flex-1 min-w-0">
 
-            {/* Pills filtres actifs */}
             {hasFilters && (
               <div className="flex flex-wrap items-center gap-2 mb-6 pb-6 border-b border-gray-800">
-                <span className="text-gray-600 text-xs font-mono">Filtres actifs :</span>
+                <span className="text-gray-600 text-xs font-mono">{t("catalogue.activeFilters")}</span>
                 {[...cats].map((slug) => (
                   <span key={slug} className="flex items-center gap-1.5 bg-blue-600/15 border border-blue-500/30 text-blue-400 text-xs font-mono px-2 py-1">
                     {allCategories.find((c) => c.slug === slug)?.name ?? slug}
@@ -451,26 +447,25 @@ export default function CataloguePage() {
                 )}
                 {hasPriceFilter && (
                   <span className="flex items-center gap-1.5 bg-blue-600/15 border border-blue-500/30 text-blue-400 text-xs font-mono px-2 py-1">
-                    Prix : {pmin !== "" ? `${pmin}€` : "0€"} – {pmax !== "" ? `${pmax}€` : "∞"}
+                    {t("catalogue.filterPriceRange", { min: pmin !== "" ? `${pmin}€` : "0€", max: pmax !== "" ? `${pmax}€` : "∞" })}
                     <button onClick={() => { setPmin(""); setPmax(""); }} className="hover:text-white"><X className="h-2.5 w-2.5" /></button>
                   </span>
                 )}
                 {dispo && (
                   <span className="flex items-center gap-1.5 bg-blue-600/15 border border-blue-500/30 text-blue-400 text-xs font-mono px-2 py-1">
-                    Disponibles
+                    {t("catalogue.filterAvailableTag")}
                     <button onClick={() => setDispo(false)} className="hover:text-white"><X className="h-2.5 w-2.5" /></button>
                   </span>
                 )}
                 {sort !== "relevance" && (
                   <span className="flex items-center gap-1.5 bg-gray-800 border border-gray-700 text-gray-400 text-xs font-mono px-2 py-1">
-                    {SORT_LABELS[sort]}
+                    {t(`catalogue.sort${sort.charAt(0).toUpperCase() + sort.slice(1).replace(/_([a-z])/g, (_, l) => l.toUpperCase())}` as never) || sort}
                     <button onClick={() => setSort("relevance")} className="hover:text-white"><X className="h-2.5 w-2.5" /></button>
                   </span>
                 )}
               </div>
             )}
 
-            {/* Grille / liste */}
             {loading ? (
               <div className={cn("gap-px", viewMode === "grid" ? "grid md:grid-cols-2 xl:grid-cols-3 bg-gray-800" : "flex flex-col divide-y divide-gray-800")}>
                 {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
@@ -487,38 +482,36 @@ export default function CataloguePage() {
               </div>
             )}
 
-            {/* État vide */}
             {!loading && total === 0 && (
               <div className="flex flex-col items-center justify-center py-24 text-center">
                 <div className="border border-gray-800 p-6 mb-6">
                   <Search className="h-8 w-8 text-gray-700 mx-auto" />
                 </div>
-                <p className="text-white font-semibold mb-2">Aucune solution trouvée</p>
+                <p className="text-white font-semibold mb-2">{t("catalogue.noResultsTitle")}</p>
                 <p className="text-gray-500 text-sm max-w-xs mb-2">
-                  Essayez d'élargir vos critères ou de réinitialiser les filtres.
+                  {t("catalogue.noResultsDesc")}
                 </p>
                 {hasPriceFilter && (
                   <p className="text-gray-600 text-xs mb-4">
-                    Suggestion : élargir la fourchette de prix.
+                    {t("catalogue.noResultsPriceHint")}
                   </p>
                 )}
                 <button onClick={resetAll}
                   className="flex items-center gap-2 text-xs font-mono text-blue-400 border border-blue-500/30 px-4 py-2 hover:bg-blue-500/10 transition-colors">
-                  <RefreshCw className="h-3 w-3" /> Réinitialiser tous les filtres
+                  <RefreshCw className="h-3 w-3" /> {t("catalogue.resetAllFilters")}
                 </button>
               </div>
             )}
 
-            {/* Pagination */}
             {!loading && total > 0 && (
               <>
                 <Pagination page={page} total={totalPages} onChange={setPage} />
                 <div className="mt-6 flex items-center justify-between">
                   <span className="text-gray-600 text-xs font-mono">
-                    {total} solution{total !== 1 ? "s" : ""} au total
+                    {t("catalogue.totalResults", { total, plural: total !== 1 ? t("catalogue.catalogDescPlural") : t("catalogue.catalogDescSingular") })}
                   </span>
                   <a href="/contact" className="text-blue-400 text-xs font-mono hover:text-blue-300 transition-colors">
-                    Solution manquante ? Contactez-nous →
+                    {t("catalogue.missingContact")}
                   </a>
                 </div>
               </>

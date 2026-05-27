@@ -7,8 +7,10 @@ import { useAuth } from "../../hooks/useAuth";
 import { toast } from "../../hooks/useToast";
 import { formatPrice } from "../../lib/utils";
 import { apiFetch } from "../../api/apiFetch";
+import { useTranslation } from "react-i18next";
 
 export default function CartPage() {
+  const { t } = useTranslation();
   const { items, removeFromCart, clearCart, total, promo, setPromo } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -19,7 +21,7 @@ export default function CartPage() {
 
   const checkout = () => {
     if (!isAuthenticated) {
-      toast("Connectez-vous pour passer commande", "error");
+      toast(t("checkout.loginRequired"), "error");
       navigate("/connexion");
       return;
     }
@@ -46,9 +48,9 @@ export default function CartPage() {
       });
 
       setPromo({ code: res.code, discount: res.discount, discountedTotal: res.discountedTotal, type: res.type });
-      toast("Code promo appliqué", "success");
+      toast(t("checkout.promoApplied"), "success");
     } catch (e: unknown) {
-      setPromoError(e instanceof Error ? e.message : "Code invalide.");
+      setPromoError(e instanceof Error ? e.message : t("checkout.promoInvalid"));
       setPromo(null);
     } finally {
       setPromoLoading(false);
@@ -68,13 +70,13 @@ export default function CartPage() {
         <div className="border border-gray-800 bg-gray-900 p-8 mb-6">
           <ShoppingCart className="h-12 w-12 text-gray-600 mx-auto" />
         </div>
-        <h1 className="text-2xl font-bold text-white">Votre panier est vide</h1>
+        <h1 className="text-2xl font-bold text-white">{t("checkout.emptyCart")}</h1>
         <p className="mt-2 text-gray-500 text-sm max-w-xs">
-          Ajoutez des solutions de cybersécurité depuis notre catalogue.
+          {t("checkout.emptyCartDesc")}
         </p>
         <Link to="/catalogue" className="mt-6">
           <Button className="gap-2">
-            Voir le catalogue <ArrowRight className="h-4 w-4" />
+            {t("checkout.seeCatalogue")} <ArrowRight className="h-4 w-4" />
           </Button>
         </Link>
       </div>
@@ -88,9 +90,9 @@ export default function CartPage() {
       <div className="flex items-center gap-3 mb-8">
         <ShoppingCart className="h-5 w-5 text-blue-500" />
         <h1 className="text-2xl font-bold text-white">
-          Panier
+          {t("checkout.cartTitle")}
           <span className="ml-2 text-gray-500 font-normal text-base">
-            {items.length} article{items.length > 1 ? "s" : ""}
+            {items.length} {items.length > 1 ? t("checkout.articlesPlural") : t("checkout.articles")}
           </span>
         </h1>
       </div>
@@ -118,7 +120,7 @@ export default function CartPage() {
 
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-white truncate">{item.name}</h3>
-                <p className="text-xs text-gray-500 mt-0.5">Paiement unique · Licence perpétuelle</p>
+                <p className="text-xs text-gray-500 mt-0.5">{t("checkout.perpetualLicense")}</p>
               </div>
 
               <p className="text-lg font-bold text-white flex-shrink-0">
@@ -128,7 +130,7 @@ export default function CartPage() {
               <button
                 onClick={() => removeFromCart(item.id)}
                 className="text-gray-600 hover:text-red-400 transition-colors flex-shrink-0 ml-1"
-                aria-label="Supprimer"
+                aria-label={t("checkout.remove")}
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -140,7 +142,7 @@ export default function CartPage() {
         <aside>
           <div className="border border-gray-800 bg-gray-900 p-6 sticky top-24 space-y-5">
             <h2 className="text-xs font-mono tracking-widest text-gray-500 uppercase">
-              Récapitulatif
+              {t("checkout.summary")}
             </h2>
 
             <div className="space-y-2.5 pb-5 border-b border-gray-800">
@@ -155,7 +157,7 @@ export default function CartPage() {
             {/* Promo code */}
             <div>
               <label className="text-[10px] font-mono tracking-widest text-gray-500 uppercase block mb-2">
-                Code promo
+                {t("checkout.promoCode")}
               </label>
               {promo ? (
                 <div className="flex items-center justify-between bg-green-500/10 border border-green-500/20 px-3 py-2">
@@ -164,7 +166,7 @@ export default function CartPage() {
                     <span className="text-green-400 text-xs font-mono">{promo.code}</span>
                     <span className="text-green-300 text-xs">−{formatPrice(promo.discount)}</span>
                   </div>
-                  <button onClick={removePromo} className="text-gray-500 hover:text-red-400 transition-colors" aria-label="Retirer le code">
+                  <button onClick={removePromo} className="text-gray-500 hover:text-red-400 transition-colors" aria-label={t("checkout.removePromo")}>
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -177,13 +179,13 @@ export default function CartPage() {
                     onKeyDown={(e) => e.key === "Enter" && applyPromo()}
                     placeholder="CODEPROMO"
                     className="flex-1 bg-gray-800 border border-gray-700 text-white text-xs font-mono px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors placeholder:text-gray-600 uppercase"
-                    aria-label="Code promo"
+                    aria-label={t("checkout.promoCode")}
                   />
                   <button
                     onClick={applyPromo}
                     disabled={promoLoading || !promoInput.trim()}
                     className="px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-white"
-                    aria-label="Appliquer le code"
+                    aria-label={t("checkout.applyPromo")}
                   >
                     <Tag className="h-3.5 w-3.5" />
                   </button>
@@ -200,36 +202,36 @@ export default function CartPage() {
             <div className="border-t border-gray-800 pt-4 space-y-2">
               {promo && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Sous-total</span>
+                  <span className="text-gray-400">{t("checkout.subtotal")}</span>
                   <span className="text-gray-300">{formatPrice(total)}</span>
                 </div>
               )}
               {promo && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-green-400">Réduction</span>
+                  <span className="text-green-400">{t("checkout.discount")}</span>
                   <span className="text-green-400">−{formatPrice(promo.discount)}</span>
                 </div>
               )}
               <div className="flex justify-between items-baseline">
-                <span className="text-gray-400 text-sm">Total TTC</span>
+                <span className="text-gray-400 text-sm">{t("checkout.totalTtc")}</span>
                 <span className="text-3xl font-black text-white">{formatPrice(finalTotal)}</span>
               </div>
             </div>
 
             <Button fullWidth size="lg" onClick={checkout} className="gap-2">
-              Commander <ArrowRight className="h-4 w-4" />
+              {t("checkout.order")} <ArrowRight className="h-4 w-4" />
             </Button>
 
             <button
               onClick={clearCart}
               className="w-full text-xs text-gray-600 hover:text-red-400 transition-colors text-center py-1"
             >
-              Vider le panier
+              {t("checkout.clearCart")}
             </button>
 
             <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-600">
               <Lock className="h-3 w-3" />
-              Paiement sécurisé · Support inclus
+              {t("checkout.securePayment")}
             </div>
           </div>
         </aside>

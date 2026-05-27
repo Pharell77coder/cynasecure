@@ -6,13 +6,8 @@ import { ContactForm } from "../../components/contact/ContactForm";
 import { ChatbotWidget } from "../../components/contact/ChatbotWidget";
 import { contactApi, type UserMessage } from "../../api/contact";
 import { useAuth } from "../../hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import React from "react";
-
-const STATUS_LABELS: Record<string, string> = {
-  new: "En attente",
-  read: "Pris en charge",
-  answered: "Répondu",
-};
 
 const STATUS_COLORS: Record<string, string> = {
   new:      "bg-gray-800 text-gray-400 border-gray-700",
@@ -25,34 +20,8 @@ function fmt(d: string) {
   catch { return d; }
 }
 
-const INFOS = [
-  {
-    icon: Mail,
-    label: "Email général",
-    value: "contact@cynasecure.fr",
-    note: "Réponse sous 4h ouvrées",
-  },
-  {
-    icon: Shield,
-    label: "Support technique",
-    value: "support@cynasecure.fr",
-    note: "Incidents P1/P2 : 24h/7j",
-  },
-  {
-    icon: Phone,
-    label: "Téléphone",
-    value: "+33 1 42 XX XX XX",
-    note: "Lun – Ven, 9h – 18h",
-  },
-  {
-    icon: MapPin,
-    label: "Adresse",
-    value: "42 avenue de la Grande Armée",
-    note: "75008 Paris, France",
-  },
-];
-
 export default function ContactPage() {
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -62,6 +31,45 @@ export default function ContactPage() {
   const [myMessages, setMyMessages]         = useState<UserMessage[]>([]);
   const [expanded, setExpanded]             = useState<number | null>(null);
 
+  const STATUS_LABELS: Record<string, string> = {
+    new:      t("contact.statusNew"),
+    read:     t("contact.statusRead"),
+    answered: t("contact.statusAnswered"),
+  };
+
+  const INFOS = [
+    {
+      icon: Mail,
+      label: t("contact.infoEmailLabel"),
+      value: "contact@cynasecure.fr",
+      note: t("contact.infoEmailNote"),
+    },
+    {
+      icon: Shield,
+      label: t("contact.infoSupportLabel"),
+      value: "support@cynasecure.fr",
+      note: t("contact.infoSupportNote"),
+    },
+    {
+      icon: Phone,
+      label: t("contact.infoPhoneLabel"),
+      value: "+33 1 42 XX XX XX",
+      note: t("contact.infoPhoneNote"),
+    },
+    {
+      icon: MapPin,
+      label: t("contact.infoAddressLabel"),
+      value: "42 avenue de la Grande Armée",
+      note: "75008 Paris, France",
+    },
+  ];
+
+  const COMMITMENTS = [
+    { label: t("contact.commitmentStandard"), delay: "< 4h ouvrées" },
+    { label: t("contact.commitmentP2"), delay: "< 2h" },
+    { label: t("contact.commitmentP1"), delay: "< 15 min — 24h/7j" },
+  ];
+
   useEffect(() => {
     if (!isAuthenticated) return;
     contactApi.user.myMessages().then(setMyMessages).catch(() => {});
@@ -69,7 +77,7 @@ export default function ContactPage() {
   }, [isAuthenticated]);
 
   const handleEscalate = (message: string) => {
-    setPrefillSubject("Assistance générale");
+    setPrefillSubject(t("contact.subjectGeneral"));
     setPrefillMessage(message);
     setFormKey((k) => k + 1);
     setTimeout(() => {
@@ -96,18 +104,17 @@ export default function ContactPage() {
         />
 
         <div className="relative container max-w-4xl">
-          <div className="text-blue-500 font-mono text-xs tracking-widest mb-5">CONTACT</div>
+          <div className="text-blue-500 font-mono text-xs tracking-widest mb-5">{t("contact.pageTag")}</div>
           <h1
             className="font-black text-white leading-none tracking-tight mb-4"
             style={{ fontSize: "clamp(2.2rem, 5vw, 3.8rem)", letterSpacing: "-0.03em" }}
           >
-            Parlons de votre
+            {t("contact.title")}
             <br />
-            <span className="text-blue-400">sécurité.</span>
+            <span className="text-blue-400">{t("contact.titleHighlight")}</span>
           </h1>
           <p className="text-gray-400 text-base leading-relaxed max-w-xl">
-            Une question, un incident, un projet — notre équipe répond sous 4 heures ouvrées.
-            Pour les urgences, le SOC est disponible 24h/7j.
+            {t("contact.subtitle")}
           </p>
         </div>
       </section>
@@ -132,16 +139,16 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* ── Mes échanges (utilisateurs connectés) ───────────────────── */}
+      {/* ── Mes échanges ────────────────────────────────────────────── */}
       {isAuthenticated && myMessages.length > 0 && (
         <section className="border-b border-gray-800 bg-gray-900/40">
           <div className="container max-w-4xl py-12">
             <div className="flex items-center gap-3 mb-6">
               <Inbox className="h-4 w-4 text-blue-500" />
-              <div className="text-blue-500 font-mono text-xs tracking-widest">MES ÉCHANGES</div>
+              <div className="text-blue-500 font-mono text-xs tracking-widest">{t("contact.myMessages")}</div>
               {myMessages.some((m) => m.adminReply && !m.replyReadAt) && (
                 <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 font-mono">
-                  NOUVELLE RÉPONSE
+                  {t("contact.newReply")}
                 </span>
               )}
             </div>
@@ -176,7 +183,7 @@ export default function ContactPage() {
                           <div className="flex items-center gap-2">
                             <CornerDownRight className="h-3.5 w-3.5 text-blue-400" />
                             <span className="text-blue-400 text-xs font-mono">
-                              Réponse de CynaSecure — {m.repliedAt ? fmt(m.repliedAt) : ""}
+                              {t("contact.replyFrom", { date: m.repliedAt ? fmt(m.repliedAt) : "" })}
                             </span>
                           </div>
                           <p className="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">{m.adminReply}</p>
@@ -196,14 +203,13 @@ export default function ContactPage() {
         <div className="container max-w-4xl">
           <div className="grid lg:grid-cols-[1fr_380px] gap-16 items-start">
 
-            {/* Formulaire */}
             <div ref={formRef}>
-              <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">FORMULAIRE</div>
+              <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("contact.formTag")}</div>
               <h2
                 className="text-2xl font-black text-white tracking-tight mb-8"
                 style={{ letterSpacing: "-0.02em" }}
               >
-                Envoyez-nous un message
+                {t("contact.formTitle")}
               </h2>
               <ContactForm
                 key={formKey}
@@ -212,16 +218,11 @@ export default function ContactPage() {
               />
             </div>
 
-            {/* Sidebar informative */}
             <div className="space-y-5 lg:pt-16">
               <div className="border border-gray-800 bg-gray-900 p-6">
-                <p className="text-white font-semibold text-sm mb-3">Engagement de réponse</p>
+                <p className="text-white font-semibold text-sm mb-3">{t("contact.responseCommitment")}</p>
                 <div className="space-y-3">
-                  {[
-                    { label: "Demande standard", delay: "< 4h ouvrées" },
-                    { label: "Incident P2", delay: "< 2h" },
-                    { label: "Incident P1 (critique)", delay: "< 15 min — 24h/7j" },
-                  ].map((r) => (
+                  {COMMITMENTS.map((r) => (
                     <div key={r.label} className="flex items-center justify-between">
                       <span className="text-gray-500 text-xs">{r.label}</span>
                       <span className="text-blue-400 font-mono text-xs">{r.delay}</span>
@@ -231,24 +232,22 @@ export default function ContactPage() {
               </div>
 
               <div className="border border-gray-800 bg-gray-900 p-6">
-                <p className="text-white font-semibold text-sm mb-2">Accès direct au support</p>
+                <p className="text-white font-semibold text-sm mb-2">{t("contact.directSupport")}</p>
                 <p className="text-gray-500 text-xs leading-relaxed mb-3">
-                  Clients avec accès actif : connectez-vous et ouvrez un ticket depuis "Mon espace"
-                  pour un traitement prioritaire avec votre contexte client pré-rempli.
+                  {t("contact.directSupportDesc")}
                 </p>
                 <a
                   href="/connexion"
                   className="text-blue-400 font-mono text-xs hover:text-blue-300 transition-colors"
                 >
-                  Se connecter →
+                  {t("contact.loginLink")}
                 </a>
               </div>
 
               <div className="border border-blue-500/20 bg-blue-500/5 p-5">
-                <p className="text-blue-300 text-xs font-mono tracking-widest mb-1">CHATBOT DISPONIBLE</p>
+                <p className="text-blue-300 text-xs font-mono tracking-widest mb-1">{t("contact.chatbotAvailable")}</p>
                 <p className="text-gray-400 text-xs leading-relaxed">
-                  Utilisez le bouton <span className="text-white font-medium">"Contact Me"</span> en
-                  bas à droite pour des réponses instantanées sur les questions courantes.
+                  {t("contact.chatbotDesc")}
                 </p>
               </div>
             </div>
@@ -257,7 +256,6 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* Chatbot local à la page Contact */}
       <ChatbotWidget onEscalate={handleEscalate} />
     </div>
   );
