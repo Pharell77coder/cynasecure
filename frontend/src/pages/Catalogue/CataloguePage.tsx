@@ -117,7 +117,7 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
         const prev = visible[i - 1];
         return (
           <React.Fragment key={p}>
-            {prev && p - prev > 1 && <span className="px-2 text-gray-600 text-xs select-none">…</span>}
+            {prev && p - prev > 1 && <span className="px-2 text-gray-400 text-xs select-none">…</span>}
             <button onClick={() => onChange(p)}
               className={cn("w-9 h-9 text-xs font-mono border transition-colors",
                 p === page ? "bg-blue-600 border-blue-600 text-white" : "border-gray-700 text-gray-400 hover:text-white hover:border-gray-600"
@@ -246,7 +246,7 @@ export default function CataloguePage() {
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="bg-gray-950 border-b border-gray-800">
         <div className="container py-12">
-          <div className="flex items-center gap-2 font-mono text-xs text-gray-600 mb-6">
+          <div className="flex items-center gap-2 font-mono text-xs text-gray-400 mb-6">
             <span>{t("catalogue.breadcrumbHome")}</span><span>/</span><span className="text-blue-500">{t("catalogue.breadcrumbCatalogue")}</span>
           </div>
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
@@ -256,7 +256,7 @@ export default function CataloguePage() {
                 style={{ fontSize: "clamp(2rem, 4vw, 3.5rem)", letterSpacing: "-0.03em" }}>
                 {t("catalogue.catalogTitle")}
               </h1>
-              <p className="mt-3 text-gray-500 text-sm max-w-xl leading-relaxed">
+              <p className="mt-3 text-gray-400 text-sm max-w-xl leading-relaxed">
                 {loading
                   ? t("catalogue.catalogDesc_loading")
                   : t("catalogue.catalogDesc", { total, plural: total !== 1 ? t("catalogue.catalogDescPlural") : t("catalogue.catalogDescSingular") })}
@@ -264,8 +264,10 @@ export default function CataloguePage() {
             </div>
             <div className="w-full lg:w-96">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                <label htmlFor="catalogue-search" className="sr-only">{t("common.searchLabel")}</label>
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" aria-hidden="true" />
                 <input
+                  id="catalogue-search"
                   type="text"
                   placeholder={t("catalogue.searchPlaceholder")}
                   value={q}
@@ -273,9 +275,9 @@ export default function CataloguePage() {
                   className="w-full bg-gray-900 border border-gray-700 text-white placeholder-gray-600 text-sm pl-10 pr-10 py-3 focus:outline-none focus:border-blue-500 transition-colors font-mono"
                 />
                 {q && (
-                  <button onClick={() => setQ("")}
+                  <button onClick={() => setQ("")} aria-label={t("common.clearSearch")}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                 )}
               </div>
@@ -291,14 +293,14 @@ export default function CataloguePage() {
             {TYPE_OPTIONS.map((opt) => (
               <button key={opt.value} onClick={() => setType(opt.value)}
                 className={cn("px-3 py-1.5 text-xs font-mono tracking-widest transition-colors border",
-                  type === opt.value ? "bg-blue-600 border-blue-600 text-white" : "border-gray-700 text-gray-500 hover:text-gray-300 hover:border-gray-600"
+                  type === opt.value ? "bg-blue-600 border-blue-600 text-white" : "border-gray-700 text-gray-400 hover:text-gray-300 hover:border-gray-600"
                 )}>
                 {opt.tag}
               </button>
             ))}
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-gray-600 text-xs font-mono hidden sm:block">
+            <span className="text-gray-400 text-xs font-mono hidden sm:block">
               {loading
                 ? "…"
                 : total === 0
@@ -319,13 +321,13 @@ export default function CataloguePage() {
               <Filter className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t("catalogue.filters")}</span>
             </button>
             <div className="flex border border-gray-700">
-              <button onClick={() => setViewMode("grid")}
-                className={cn("px-2.5 py-2.5 transition-colors", viewMode === "grid" ? "bg-gray-700 text-white" : "text-gray-600 hover:text-gray-400")}>
-                <LayoutGrid className="h-3.5 w-3.5" />
+              <button onClick={() => setViewMode("grid")} aria-label={t("common.viewGrid")} aria-pressed={viewMode === "grid"}
+                className={cn("px-2.5 py-2.5 transition-colors", viewMode === "grid" ? "bg-gray-700 text-white" : "text-gray-500 hover:text-gray-300")}>
+                <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
-              <button onClick={() => setViewMode("list")}
-                className={cn("px-2.5 py-2.5 border-l border-gray-700 transition-colors", viewMode === "list" ? "bg-gray-700 text-white" : "text-gray-600 hover:text-gray-400")}>
-                <List className="h-3.5 w-3.5" />
+              <button onClick={() => setViewMode("list")} aria-label={t("common.viewList")} aria-pressed={viewMode === "list"}
+                className={cn("px-2.5 py-2.5 border-l border-gray-700 transition-colors", viewMode === "list" ? "bg-gray-700 text-white" : "text-gray-500 hover:text-gray-300")}>
+                <List className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -341,7 +343,7 @@ export default function CataloguePage() {
             <aside className="w-56 flex-shrink-0">
               <div className="sticky top-20 space-y-1">
 
-                <div className="text-gray-600 font-mono text-[10px] tracking-widest px-2 mb-3">{t("catalogue.filterCategories")}</div>
+                <div className="text-gray-400 font-mono text-[10px] tracking-widest px-2 mb-3">{t("catalogue.filterCategories")}</div>
                 {allCategories.map((c) => (
                   <label key={c.slug}
                     className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-gray-900 transition-colors group">
@@ -352,16 +354,18 @@ export default function CataloguePage() {
                       className="accent-blue-500 w-3.5 h-3.5 flex-shrink-0"
                     />
                     <span className={cn("font-mono text-xs tracking-wide truncate",
-                      cats.has(c.slug) ? "text-white" : "text-gray-500 group-hover:text-gray-300")}>
+                      cats.has(c.slug) ? "text-white" : "text-gray-400 group-hover:text-gray-300")}>
                       {c.name}
                     </span>
                   </label>
                 ))}
 
                 <div className="pt-5 border-t border-gray-800 mt-4">
-                  <div className="text-gray-600 font-mono text-[10px] tracking-widest px-2 mb-3">{t("catalogue.filterMonthlyPrice")}</div>
+                  <div className="text-gray-400 font-mono text-[10px] tracking-widest px-2 mb-3">{t("catalogue.filterMonthlyPrice")}</div>
                   <div className="px-3 flex gap-2">
+                    <label htmlFor="price-min" className="sr-only">{t("catalogue.filterMin")}</label>
                     <input
+                      id="price-min"
                       type="number"
                       min={0}
                       placeholder={t("catalogue.filterMin")}
@@ -369,7 +373,9 @@ export default function CataloguePage() {
                       onChange={(e) => setPmin(e.target.value === "" ? "" : Number(e.target.value))}
                       className="w-full bg-gray-900 border border-gray-700 text-white text-xs font-mono px-2 py-1.5 focus:outline-none focus:border-blue-500 placeholder-gray-700"
                     />
+                    <label htmlFor="price-max" className="sr-only">{t("catalogue.filterMax")}</label>
                     <input
+                      id="price-max"
                       type="number"
                       min={0}
                       placeholder={t("catalogue.filterMax")}
@@ -388,18 +394,18 @@ export default function CataloguePage() {
                       onChange={(e) => setDispo(e.target.checked)}
                       className="accent-blue-500 w-3.5 h-3.5 flex-shrink-0"
                     />
-                    <span className={cn("font-mono text-xs tracking-wide", dispo ? "text-white" : "text-gray-500 group-hover:text-gray-300")}>
+                    <span className={cn("font-mono text-xs tracking-wide", dispo ? "text-white" : "text-gray-400 group-hover:text-gray-300")}>
                       {t("catalogue.filterAvailable")}
                     </span>
                   </label>
                 </div>
 
                 <div className="pt-5 border-t border-gray-800 mt-4">
-                  <div className="text-gray-600 font-mono text-[10px] tracking-widest px-2 mb-3">{t("catalogue.filterType")}</div>
+                  <div className="text-gray-400 font-mono text-[10px] tracking-widest px-2 mb-3">{t("catalogue.filterType")}</div>
                   {TYPE_OPTIONS.map((opt) => (
                     <button key={opt.value} onClick={() => setType(opt.value)}
                       className={cn("w-full flex items-center gap-2 px-3 py-2.5 text-xs font-mono tracking-wide transition-colors border-l-2",
-                        type === opt.value ? "border-blue-500 bg-blue-500/10 text-white" : "border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-900"
+                        type === opt.value ? "border-blue-500 bg-blue-500/10 text-white" : "border-transparent text-gray-400 hover:text-gray-300 hover:bg-gray-900"
                       )}>
                       <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", type === opt.value ? "bg-blue-400" : "bg-gray-700")} />
                       {opt.label}
@@ -411,7 +417,7 @@ export default function CataloguePage() {
                   <div className="bg-blue-600/10 border border-blue-500/20 p-4">
                     <Zap className="h-4 w-4 text-blue-500 mb-2" />
                     <p className="text-white text-xs font-semibold mb-1">{t("catalogue.ctaAdvice")}</p>
-                    <p className="text-gray-500 text-xs leading-relaxed mb-3">{t("catalogue.ctaAdviceDesc")}</p>
+                    <p className="text-gray-400 text-xs leading-relaxed mb-3">{t("catalogue.ctaAdviceDesc")}</p>
                     <a href="/contact" className="inline-flex items-center gap-1 text-blue-400 text-xs font-mono hover:text-blue-300 transition-colors">
                       {t("catalogue.ctaContact")}
                     </a>
@@ -426,41 +432,41 @@ export default function CataloguePage() {
 
             {hasFilters && (
               <div className="flex flex-wrap items-center gap-2 mb-6 pb-6 border-b border-gray-800">
-                <span className="text-gray-600 text-xs font-mono">{t("catalogue.activeFilters")}</span>
+                <span className="text-gray-400 text-xs font-mono">{t("catalogue.activeFilters")}</span>
                 {[...cats].map((slug) => (
                   <span key={slug} className="flex items-center gap-1.5 bg-blue-600/15 border border-blue-500/30 text-blue-400 text-xs font-mono px-2 py-1">
                     {allCategories.find((c) => c.slug === slug)?.name ?? slug}
-                    <button onClick={() => toggleCat(slug)} className="hover:text-white"><X className="h-2.5 w-2.5" /></button>
+                    <button onClick={() => toggleCat(slug)} aria-label={t("common.removeFilter")} className="hover:text-white"><X className="h-2.5 w-2.5" aria-hidden="true" /></button>
                   </span>
                 ))}
                 {type !== "all" && (
                   <span className="flex items-center gap-1.5 bg-blue-600/15 border border-blue-500/30 text-blue-400 text-xs font-mono px-2 py-1">
                     {TYPE_OPTIONS.find((o) => o.value === type)?.label}
-                    <button onClick={() => setType("all")} className="hover:text-white"><X className="h-2.5 w-2.5" /></button>
+                    <button onClick={() => setType("all")} aria-label={t("common.removeFilter")} className="hover:text-white"><X className="h-2.5 w-2.5" aria-hidden="true" /></button>
                   </span>
                 )}
                 {q && (
                   <span className="flex items-center gap-1.5 bg-blue-600/15 border border-blue-500/30 text-blue-400 text-xs font-mono px-2 py-1">
                     "{q}"
-                    <button onClick={() => setQ("")} className="hover:text-white"><X className="h-2.5 w-2.5" /></button>
+                    <button onClick={() => setQ("")} aria-label={t("common.removeFilter")} className="hover:text-white"><X className="h-2.5 w-2.5" aria-hidden="true" /></button>
                   </span>
                 )}
                 {hasPriceFilter && (
                   <span className="flex items-center gap-1.5 bg-blue-600/15 border border-blue-500/30 text-blue-400 text-xs font-mono px-2 py-1">
                     {t("catalogue.filterPriceRange", { min: pmin !== "" ? `${pmin}€` : "0€", max: pmax !== "" ? `${pmax}€` : "∞" })}
-                    <button onClick={() => { setPmin(""); setPmax(""); }} className="hover:text-white"><X className="h-2.5 w-2.5" /></button>
+                    <button onClick={() => { setPmin(""); setPmax(""); }} aria-label={t("common.removeFilter")} className="hover:text-white"><X className="h-2.5 w-2.5" aria-hidden="true" /></button>
                   </span>
                 )}
                 {dispo && (
                   <span className="flex items-center gap-1.5 bg-blue-600/15 border border-blue-500/30 text-blue-400 text-xs font-mono px-2 py-1">
                     {t("catalogue.filterAvailableTag")}
-                    <button onClick={() => setDispo(false)} className="hover:text-white"><X className="h-2.5 w-2.5" /></button>
+                    <button onClick={() => setDispo(false)} aria-label={t("common.removeFilter")} className="hover:text-white"><X className="h-2.5 w-2.5" aria-hidden="true" /></button>
                   </span>
                 )}
                 {sort !== "relevance" && (
                   <span className="flex items-center gap-1.5 bg-gray-800 border border-gray-700 text-gray-400 text-xs font-mono px-2 py-1">
                     {t(`catalogue.sort${sort.charAt(0).toUpperCase() + sort.slice(1).replace(/_([a-z])/g, (_, l) => l.toUpperCase())}` as never) || sort}
-                    <button onClick={() => setSort("relevance")} className="hover:text-white"><X className="h-2.5 w-2.5" /></button>
+                    <button onClick={() => setSort("relevance")} aria-label={t("common.removeFilter")} className="hover:text-white"><X className="h-2.5 w-2.5" aria-hidden="true" /></button>
                   </span>
                 )}
               </div>
@@ -485,14 +491,14 @@ export default function CataloguePage() {
             {!loading && total === 0 && (
               <div className="flex flex-col items-center justify-center py-24 text-center">
                 <div className="border border-gray-800 p-6 mb-6">
-                  <Search className="h-8 w-8 text-gray-700 mx-auto" />
+                  <Search className="h-8 w-8 text-gray-500 mx-auto" />
                 </div>
                 <p className="text-white font-semibold mb-2">{t("catalogue.noResultsTitle")}</p>
-                <p className="text-gray-500 text-sm max-w-xs mb-2">
+                <p className="text-gray-400 text-sm max-w-xs mb-2">
                   {t("catalogue.noResultsDesc")}
                 </p>
                 {hasPriceFilter && (
-                  <p className="text-gray-600 text-xs mb-4">
+                  <p className="text-gray-400 text-xs mb-4">
                     {t("catalogue.noResultsPriceHint")}
                   </p>
                 )}
@@ -507,7 +513,7 @@ export default function CataloguePage() {
               <>
                 <Pagination page={page} total={totalPages} onChange={setPage} />
                 <div className="mt-6 flex items-center justify-between">
-                  <span className="text-gray-600 text-xs font-mono">
+                  <span className="text-gray-400 text-xs font-mono">
                     {t("catalogue.totalResults", { total, plural: total !== 1 ? t("catalogue.catalogDescPlural") : t("catalogue.catalogDescSingular") })}
                   </span>
                   <a href="/contact" className="text-blue-400 text-xs font-mono hover:text-blue-300 transition-colors">

@@ -128,9 +128,9 @@ export default function ContactPage() {
               className={`py-8 px-6 ${i < 3 ? "border-r border-gray-800" : ""}`}
             >
               <info.icon className="h-4 w-4 text-blue-500 mb-3" />
-              <p className="text-[10px] font-mono tracking-widest text-gray-600 mb-1">{info.label.toUpperCase()}</p>
+              <p className="text-[10px] font-mono tracking-widest text-gray-400 mb-1">{info.label.toUpperCase()}</p>
               <p className="text-white text-sm font-medium">{info.value}</p>
-              <p className="text-gray-600 text-xs mt-0.5 flex items-center gap-1">
+              <p className="text-gray-400 text-xs mt-0.5 flex items-center gap-1">
                 <Clock className="h-3 w-3" />
                 {info.note}
               </p>
@@ -166,7 +166,7 @@ export default function ContactPage() {
                       )}
                       <div className="min-w-0">
                         <p className="text-white text-sm font-medium truncate">{m.subject}</p>
-                        <p className="text-gray-500 text-xs mt-0.5">{fmt(m.createdAt)}</p>
+                        <p className="text-gray-400 text-xs mt-0.5">{fmt(m.createdAt)}</p>
                       </div>
                     </div>
                     <span className={`ml-4 flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 border font-mono ${STATUS_COLORS[m.status]}`}>
@@ -224,7 +224,7 @@ export default function ContactPage() {
                 <div className="space-y-3">
                   {COMMITMENTS.map((r) => (
                     <div key={r.label} className="flex items-center justify-between">
-                      <span className="text-gray-500 text-xs">{r.label}</span>
+                      <span className="text-gray-400 text-xs">{r.label}</span>
                       <span className="text-blue-400 font-mono text-xs">{r.delay}</span>
                     </div>
                   ))}
@@ -233,7 +233,7 @@ export default function ContactPage() {
 
               <div className="border border-gray-800 bg-gray-900 p-6">
                 <p className="text-white font-semibold text-sm mb-2">{t("contact.directSupport")}</p>
-                <p className="text-gray-500 text-xs leading-relaxed mb-3">
+                <p className="text-gray-400 text-xs leading-relaxed mb-3">
                   {t("contact.directSupportDesc")}
                 </p>
                 <a

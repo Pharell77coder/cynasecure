@@ -169,7 +169,7 @@ export default function AdminDashboardPage() {
           <p className="text-gray-500 text-sm px-6 py-10 text-center">Aucun abonnement enregistré.</p>
         ) : (
           <>
-            <div className="hidden md:grid grid-cols-4 gap-4 px-6 py-2.5 text-[10px] font-medium text-gray-600 uppercase tracking-wider border-b border-gray-800 bg-gray-950">
+            <div className="hidden md:grid grid-cols-4 gap-4 px-6 py-2.5 text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b border-gray-800 bg-gray-950">
               <span>Utilisateur</span>
               <span>Service</span>
               <span>Montant</span>
@@ -181,7 +181,7 @@ export default function AdminDashboardPage() {
                   <p className="text-sm text-white font-medium truncate">{sub.user.displayName}</p>
                   <p className="text-sm text-gray-400 truncate">{sub.service.name}</p>
                   <p className="text-sm font-semibold text-white">
-                    {sub.price} € <span className="text-gray-600 font-normal text-xs">/ {sub.cycle === "monthly" ? "mois" : "an"}</span>
+                    {sub.price} € <span className="text-gray-500 font-normal text-xs">/ {sub.cycle === "monthly" ? "mois" : "an"}</span>
                   </p>
                   <div className="flex items-center justify-between md:justify-end gap-3">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full border ${
@@ -194,7 +194,7 @@ export default function AdminDashboardPage() {
                         : <XCircle className="h-2.5 w-2.5" />}
                       {sub.status === "ACTIVE" ? "Actif" : "Annulé"}
                     </span>
-                    <span className="text-xs text-gray-600">{fmt(sub.startDate)}</span>
+                    <span className="text-xs text-gray-500">{fmt(sub.startDate)}</span>
                   </div>
                 </div>
               ))}

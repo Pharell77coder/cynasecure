@@ -41,6 +41,41 @@ export function ChatbotWidget({ onEscalate }: Props) {
 
   const sessionId = useRef(generateSessionId());
   const bottomRef = useRef<HTMLDivElement>(null);
+  const panelRef  = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const FOCUSABLE = 'button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+  useEffect(() => {
+    if (!open) return;
+
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const els = () => Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE));
+    const first = () => els()[0];
+    const last  = () => els()[els().length - 1];
+
+    first()?.focus();
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setOpen(false); return; }
+      if (e.key !== "Tab") return;
+      const all = els();
+      if (!all.length) return;
+      if (e.shiftKey) {
+        if (document.activeElement === all[0]) { e.preventDefault(); last()?.focus(); }
+      } else {
+        if (document.activeElement === all[all.length - 1]) { e.preventDefault(); first()?.focus(); }
+      }
+    };
+
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      triggerRef.current?.focus();
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open || categories.length > 0) return;
@@ -88,10 +123,12 @@ export function ChatbotWidget({ onEscalate }: Props) {
     <>
       {open && (
         <div
+          ref={panelRef}
           className="fixed bottom-20 right-4 sm:right-6 w-[calc(100vw-2rem)] sm:w-[400px] bg-gray-950 border border-gray-800 shadow-2xl z-50 flex flex-col"
           style={{ maxHeight: "560px" }}
           role="dialog"
-          aria-label={t("chatbot.ariaLabel")}
+          aria-modal="true"
+          aria-labelledby="chatbot-title"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900 flex-shrink-0">
@@ -100,7 +137,7 @@ export function ChatbotWidget({ onEscalate }: Props) {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
               </span>
-              <span className="text-white text-sm font-semibold">{t("chatbot.title")}</span>
+              <span id="chatbot-title" className="text-white text-sm font-semibold">{t("chatbot.title")}</span>
               <span className="text-gray-600 font-mono text-[10px] tracking-widest">{t("chatbot.online")}</span>
             </div>
             <button
@@ -227,9 +264,12 @@ export function ChatbotWidget({ onEscalate }: Props) {
 
       {/* Bouton flottant */}
       <button
+        ref={triggerRef}
         onClick={() => setOpen((v) => !v)}
         className="fixed bottom-4 right-4 sm:right-6 flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 shadow-lg transition-colors z-50 font-medium text-sm"
         aria-label={open ? t("chatbot.closeChat") : t("chatbot.openChat")}
+        aria-haspopup="dialog"
+        aria-expanded={open}
       >
         {open ? <X className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
         <span className="hidden sm:inline">{open ? t("chatbot.close") : t("chatbot.contactMe")}</span>

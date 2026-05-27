@@ -533,6 +533,17 @@
     "footerDesc": "Plateforme XDR de nouvelle génération conçue pour protéger les infrastructures critiques, du cloud aux endpoints.",
     "footerSolutions": "Solutions",
     "footerCompany": "Entreprise",
-    "footerLegal": "Légal"
+    "footerLegal": "Légal",
+    "prevSlide": "Diapositive précédente",
+    "nextSlide": "Diapositive suivante",
+    "goToSlide": "Diapositive {{n}}",
+    "prevImage": "Image précédente",
+    "nextImage": "Image suivante",
+    "selectImage": "Image {{n}}",
+    "viewGrid": "Vue en grille",
+    "viewList": "Vue en liste",
+    "removeFilter": "Retirer ce filtre",
+    "clearSearch": "Effacer la recherche",
+    "searchLabel": "Rechercher une solution"
   }
 }

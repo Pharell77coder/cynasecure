@@ -42,8 +42,12 @@ export default function TwoFactorPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
+          <label htmlFor="totp-code" className="sr-only">
+            Code à 6 chiffres
+          </label>
           <input
             ref={inputRef}
+            id="totp-code"
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
@@ -52,11 +56,12 @@ export default function TwoFactorPage() {
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
             placeholder="000000"
             autoFocus
+            aria-required="true"
             className="w-full text-center text-2xl tracking-widest bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
           />
         </div>
 
-        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+        {error && <p role="alert" className="text-red-400 text-sm text-center">{error}</p>}
 
         <button
           type="submit"

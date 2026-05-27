@@ -171,24 +171,25 @@ export default function AdminServiceFormPage() {
         {/* Infos de base */}
         <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <label className={labelCls}>Nom</label>
-            <input className={inputCls} value={form.name} onChange={(e) => set("name", e.target.value)} />
+            <label htmlFor="svc-name" className={labelCls}>Nom</label>
+            <input id="svc-name" className={inputCls} value={form.name} onChange={(e) => set("name", e.target.value)} />
           </div>
           <div>
-            <label className={labelCls}>Catégorie (slug)</label>
-            <input className={inputCls} value={form.categorySlug} onChange={(e) => set("categorySlug", e.target.value)} />
+            <label htmlFor="svc-category" className={labelCls}>Catégorie (slug)</label>
+            <input id="svc-category" className={inputCls} value={form.categorySlug} onChange={(e) => set("categorySlug", e.target.value)} />
           </div>
           <div>
-            <label className={labelCls}>Prix mensuel</label>
-            <input type="number" className={inputCls} value={form.priceMonthly} onChange={(e) => set("priceMonthly", Number(e.target.value))} />
+            <label htmlFor="svc-price-monthly" className={labelCls}>Prix mensuel</label>
+            <input id="svc-price-monthly" type="number" className={inputCls} value={form.priceMonthly} onChange={(e) => set("priceMonthly", Number(e.target.value))} />
           </div>
           <div>
-            <label className={labelCls}>Prix annuel</label>
-            <input type="number" className={inputCls} value={form.priceYearly ?? 0} onChange={(e) => set("priceYearly", Number(e.target.value))} />
+            <label htmlFor="svc-price-yearly" className={labelCls}>Prix annuel</label>
+            <input id="svc-price-yearly" type="number" className={inputCls} value={form.priceYearly ?? 0} onChange={(e) => set("priceYearly", Number(e.target.value))} />
           </div>
           <div>
-            <label className={labelCls}>Type</label>
+            <label htmlFor="svc-type" className={labelCls}>Type</label>
             <select
+              id="svc-type"
               className={inputCls}
               value={form.type}
               onChange={(e) => set("type", e.target.value as "saas" | "one_shot")}
@@ -198,8 +199,9 @@ export default function AdminServiceFormPage() {
             </select>
           </div>
           <div>
-            <label className={labelCls}>Disponibilité</label>
+            <label htmlFor="svc-availability" className={labelCls}>Disponibilité</label>
             <select
+              id="svc-availability"
               className={inputCls}
               value={form.availability}
               onChange={(e) => set("availability", e.target.value as Avail)}
@@ -226,18 +228,18 @@ export default function AdminServiceFormPage() {
         )}
 
         <div>
-          <label className={labelCls}>Image principale (URL ou chemin)</label>
-          <input className={inputCls} value={form.image ?? ""} onChange={(e) => set("image", e.target.value)} />
+          <label htmlFor="svc-image" className={labelCls}>Image principale (URL ou chemin)</label>
+          <input id="svc-image" className={inputCls} value={form.image ?? ""} onChange={(e) => set("image", e.target.value)} />
         </div>
 
         <div>
-          <label className={labelCls}>Description courte</label>
-          <textarea className={inputCls} rows={3} value={form.description} onChange={(e) => set("description", e.target.value)} />
+          <label htmlFor="svc-description" className={labelCls}>Description courte</label>
+          <textarea id="svc-description" className={inputCls} rows={3} value={form.description} onChange={(e) => set("description", e.target.value)} />
         </div>
 
         <div>
-          <label className={labelCls}>Description longue</label>
-          <textarea className={inputCls} rows={5} value={form.longDescription} onChange={(e) => set("longDescription", e.target.value)} />
+          <label htmlFor="svc-long-description" className={labelCls}>Description longue</label>
+          <textarea id="svc-long-description" className={inputCls} rows={5} value={form.longDescription} onChange={(e) => set("longDescription", e.target.value)} />
         </div>
 
         {/* ─ Images multiples ─ */}
@@ -250,11 +252,11 @@ export default function AdminServiceFormPage() {
             {form.images.map((src, i) => (
               <div key={i} className="flex items-center gap-3 bg-gray-800 border border-gray-700 px-3 py-2">
                 <div className="flex flex-col gap-0.5">
-                  <button type="button" onClick={() => i > 0 && moveImg(i, -1)} disabled={i === 0} className="text-gray-500 hover:text-white disabled:opacity-20">
-                    <ChevronUp className="h-3 w-3" />
+                  <button type="button" aria-label="Monter l'image" onClick={() => i > 0 && moveImg(i, -1)} disabled={i === 0} className="text-gray-500 hover:text-white disabled:opacity-20">
+                    <ChevronUp className="h-3 w-3" aria-hidden="true" />
                   </button>
-                  <button type="button" onClick={() => i < form.images.length - 1 && moveImg(i, 1)} disabled={i === form.images.length - 1} className="text-gray-500 hover:text-white disabled:opacity-20">
-                    <ChevronDown className="h-3 w-3" />
+                  <button type="button" aria-label="Descendre l'image" onClick={() => i < form.images.length - 1 && moveImg(i, 1)} disabled={i === form.images.length - 1} className="text-gray-500 hover:text-white disabled:opacity-20">
+                    <ChevronDown className="h-3 w-3" aria-hidden="true" />
                   </button>
                 </div>
                 {src ? (
@@ -265,13 +267,13 @@ export default function AdminServiceFormPage() {
                   </div>
                 )}
                 <span className="flex-1 text-xs font-mono text-gray-400 truncate">{src}</span>
-                <button type="button" onClick={() => removeImg(i)} className="text-gray-500 hover:text-red-400 transition-colors flex-shrink-0">
-                  <X className="h-4 w-4" />
+                <button type="button" aria-label="Retirer cette image" onClick={() => removeImg(i)} className="text-gray-500 hover:text-red-400 transition-colors flex-shrink-0">
+                  <X className="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
             ))}
             {form.images.length === 0 && (
-              <p className="text-gray-600 text-sm font-mono">Aucune illustration.</p>
+              <p className="text-gray-500 text-sm font-mono">Aucune illustration.</p>
             )}
           </div>
 
@@ -315,8 +317,8 @@ export default function AdminServiceFormPage() {
                   value={spec.value}
                   onChange={(e) => updateSpec(i, "value", e.target.value)}
                 />
-                <button type="button" onClick={() => removeSpec(i)} className="text-gray-500 hover:text-red-400 transition-colors">
-                  <Trash2 className="h-4 w-4" />
+                <button type="button" aria-label="Supprimer cette caractéristique" onClick={() => removeSpec(i)} className="text-gray-500 hover:text-red-400 transition-colors">
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
             ))}
@@ -352,8 +354,8 @@ export default function AdminServiceFormPage() {
                   value={f.label}
                   onChange={(e) => updateFeature(i, "label", e.target.value)}
                 />
-                <button type="button" onClick={() => removeFeature(i)} className="text-gray-500 hover:text-red-400 transition-colors">
-                  <Trash2 className="h-4 w-4" />
+                <button type="button" aria-label="Supprimer cette fonctionnalité" onClick={() => removeFeature(i)} className="text-gray-500 hover:text-red-400 transition-colors">
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
             ))}

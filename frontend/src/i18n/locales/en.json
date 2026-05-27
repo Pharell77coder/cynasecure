@@ -533,6 +533,17 @@
     "footerDesc": "Next-generation XDR platform designed to protect critical infrastructures, from cloud to endpoints.",
     "footerSolutions": "Solutions",
     "footerCompany": "Company",
-    "footerLegal": "Legal"
+    "footerLegal": "Legal",
+    "prevSlide": "Previous slide",
+    "nextSlide": "Next slide",
+    "goToSlide": "Slide {{n}}",
+    "prevImage": "Previous image",
+    "nextImage": "Next image",
+    "selectImage": "Image {{n}}",
+    "viewGrid": "Grid view",
+    "viewList": "List view",
+    "removeFilter": "Remove this filter",
+    "clearSearch": "Clear search",
+    "searchLabel": "Search for a solution"
   }
 }

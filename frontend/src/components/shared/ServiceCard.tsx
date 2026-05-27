@@ -57,15 +57,15 @@ export function ServiceCard({ service }: { service: Service }) {
             <>
               <div className="flex items-baseline gap-1">
                 <span className="text-xl font-black text-white">{formatPrice(service.priceMonthly)}</span>
-                <span className="text-sm text-gray-500">/mois</span>
+                <span className="text-sm text-gray-400">/mois</span>
               </div>
-              <p className="text-xs text-gray-600 mt-0.5">ou {formatPrice(yearlyPrice)} / an</p>
+              <p className="text-xs text-gray-400 mt-0.5">ou {formatPrice(yearlyPrice)} / an</p>
             </>
           )}
           {service.type === "one_shot" && (
             <div className="flex items-baseline gap-1">
               <span className="text-xl font-black text-white">{formatPrice(service.priceMonthly)}</span>
-              <span className="text-sm text-gray-500">achat unique</span>
+              <span className="text-sm text-gray-400">achat unique</span>
             </div>
           )}
         </div>
@@ -74,16 +74,18 @@ export function ServiceCard({ service }: { service: Service }) {
         <div className="mt-5 flex items-center gap-2">
           <Link
             to={`/services/${service.id}`}
+            aria-label={`Voir le service ${service.name}`}
             className="flex-1 inline-flex h-10 items-center justify-center gap-1.5 border border-gray-700 text-sm font-medium text-gray-300 hover:text-blue-400 hover:border-blue-500 transition-colors"
           >
-            Découvrir <ArrowRight className="h-3.5 w-3.5" />
+            Découvrir <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
 
           {service.type === "saas" && (
             <Link
               to={`/services/${service.id}`}
               className="flex h-10 w-10 items-center justify-center bg-blue-600 hover:bg-blue-500 text-white transition-colors flex-shrink-0"
-              aria-label="Voir et s'abonner"
+              tabIndex={-1}
+              aria-hidden="true"
             >
               <ArrowRight className="h-4 w-4" />
             </Link>

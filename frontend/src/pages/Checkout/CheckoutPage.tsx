@@ -90,7 +90,7 @@ function StepIndicator({ step, isAuthenticated }: { step: Step; isAuthenticated:
             </div>
             <span
               className={`text-xs font-mono tracking-widest ${
-                i === idx ? "text-white" : "text-gray-500"
+                i === idx ? "text-white" : "text-gray-400"
               }`}
             >
               {s.label.toUpperCase()}
@@ -136,7 +136,7 @@ function AuthStep({ onGuest }: { onGuest: (email: string) => void }) {
         >
           <div>
             <p className="text-white text-sm font-medium">{t("checkout.hasAccount")}</p>
-            <p className="text-gray-500 text-xs mt-0.5">{t("checkout.loginToContinue")}</p>
+            <p className="text-gray-400 text-xs mt-0.5">{t("checkout.loginToContinue")}</p>
           </div>
           <LogIn className="h-4 w-4 text-gray-500 group-hover:text-blue-400 transition-colors" />
         </Link>
@@ -147,7 +147,7 @@ function AuthStep({ onGuest }: { onGuest: (email: string) => void }) {
         >
           <div>
             <p className="text-white text-sm font-medium">{t("checkout.createAccount")}</p>
-            <p className="text-gray-500 text-xs mt-0.5">{t("checkout.manageSubscriptions")}</p>
+            <p className="text-gray-400 text-xs mt-0.5">{t("checkout.manageSubscriptions")}</p>
           </div>
           <UserPlus className="h-4 w-4 text-gray-500 group-hover:text-blue-400 transition-colors" />
         </Link>
@@ -155,13 +155,13 @@ function AuthStep({ onGuest }: { onGuest: (email: string) => void }) {
 
       <div className="flex items-center gap-4 mb-8">
         <div className="flex-1 h-px bg-gray-800" />
-        <span className="text-xs font-mono text-gray-600 tracking-widest">{t("checkout.orSeparator")}</span>
+        <span className="text-xs font-mono text-gray-400 tracking-widest">{t("checkout.orSeparator")}</span>
         <div className="flex-1 h-px bg-gray-800" />
       </div>
 
       <div className="space-y-3">
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-mono tracking-widest text-gray-500 uppercase">
+          <label className="text-[10px] font-mono tracking-widest text-gray-400 uppercase">
             {t("checkout.guestEmail")} <span className="text-blue-500">*</span>
           </label>
           <input
@@ -208,7 +208,7 @@ function AddressStep({
     half = false
   ) => (
     <div className={half ? "flex flex-col gap-1" : "col-span-2 flex flex-col gap-1"}>
-      <label className="text-[10px] font-mono tracking-widest text-gray-500 uppercase">
+      <label className="text-[10px] font-mono tracking-widest text-gray-400 uppercase">
         {label} {required && <span className="text-blue-500">*</span>}
       </label>
       <input
@@ -413,7 +413,7 @@ function PaymentStep({
       </div>
 
       {loading && (
-        <div className="text-center py-8 text-gray-500 text-sm animate-pulse">
+        <div className="text-center py-8 text-gray-400 text-sm animate-pulse">
           {t("checkout.initPayment")}
         </div>
       )}
@@ -435,7 +435,7 @@ function PaymentStep({
                 className={`px-6 py-3 text-xs font-mono tracking-widest uppercase transition-colors border-b-2 -mb-px ${
                   tab === tabKey
                     ? "text-blue-400 border-blue-500"
-                    : "text-gray-500 border-transparent hover:text-gray-300"
+                    : "text-gray-400 border-transparent hover:text-gray-300"
                 }`}
               >
                 {tabKey === "stripe" ? t("checkout.card") : t("checkout.paypal")}
@@ -467,7 +467,7 @@ function PaymentStep({
             />
           )}
 
-          <div className="mt-6 flex items-center justify-center gap-1.5 text-[11px] text-gray-600">
+          <div className="mt-6 flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
             <Lock className="h-3 w-3" />
             {t("checkout.secureDataTls")}
           </div>
@@ -514,7 +514,7 @@ function ConfirmationStep({
       <p className="text-gray-400 text-sm mb-1">
         {t("checkout.paymentReceived").replace("<1>", "").replace("</1>", "").replace("{{amount}}", formatPrice(total))}
       </p>
-      <p className="text-gray-600 text-xs font-mono mb-8">{invoiceNumber}</p>
+      <p className="text-gray-400 text-xs font-mono mb-8">{invoiceNumber}</p>
 
       {isGuest ? (
         <>
@@ -653,7 +653,7 @@ export default function CheckoutPage() {
           {step !== "confirmation" && (
             <aside>
               <div className="border border-gray-800 bg-gray-900 p-5 sticky top-24">
-                <h3 className="text-[10px] font-mono tracking-widest text-gray-500 uppercase mb-4">
+                <h3 className="text-[10px] font-mono tracking-widest text-gray-400 uppercase mb-4">
                   {t("checkout.summary")}
                 </h3>
                 <div className="space-y-2 pb-4 border-b border-gray-800 mb-4">

@@ -128,7 +128,7 @@ export default function ServiceDetailsPage() {
 
         <Link
           to="/catalogue"
-          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-white transition-colors mb-10"
+          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors mb-10"
         >
           <ArrowLeft className="h-4 w-4" />
           {t("service.backToCatalogue")}
@@ -147,7 +147,7 @@ export default function ServiceDetailsPage() {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <Shield className="h-16 w-16 text-gray-700" />
+                  <Shield className="h-16 w-16 text-gray-500" />
                 </div>
               )}
 
@@ -155,23 +155,29 @@ export default function ServiceDetailsPage() {
                 <>
                   <button
                     onClick={() => goImg(-1)}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-black/60 border border-white/10 text-white hover:bg-black/80 transition-colors"
+                    aria-label={t("common.prevImage")}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-black/60 border border-white/10 text-white hover:bg-black/80 transition-colors"
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                   </button>
                   <button
                     onClick={() => goImg(1)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-black/60 border border-white/10 text-white hover:bg-black/80 transition-colors"
+                    aria-label={t("common.nextImage")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-black/60 border border-white/10 text-white hover:bg-black/80 transition-colors"
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
                   </button>
-                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex">
                     {imgs.map((_, i) => (
                       <button
                         key={i}
                         onClick={() => setImgIdx(i)}
-                        className={`w-1.5 h-1.5 rounded-full transition-colors ${i === imgIdx ? "bg-blue-400" : "bg-white/30 hover:bg-white/60"}`}
-                      />
+                        aria-label={t("common.selectImage", { n: i + 1 })}
+                        aria-current={i === imgIdx ? "true" : undefined}
+                        className="flex items-center justify-center w-8 h-8"
+                      >
+                        <span className={`block w-1.5 h-1.5 rounded-full transition-colors ${i === imgIdx ? "bg-blue-400" : "bg-white/30 hover:bg-white/60"}`} />
+                      </button>
                     ))}
                   </div>
                 </>
@@ -184,6 +190,8 @@ export default function ServiceDetailsPage() {
                   <button
                     key={i}
                     onClick={() => setImgIdx(i)}
+                    aria-label={t("common.selectImage", { n: i + 1 })}
+                    aria-pressed={i === imgIdx}
                     className={`flex-shrink-0 w-16 h-10 border transition-colors overflow-hidden ${i === imgIdx ? "border-blue-500" : "border-gray-700 hover:border-gray-500"}`}
                   >
                     <img src={`/${src}`} alt="" className="w-full h-full object-cover" />
@@ -203,8 +211,8 @@ export default function ServiceDetailsPage() {
                     <li key={i} className="flex items-center gap-3 text-sm">
                       {f.included
                         ? <Check className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                        : <X className="h-4 w-4 text-gray-700 flex-shrink-0" />}
-                      <span className={f.included ? "text-gray-200" : "text-gray-600 line-through"}>
+                        : <X className="h-4 w-4 text-gray-500 flex-shrink-0" />}
+                      <span className={f.included ? "text-gray-200" : "text-gray-500 line-through"}>
                         {f.label}
                       </span>
                     </li>
@@ -222,7 +230,7 @@ export default function ServiceDetailsPage() {
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-3">
                   {service.technicalSpecs.map((spec, i) => (
                     <div key={i} className="contents">
-                      <dt className="text-xs font-mono text-gray-500 self-center">{spec.label}</dt>
+                      <dt className="text-xs font-mono text-gray-400 self-center">{spec.label}</dt>
                       <dd className="text-sm text-gray-200 self-center">{spec.value}</dd>
                     </div>
                   ))}
@@ -263,7 +271,7 @@ export default function ServiceDetailsPage() {
 
             {service.type === "saas" && !unavail && (
               <div className="mt-8">
-                <p className="text-xs font-mono tracking-widest text-gray-500 uppercase mb-3">
+                <p className="text-xs font-mono tracking-widest text-gray-400 uppercase mb-3">
                   {t("service.choosePlan")}
                 </p>
 
@@ -298,7 +306,7 @@ export default function ServiceDetailsPage() {
                     <span className="text-4xl font-black text-white">
                       {cycle === "monthly" ? service.priceMonthly : yearlyPrice}€
                     </span>
-                    <span className="text-gray-500 text-sm">
+                    <span className="text-gray-400 text-sm">
                       {cycle === "monthly" ? t("service.perMonth") : t("service.perYear")}
                     </span>
                   </div>
@@ -316,7 +324,7 @@ export default function ServiceDetailsPage() {
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-black text-white">{service.priceMonthly}€</span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">{t("service.perpetualLicense")}</p>
+                <p className="text-xs text-gray-400 mt-1">{t("service.perpetualLicense")}</p>
               </div>
             )}
 
@@ -369,7 +377,7 @@ export default function ServiceDetailsPage() {
                 </>
               )}
 
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-600 mt-1">
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400 mt-1">
                 <Lock className="h-3 w-3" />
                 {t("service.securePayment")}
               </div>

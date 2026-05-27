@@ -147,9 +147,9 @@ export default function MyOrdersPage() {
 
         {!loading && orders.length === 0 && (
           <Card className="p-16 text-center border-dashed">
-            <ShoppingBag className="h-12 w-12 mx-auto mb-4 text-gray-700" />
+            <ShoppingBag className="h-12 w-12 mx-auto mb-4 text-gray-500" />
             <p className="text-gray-400 font-medium">Aucune commande trouvée</p>
-            <p className="text-gray-600 text-sm mt-1">
+            <p className="text-gray-500 text-sm mt-1">
               {q || year || status ? "Modifiez vos filtres pour voir plus de résultats." : "Vos futures commandes apparaîtront ici."}
             </p>
           </Card>
@@ -179,7 +179,7 @@ export default function MyOrdersPage() {
                           <span className="text-white font-semibold text-sm">#{order.id}</span>
                           <StatusChip status={order.status} />
                           {order.gateway && (
-                            <span className="text-[10px] font-mono text-gray-600">{order.gateway}</span>
+                            <span className="text-[10px] font-mono text-gray-500">{order.gateway}</span>
                           )}
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5 flex gap-3">
@@ -203,7 +203,7 @@ export default function MyOrdersPage() {
                           {order.items.map((item) => (
                             <div key={item.id} className="flex items-center gap-3 text-sm">
                               <div className="flex-1 text-gray-300">{item.serviceName}</div>
-                              <span className="text-[10px] font-mono text-gray-600 border border-gray-700 px-1.5 py-0.5">
+                              <span className="text-[10px] font-mono text-gray-500 border border-gray-700 px-1.5 py-0.5">
                                 {item.serviceType === "saas" ? "SaaS" : "One Shot"}
                               </span>
                               {item.billing && (

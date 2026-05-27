@@ -144,20 +144,25 @@ export default function AdminPromoPage() {
   const setPage    = (p: number) => setSearchParams((prev) => { prev.set("page", String(p)); return prev; });
   const setPerPage = (pp: number) => setSearchParams({ page: "1", perPage: String(pp) });
 
-  const field = (label: string, key: keyof typeof form, type = "text", required = false) => (
-    <div className="flex flex-col gap-1">
-      <label className="text-[10px] font-mono tracking-widest text-gray-500 uppercase">
-        {label} {required && <span className="text-blue-500">*</span>}
-      </label>
-      <input
-        type={type}
-        value={String(form[key])}
-        onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-        required={required}
-        className="bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
-      />
-    </div>
-  );
+  const field = (label: string, key: keyof typeof form, type = "text", required = false) => {
+    const id = `promo-${key}`;
+    return (
+      <div className="flex flex-col gap-1">
+        <label htmlFor={id} className="text-[10px] font-mono tracking-widest text-gray-500 uppercase">
+          {label} {required && <span className="text-blue-500">*</span>}
+        </label>
+        <input
+          id={id}
+          type={type}
+          value={String(form[key])}
+          onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+          required={required}
+          aria-required={required || undefined}
+          className="bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors"
+        />
+      </div>
+    );
+  };
 
   return (
     <div className="relative">
@@ -209,34 +214,37 @@ export default function AdminPromoPage() {
 
             <form onSubmit={handleSave} className="grid gap-4 md:grid-cols-3">
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-mono tracking-widest text-gray-500 uppercase">
+                <label htmlFor="promo-code-input" className="text-[10px] font-mono tracking-widest text-gray-500 uppercase">
                   Code <span className="text-blue-500">*</span>
                 </label>
                 <div className="flex gap-2">
                   <input
+                    id="promo-code-input"
                     type="text"
                     value={form.code}
                     onChange={(e) => setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))}
                     required
+                    aria-required="true"
                     className="flex-1 bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2 focus:outline-none focus:border-blue-500 transition-colors font-mono uppercase"
                   />
                   <button
                     type="button"
-                    title="Générer"
+                    aria-label="Générer un code aléatoire"
                     onClick={async () => {
                       const res = await apiFetch<{ code: string }>("/api/admin/promos/generate", { method: "POST" }).catch(() => null);
                       if (res) setForm((f) => ({ ...f, code: res.code }));
                     }}
                     className="px-3 py-2 bg-gray-800 border border-gray-700 text-gray-400 hover:text-white transition-colors"
                   >
-                    <RefreshCw className="h-3.5 w-3.5" />
+                    <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-mono tracking-widest text-gray-500 uppercase">Type <span className="text-blue-500">*</span></label>
+                <label htmlFor="promo-type-select" className="text-[10px] font-mono tracking-widest text-gray-500 uppercase">Type <span className="text-blue-500">*</span></label>
                 <select
+                  id="promo-type-select"
                   value={form.type}
                   onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as "percent" | "fixed" }))}
                   className="bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2 focus:outline-none focus:border-blue-500"
@@ -253,8 +261,9 @@ export default function AdminPromoPage() {
               {field("Valide jusqu'au", "validUntil", "date")}
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-mono tracking-widest text-gray-500 uppercase">S'applique à</label>
+                <label htmlFor="promo-applies-to" className="text-[10px] font-mono tracking-widest text-gray-500 uppercase">S'applique à</label>
                 <select
+                  id="promo-applies-to"
                   value={form.appliesTo}
                   onChange={(e) => setForm((f) => ({ ...f, appliesTo: e.target.value }))}
                   className="bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2 focus:outline-none focus:border-blue-500"
@@ -330,7 +339,7 @@ export default function AdminPromoPage() {
                     <td className="px-6 py-4 text-gray-400">
                       {p.type === "percent" ? `${p.value}%` : `${p.value} €`}
                       {p.minAmount != null && (
-                        <span className="ml-2 text-gray-600 text-xs">min {p.minAmount} €</span>
+                        <span className="ml-2 text-gray-500 text-xs">min {p.minAmount} €</span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-gray-400">

@@ -50,8 +50,9 @@ function PasswordField({ label, value, onChange, placeholder }: {
           onClick={() => setVisible((v) => !v)}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
           tabIndex={-1}
+          aria-label={visible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
         >
-          {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {visible ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
         </button>
       </div>
     </div>
@@ -107,12 +108,12 @@ function EmailChangeSection({ currentEmail }: { currentEmail: string }) {
       {open && !sent && (
         <form onSubmit={handleSubmit} className="mt-3 p-4 border border-gray-700 bg-gray-800/50 space-y-3">
           <div>
-            <label className="text-xs text-gray-400">Nouvel email</label>
-            <input type="email" className={inputCls} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="nouveau@email.com" required />
+            <label htmlFor="email-change-new" className="text-xs text-gray-400">Nouvel email</label>
+            <input id="email-change-new" type="email" className={inputCls} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="nouveau@email.com" required aria-required="true" />
           </div>
           <div>
-            <label className="text-xs text-gray-400">Mot de passe actuel (requis)</label>
-            <input type="password" className={inputCls} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
+            <label htmlFor="email-change-password" className="text-xs text-gray-400">Mot de passe actuel (requis)</label>
+            <input id="email-change-password" type="password" className={inputCls} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required aria-required="true" />
           </div>
           <div className="flex gap-2 pt-1">
             <Button type="submit" size="sm" disabled={loading} className="gap-1.5">
@@ -220,14 +221,16 @@ function TwoFactorSection() {
               <p className="text-xs text-gray-400">Confirmez votre identité pour désactiver le 2FA.</p>
               <PasswordField label="Mot de passe actuel" value={disablePassword} onChange={setDisablePassword} placeholder="••••••••" />
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-300">Code 2FA</label>
+                <label htmlFor="2fa-disable-code" className="mb-2 block text-sm font-medium text-gray-300">Code 2FA</label>
                 <input
+                  id="2fa-disable-code"
                   type="text"
                   inputMode="numeric"
                   maxLength={6}
                   value={disableCode}
                   onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, ""))}
                   placeholder="000000"
+                  aria-required="true"
                   className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
                 />
               </div>
@@ -260,10 +263,11 @@ function TwoFactorSection() {
           </div>
           <form onSubmit={handleConfirm} className="space-y-3">
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">
+              <label htmlFor="2fa-confirm-code" className="mb-2 block text-sm font-medium text-gray-300">
                 Code de vérification (6 chiffres)
               </label>
               <input
+                id="2fa-confirm-code"
                 type="text"
                 inputMode="numeric"
                 maxLength={6}
@@ -271,6 +275,7 @@ function TwoFactorSection() {
                 onChange={(e) => setConfirmCode(e.target.value.replace(/\D/g, ""))}
                 placeholder="000000"
                 autoFocus
+                aria-required="true"
                 className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -398,7 +403,7 @@ function AddressSection() {
       {loading && <p className="text-gray-500 text-sm">Chargement…</p>}
 
       {!loading && addresses.length === 0 && !showForm && (
-        <p className="text-gray-600 text-sm">Aucune adresse enregistrée.</p>
+        <p className="text-gray-500 text-sm">Aucune adresse enregistrée.</p>
       )}
 
       <div className="space-y-3 mb-4">
@@ -445,49 +450,49 @@ function AddressSection() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Prénom *</label>
-              <input className={inputCls} value={form.firstName} onChange={(e) => set("firstName", e.target.value)} required />
+              <label htmlFor="addr-first-name" className={labelCls}>Prénom *</label>
+              <input id="addr-first-name" className={inputCls} value={form.firstName} onChange={(e) => set("firstName", e.target.value)} required aria-required="true" />
             </div>
             <div>
-              <label className={labelCls}>Nom *</label>
-              <input className={inputCls} value={form.lastName} onChange={(e) => set("lastName", e.target.value)} required />
+              <label htmlFor="addr-last-name" className={labelCls}>Nom *</label>
+              <input id="addr-last-name" className={inputCls} value={form.lastName} onChange={(e) => set("lastName", e.target.value)} required aria-required="true" />
             </div>
           </div>
           <div>
-            <label className={labelCls}>Entreprise</label>
-            <input className={inputCls} value={form.company ?? ""} onChange={(e) => set("company", e.target.value)} />
+            <label htmlFor="addr-company" className={labelCls}>Entreprise</label>
+            <input id="addr-company" className={inputCls} value={form.company ?? ""} onChange={(e) => set("company", e.target.value)} />
           </div>
           <div>
-            <label className={labelCls}>Adresse *</label>
-            <input className={inputCls} value={form.line1} onChange={(e) => set("line1", e.target.value)} required />
+            <label htmlFor="addr-line1" className={labelCls}>Adresse *</label>
+            <input id="addr-line1" className={inputCls} value={form.line1} onChange={(e) => set("line1", e.target.value)} required aria-required="true" />
           </div>
           <div>
-            <label className={labelCls}>Complément</label>
-            <input className={inputCls} value={form.line2 ?? ""} onChange={(e) => set("line2", e.target.value)} />
+            <label htmlFor="addr-line2" className={labelCls}>Complément</label>
+            <input id="addr-line2" className={inputCls} value={form.line2 ?? ""} onChange={(e) => set("line2", e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Code postal *</label>
-              <input className={inputCls} value={form.postalCode} onChange={(e) => set("postalCode", e.target.value)} required />
+              <label htmlFor="addr-postal-code" className={labelCls}>Code postal *</label>
+              <input id="addr-postal-code" className={inputCls} value={form.postalCode} onChange={(e) => set("postalCode", e.target.value)} required aria-required="true" />
             </div>
             <div>
-              <label className={labelCls}>Ville *</label>
-              <input className={inputCls} value={form.city} onChange={(e) => set("city", e.target.value)} required />
+              <label htmlFor="addr-city" className={labelCls}>Ville *</label>
+              <input id="addr-city" className={inputCls} value={form.city} onChange={(e) => set("city", e.target.value)} required aria-required="true" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Région</label>
-              <input className={inputCls} value={form.region ?? ""} onChange={(e) => set("region", e.target.value)} />
+              <label htmlFor="addr-region" className={labelCls}>Région</label>
+              <input id="addr-region" className={inputCls} value={form.region ?? ""} onChange={(e) => set("region", e.target.value)} />
             </div>
             <div>
-              <label className={labelCls}>Pays (ISO) *</label>
-              <input className={inputCls} value={form.country} maxLength={2} onChange={(e) => set("country", e.target.value.toUpperCase())} required />
+              <label htmlFor="addr-country" className={labelCls}>Pays (ISO) *</label>
+              <input id="addr-country" className={inputCls} value={form.country} maxLength={2} onChange={(e) => set("country", e.target.value.toUpperCase())} required aria-required="true" />
             </div>
           </div>
           <div>
-            <label className={labelCls}>Téléphone</label>
-            <input className={inputCls} value={form.phone ?? ""} onChange={(e) => set("phone", e.target.value)} />
+            <label htmlFor="addr-phone" className={labelCls}>Téléphone</label>
+            <input id="addr-phone" className={inputCls} value={form.phone ?? ""} onChange={(e) => set("phone", e.target.value)} />
           </div>
           <div className="flex gap-2 pt-1">
             <Button type="submit" size="sm" disabled={saving}>
@@ -610,7 +615,7 @@ function PaymentMethodsSection() {
       {loading && <p className="text-gray-500 text-sm">Chargement…</p>}
 
       {!loading && methods.length === 0 && !showAddCard && (
-        <p className="text-gray-600 text-sm">Aucune carte enregistrée.</p>
+        <p className="text-gray-500 text-sm">Aucune carte enregistrée.</p>
       )}
 
       <div className="space-y-2 mb-3">
@@ -747,7 +752,7 @@ export default function ProfilePage() {
             </div>
             <p className="text-sm text-gray-400">{user.email}</p>
             {user.company && <p className="text-xs text-gray-500 mt-0.5">{user.company}</p>}
-            <p className="text-xs text-gray-600 mt-2 flex items-center justify-center sm:justify-start gap-1">
+            <p className="text-xs text-gray-500 mt-2 flex items-center justify-center sm:justify-start gap-1">
               <Calendar className="h-3 w-3" />
               Membre depuis {fmt(user.createdAt)}
             </p>

@@ -18,7 +18,7 @@ const tickFmt    = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k€` : `
 
 function EmptyState() {
   return (
-    <div className="flex items-center justify-center h-[280px] text-gray-600 text-sm font-mono">
+    <div className="flex items-center justify-center h-[280px] text-gray-500 text-sm font-mono">
       Pas encore de ventes sur la période sélectionnée
     </div>
   );
@@ -54,6 +54,8 @@ export function SalesBarChart({ data, period }: { data: SalesPoint[]; period: "d
         <span className="text-white">{formatPrice(total)}</span>
       </p>
       {isEmpty ? <EmptyState /> : (
+        <>
+        <p className="sr-only">{ariaLabel}</p>
         <div role="img" aria-label={ariaLabel} className="h-[280px] md:h-[320px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
@@ -65,6 +67,7 @@ export function SalesBarChart({ data, period }: { data: SalesPoint[]; period: "d
             </BarChart>
           </ResponsiveContainer>
         </div>
+        </>
       )}
     </div>
   );
@@ -159,7 +162,7 @@ export function CategoryPieChart({ data }: { data: SharePoint[] }) {
         <div key={d.category} className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
           <span className="text-[10px] font-mono text-gray-400">{d.category}</span>
-          <span className="text-[10px] font-mono text-gray-600">{d.percentage}%</span>
+          <span className="text-[10px] font-mono text-gray-500">{d.percentage}%</span>
         </div>
       ))}
     </div>

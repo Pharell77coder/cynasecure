@@ -208,7 +208,7 @@ export default function AdminSubscriptionsPage() {
                           PDF
                         </button>
                       ) : (
-                        <span className="text-gray-700 text-xs">—</span>
+                        <span className="text-gray-500 text-xs">—</span>
                       )}
                     </td>
                   </motion.tr>

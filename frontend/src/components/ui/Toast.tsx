@@ -7,7 +7,7 @@ export function Toast() {
   const { items, dismiss } = useToast();
 
   return (
-    <div className="pointer-events-none fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+    <div aria-live="polite" aria-atomic="false" className="pointer-events-none fixed bottom-6 right-6 z-50 flex flex-col gap-3">
       {items.map((t) => (
         <div
           key={t.id}

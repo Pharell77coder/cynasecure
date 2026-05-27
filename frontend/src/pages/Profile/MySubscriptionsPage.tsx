@@ -193,9 +193,9 @@ export default function MySubscriptionsPage() {
 
         {subs.length === 0 && (
           <Card className="p-16 text-center border-dashed">
-            <Package className="h-12 w-12 mx-auto mb-4 text-gray-700" />
+            <Package className="h-12 w-12 mx-auto mb-4 text-gray-500" />
             <p className="text-gray-400 font-medium">Aucun abonnement pour le moment</p>
-            <p className="text-gray-600 text-sm mt-1">Découvrez nos solutions de cybersécurité</p>
+            <p className="text-gray-500 text-sm mt-1">Découvrez nos solutions de cybersécurité</p>
             <Link to="/catalogue">
               <Button className="mt-6 gap-1.5">
                 <Package className="h-4 w-4" />

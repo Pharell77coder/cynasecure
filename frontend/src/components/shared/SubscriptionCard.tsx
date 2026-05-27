@@ -64,7 +64,7 @@ export function SubscriptionCard({
               <span className="text-2xl font-black text-white">
                 {opt.price}
               </span>
-              <span className="text-xs text-gray-500">{opt.suffix}</span>
+              <span className="text-xs text-gray-400">{opt.suffix}</span>
             </div>
           </button>
         );

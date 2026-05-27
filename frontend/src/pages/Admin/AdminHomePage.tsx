@@ -107,10 +107,10 @@ function SlideModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-lg bg-gray-900 border border-gray-700">
+      <div role="dialog" aria-modal="true" aria-labelledby="slide-modal-title" className="w-full max-w-lg bg-gray-900 border border-gray-700">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-          <h3 className="text-white font-bold">{slide ? "Modifier la slide" : "Nouvelle slide"}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white"><X className="h-4 w-4" /></button>
+          <h3 id="slide-modal-title" className="text-white font-bold">{slide ? "Modifier la slide" : "Nouvelle slide"}</h3>
+          <button onClick={onClose} aria-label="Fermer" className="text-gray-400 hover:text-white"><X className="h-4 w-4" aria-hidden="true" /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
@@ -124,7 +124,7 @@ function SlideModal({
                 <img src={`/${form.imagePath}`} alt="" className="w-16 h-10 object-cover border border-gray-700" />
               ) : (
                 <div className="w-16 h-10 bg-gray-800 border border-gray-700 flex items-center justify-center">
-                  <ImageOff className="h-4 w-4 text-gray-600" />
+                  <ImageOff className="h-4 w-4 text-gray-500" />
                 </div>
               )}
               <button
@@ -147,19 +147,23 @@ function SlideModal({
 
           {/* Titre */}
           <div>
-            <label className="block text-xs font-mono text-gray-400 mb-1">TITRE *</label>
+            <label htmlFor="slide-title" className="block text-xs font-mono text-gray-400 mb-1">TITRE *</label>
             <input
+              id="slide-title"
               value={form.title}
               onChange={(e) => set("title", e.target.value)}
               maxLength={120}
+              required
+              aria-required="true"
               className="w-full bg-gray-800 border border-gray-700 text-white px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
             />
           </div>
 
           {/* Sous-titre */}
           <div>
-            <label className="block text-xs font-mono text-gray-400 mb-1">SOUS-TITRE</label>
+            <label htmlFor="slide-subtitle" className="block text-xs font-mono text-gray-400 mb-1">SOUS-TITRE</label>
             <input
+              id="slide-subtitle"
               value={form.subtitle}
               onChange={(e) => set("subtitle", e.target.value)}
               maxLength={240}
@@ -170,8 +174,9 @@ function SlideModal({
           {/* CTA */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-mono text-gray-400 mb-1">BOUTON (texte)</label>
+              <label htmlFor="slide-cta-label" className="block text-xs font-mono text-gray-400 mb-1">BOUTON (texte)</label>
               <input
+                id="slide-cta-label"
                 value={form.ctaLabel}
                 onChange={(e) => set("ctaLabel", e.target.value)}
                 maxLength={60}
@@ -180,8 +185,9 @@ function SlideModal({
               />
             </div>
             <div>
-              <label className="block text-xs font-mono text-gray-400 mb-1">BOUTON (lien)</label>
+              <label htmlFor="slide-cta-url" className="block text-xs font-mono text-gray-400 mb-1">BOUTON (lien)</label>
               <input
+                id="slide-cta-url"
                 value={form.ctaUrl}
                 onChange={(e) => set("ctaUrl", e.target.value)}
                 maxLength={255}
@@ -274,28 +280,28 @@ function CarouselSection({ onToast }: { onToast: (msg: string, ok: boolean) => v
       <SectionTitle label="Carrousel" sub="SECTION 1 — HERO" />
 
       {loading ? (
-        <p className="text-gray-600 font-mono text-sm">Chargement…</p>
+        <p className="text-gray-500 font-mono text-sm">Chargement…</p>
       ) : (
         <div className="space-y-2 mb-4">
           {slides.map((s, i) => (
             <div key={s.id} className="flex items-center gap-3 bg-gray-800/60 border border-gray-700 px-4 py-3">
               {/* Flèches */}
               <div className="flex flex-col gap-0.5">
-                <button onClick={() => i > 0 && move(i, -1)} disabled={i === 0} className="text-gray-500 hover:text-white disabled:opacity-20">
-                  <ChevronUp className="h-3 w-3" />
+                <button aria-label="Monter la slide" onClick={() => i > 0 && move(i, -1)} disabled={i === 0} className="text-gray-500 hover:text-white disabled:opacity-20">
+                  <ChevronUp className="h-3 w-3" aria-hidden="true" />
                 </button>
-                <button onClick={() => i < slides.length - 1 && move(i, 1)} disabled={i === slides.length - 1} className="text-gray-500 hover:text-white disabled:opacity-20">
-                  <ChevronDown className="h-3 w-3" />
+                <button aria-label="Descendre la slide" onClick={() => i < slides.length - 1 && move(i, 1)} disabled={i === slides.length - 1} className="text-gray-500 hover:text-white disabled:opacity-20">
+                  <ChevronDown className="h-3 w-3" aria-hidden="true" />
                 </button>
               </div>
-              <GripVertical className="h-4 w-4 text-gray-700 flex-shrink-0" />
+              <GripVertical className="h-4 w-4 text-gray-600 flex-shrink-0" aria-hidden="true" />
 
               {/* Miniature */}
               {s.imagePath ? (
                 <img src={`/${s.imagePath}`} alt="" className="w-14 h-8 object-cover border border-gray-700 flex-shrink-0" />
               ) : (
                 <div className="w-14 h-8 bg-gray-700 border border-gray-700 flex items-center justify-center flex-shrink-0">
-                  <ImageOff className="h-3 w-3 text-gray-600" />
+                  <ImageOff className="h-3 w-3 text-gray-500" />
                 </div>
               )}
 
@@ -306,14 +312,14 @@ function CarouselSection({ onToast }: { onToast: (msg: string, ok: boolean) => v
               </div>
 
               {/* Actions */}
-              <button onClick={() => toggleActive(s)} title={s.isActive ? "Masquer" : "Afficher"} className={`${s.isActive ? "text-emerald-400 hover:text-gray-400" : "text-gray-600 hover:text-emerald-400"} transition-colors`}>
-                {s.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              <button onClick={() => toggleActive(s)} aria-label={s.isActive ? "Masquer la slide" : "Afficher la slide"} className={`${s.isActive ? "text-emerald-400 hover:text-gray-400" : "text-gray-500 hover:text-emerald-400"} transition-colors`}>
+                {s.isActive ? <Eye className="h-4 w-4" aria-hidden="true" /> : <EyeOff className="h-4 w-4" aria-hidden="true" />}
               </button>
-              <button onClick={() => setModal(s)} className="text-gray-400 hover:text-blue-400 transition-colors">
-                <Pencil className="h-4 w-4" />
+              <button onClick={() => setModal(s)} aria-label={`Modifier la slide « ${s.title} »`} className="text-gray-400 hover:text-blue-400 transition-colors">
+                <Pencil className="h-4 w-4" aria-hidden="true" />
               </button>
-              <button onClick={() => handleDelete(s.id)} className="text-gray-400 hover:text-red-400 transition-colors">
-                <Trash2 className="h-4 w-4" />
+              <button onClick={() => handleDelete(s.id)} aria-label={`Supprimer la slide « ${s.title} »`} className="text-gray-400 hover:text-red-400 transition-colors">
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
           ))}
@@ -372,12 +378,13 @@ function ContentSection({ onToast }: { onToast: (msg: string, ok: boolean) => vo
       <SectionTitle label="Texte d'introduction" sub="SECTION 2 — HÉRO INTRO" />
 
       {loading ? (
-        <p className="text-gray-600 font-mono text-sm">Chargement…</p>
+        <p className="text-gray-500 font-mono text-sm">Chargement…</p>
       ) : (
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-mono text-gray-400 mb-1">TITRE</label>
+            <label htmlFor="content-title" className="block text-xs font-mono text-gray-400 mb-1">TITRE</label>
             <input
+              id="content-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={120}
@@ -385,8 +392,9 @@ function ContentSection({ onToast }: { onToast: (msg: string, ok: boolean) => vo
             />
           </div>
           <div>
-            <label className="block text-xs font-mono text-gray-400 mb-1">CONTENU</label>
+            <label htmlFor="content-body" className="block text-xs font-mono text-gray-400 mb-1">CONTENU</label>
             <textarea
+              id="content-body"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={5}
@@ -481,7 +489,7 @@ function CategoriesSection({ onToast }: { onToast: (msg: string, ok: boolean) =>
       <SectionTitle label="Catégories affichées" sub="SECTION 3 — GRILLE DOMAINES" />
 
       {loading ? (
-        <p className="text-gray-600 font-mono text-sm">Chargement…</p>
+        <p className="text-gray-500 font-mono text-sm">Chargement…</p>
       ) : (
         <div className="space-y-6">
           {/* In home */}
@@ -491,11 +499,11 @@ function CategoriesSection({ onToast }: { onToast: (msg: string, ok: boolean) =>
               {inHome.map((cat, i) => (
                 <div key={cat.id} className="flex items-center gap-3 bg-gray-800/60 border border-gray-700 px-4 py-2.5">
                   <div className="flex flex-col gap-0.5">
-                    <button onClick={() => i > 0 && move(i, -1)} disabled={i === 0} className="text-gray-500 hover:text-white disabled:opacity-20">
-                      <ChevronUp className="h-3 w-3" />
+                    <button aria-label="Monter la catégorie" onClick={() => i > 0 && move(i, -1)} disabled={i === 0} className="text-gray-500 hover:text-white disabled:opacity-20">
+                      <ChevronUp className="h-3 w-3" aria-hidden="true" />
                     </button>
-                    <button onClick={() => i < inHome.length - 1 && move(i, 1)} disabled={i === inHome.length - 1} className="text-gray-500 hover:text-white disabled:opacity-20">
-                      <ChevronDown className="h-3 w-3" />
+                    <button aria-label="Descendre la catégorie" onClick={() => i < inHome.length - 1 && move(i, 1)} disabled={i === inHome.length - 1} className="text-gray-500 hover:text-white disabled:opacity-20">
+                      <ChevronDown className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </div>
 
@@ -504,7 +512,7 @@ function CategoriesSection({ onToast }: { onToast: (msg: string, ok: boolean) =>
                     <img src={`/${cat.imagePath}`} alt="" className="w-10 h-10 object-cover border border-gray-700 flex-shrink-0" />
                   ) : (
                     <div className="w-10 h-10 bg-gray-700 border border-gray-700 flex items-center justify-center flex-shrink-0">
-                      <ImageOff className="h-3 w-3 text-gray-600" />
+                      <ImageOff className="h-3 w-3 text-gray-500" />
                     </div>
                   )}
 
@@ -528,13 +536,13 @@ function CategoriesSection({ onToast }: { onToast: (msg: string, ok: boolean) =>
                   />
 
                   {/* Retirer */}
-                  <button onClick={() => removeFromHome(cat)} className="text-gray-500 hover:text-red-400 transition-colors">
-                    <X className="h-4 w-4" />
+                  <button onClick={() => removeFromHome(cat)} aria-label={`Retirer ${cat.name} de l'accueil`} className="text-gray-500 hover:text-red-400 transition-colors">
+                    <X className="h-4 w-4" aria-hidden="true" />
                   </button>
                 </div>
               ))}
               {inHome.length === 0 && (
-                <p className="text-gray-600 text-sm font-mono py-2">Aucune catégorie affichée.</p>
+                <p className="text-gray-500 text-sm font-mono py-2">Aucune catégorie affichée.</p>
               )}
             </div>
           </div>
@@ -617,7 +625,7 @@ function TopProductsSection({ onToast }: { onToast: (msg: string, ok: boolean) =
       <SectionTitle label="Solutions mises en avant" sub="SECTION 4 — TOP PRODUITS" />
 
       {loading ? (
-        <p className="text-gray-600 font-mono text-sm">Chargement…</p>
+        <p className="text-gray-500 font-mono text-sm">Chargement…</p>
       ) : (
         <div className="space-y-6">
           {/* In top */}
@@ -627,14 +635,14 @@ function TopProductsSection({ onToast }: { onToast: (msg: string, ok: boolean) =
               {inTop.map((svc, i) => (
                 <div key={svc.id} className="flex items-center gap-3 bg-gray-800/60 border border-gray-700 px-4 py-2.5">
                   <div className="flex flex-col gap-0.5">
-                    <button onClick={() => i > 0 && move(i, -1)} disabled={i === 0} className="text-gray-500 hover:text-white disabled:opacity-20">
-                      <ChevronUp className="h-3 w-3" />
+                    <button aria-label="Monter le service" onClick={() => i > 0 && move(i, -1)} disabled={i === 0} className="text-gray-500 hover:text-white disabled:opacity-20">
+                      <ChevronUp className="h-3 w-3" aria-hidden="true" />
                     </button>
-                    <button onClick={() => i < inTop.length - 1 && move(i, 1)} disabled={i === inTop.length - 1} className="text-gray-500 hover:text-white disabled:opacity-20">
-                      <ChevronDown className="h-3 w-3" />
+                    <button aria-label="Descendre le service" onClick={() => i < inTop.length - 1 && move(i, 1)} disabled={i === inTop.length - 1} className="text-gray-500 hover:text-white disabled:opacity-20">
+                      <ChevronDown className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </div>
-                  <GripVertical className="h-4 w-4 text-gray-700 flex-shrink-0" />
+                  <GripVertical className="h-4 w-4 text-gray-600 flex-shrink-0" aria-hidden="true" />
 
                   <div className="flex-1 min-w-0">
                     <p className="text-white text-sm font-medium truncate">{svc.name}</p>
@@ -645,13 +653,13 @@ function TopProductsSection({ onToast }: { onToast: (msg: string, ok: boolean) =
                     <span className="text-xs font-mono text-blue-400">{svc.priceMonthly} €/mois</span>
                   )}
 
-                  <button onClick={() => remove(svc)} className="text-gray-500 hover:text-red-400 transition-colors">
-                    <X className="h-4 w-4" />
+                  <button onClick={() => remove(svc)} aria-label={`Retirer ${svc.name} des solutions mises en avant`} className="text-gray-500 hover:text-red-400 transition-colors">
+                    <X className="h-4 w-4" aria-hidden="true" />
                   </button>
                 </div>
               ))}
               {inTop.length === 0 && (
-                <p className="text-gray-600 text-sm font-mono py-2">Aucun produit mis en avant.</p>
+                <p className="text-gray-500 text-sm font-mono py-2">Aucun produit mis en avant.</p>
               )}
             </div>
           </div>

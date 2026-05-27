@@ -71,8 +71,8 @@ function MessageRow({
         <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold border w-fit ${STATUS_COLORS[msg.status]}`}>
           {STATUS_LABELS[msg.status]}
         </span>
-        <p className="text-xs text-gray-600">{fmt(msg.createdAt)}</p>
-        <ChevronRight className={`h-4 w-4 text-gray-600 transition-transform ${open ? "rotate-90" : ""}`} aria-hidden="true" />
+        <p className="text-xs text-gray-500">{fmt(msg.createdAt)}</p>
+        <ChevronRight className={`h-4 w-4 text-gray-500 transition-transform ${open ? "rotate-90" : ""}`} aria-hidden="true" />
       </div>
 
       {open && (
@@ -87,7 +87,7 @@ function MessageRow({
                 <span className="text-blue-400 text-xs font-mono">Réponse envoyée — {msg.repliedAt ? fmt(msg.repliedAt) : ""}</span>
                 {msg.replyReadAt
                   ? <span className="text-emerald-400 text-[10px] font-mono">Lu par l'utilisateur</span>
-                  : <span className="text-gray-600 text-[10px] font-mono">Pas encore lu</span>}
+                  : <span className="text-gray-500 text-[10px] font-mono">Pas encore lu</span>}
               </div>
               <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap">{msg.adminReply}</p>
             </div>
@@ -108,7 +108,7 @@ function MessageRow({
             />
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-gray-600 text-xs font-mono">Statut :</span>
+                <span className="text-gray-500 text-xs font-mono">Statut :</span>
                 {(["new", "read", "answered"] as const).map((s) => (
                   <button
                     key={s}
@@ -309,7 +309,7 @@ export default function AdminContactPage() {
             <p className="text-gray-500 text-sm px-6 py-10 text-center">Aucun message reçu.</p>
           ) : (
             <>
-              <div className="hidden md:grid grid-cols-[1fr_150px_110px_130px_36px] gap-3 px-6 py-2.5 text-[10px] font-medium text-gray-600 uppercase tracking-wider border-b border-gray-800 bg-gray-950">
+              <div className="hidden md:grid grid-cols-[1fr_150px_110px_130px_36px] gap-3 px-6 py-2.5 text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b border-gray-800 bg-gray-950">
                 <span>Expéditeur / Aperçu</span>
                 <span>Sujet</span>
                 <span>Statut</span>
@@ -342,7 +342,7 @@ export default function AdminContactPage() {
             <p className="text-gray-500 text-sm px-6 py-10 text-center">Aucune conversation.</p>
           ) : (
             <>
-              <div className="hidden md:grid grid-cols-[1fr_200px_80px_130px] gap-3 px-6 py-2.5 text-[10px] font-medium text-gray-600 uppercase tracking-wider border-b border-gray-800 bg-gray-950">
+              <div className="hidden md:grid grid-cols-[1fr_200px_80px_130px] gap-3 px-6 py-2.5 text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b border-gray-800 bg-gray-950">
                 <span>Session</span>
                 <span>Email</span>
                 <span>Messages</span>
@@ -360,9 +360,9 @@ export default function AdminContactPage() {
                     aria-label={`Voir la conversation #${c.id}`}
                   >
                     <p className="text-sm font-mono text-gray-400 truncate">{c.sessionId}</p>
-                    <p className="text-sm text-gray-300">{c.email ?? <span className="text-gray-600">Anonyme</span>}</p>
+                    <p className="text-sm text-gray-300">{c.email ?? <span className="text-gray-500">Anonyme</span>}</p>
                     <p className="text-sm text-white font-semibold">{c.messages}</p>
-                    <p className="text-xs text-gray-600">{fmt(c.createdAt)}</p>
+                    <p className="text-xs text-gray-500">{fmt(c.createdAt)}</p>
                   </div>
                 ))}
               </div>

@@ -124,13 +124,15 @@ export default function ForgotPasswordPage() {
         {step === "email" && (
           <form onSubmit={handleEmailSubmit} className="space-y-5">
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">{t("auth.emailAddress")}</label>
+              <label htmlFor="forgot-email" className="mb-2 block text-sm font-medium text-gray-300">{t("auth.emailAddress")}</label>
               <Input
+                id="forgot-email"
                 icon={<Mail className="h-4 w-4" />}
                 type="email"
                 placeholder={t("auth.emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                aria-required="true"
               />
             </div>
 
@@ -158,20 +160,23 @@ export default function ForgotPasswordPage() {
             )}
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">{t("auth.resetCode")}</label>
+              <label htmlFor="forgot-reset-code" className="mb-2 block text-sm font-medium text-gray-300">{t("auth.resetCode")}</label>
               <Input
+                id="forgot-reset-code"
                 icon={<KeyRound className="h-4 w-4" />}
                 type="text"
                 placeholder={t("auth.resetCodePlaceholder")}
                 value={token}
                 onChange={(e) => setToken(e.target.value.trim())}
+                aria-required="true"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">{t("auth.newPassword")}</label>
+              <label htmlFor="forgot-new-password" className="mb-2 block text-sm font-medium text-gray-300">{t("auth.newPassword")}</label>
               <div className="relative">
                 <Input
+                  id="forgot-new-password"
                   icon={<Lock className="h-4 w-4" />}
                   type={showNew ? "text" : "password"}
                   placeholder={t("auth.pwMinPlaceholder")}
@@ -207,9 +212,10 @@ export default function ForgotPasswordPage() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">{t("auth.confirmPassword")}</label>
+              <label htmlFor="forgot-confirm-password" className="mb-2 block text-sm font-medium text-gray-300">{t("auth.confirmPassword")}</label>
               <div className="relative">
                 <Input
+                  id="forgot-confirm-password"
                   icon={<Lock className="h-4 w-4" />}
                   type={showConfirm ? "text" : "password"}
                   placeholder={t("auth.passwordPlaceholder")}

@@ -237,7 +237,7 @@ export default function AdminPaiementsPage() {
                           {p.fraud.level === "blocked" ? "BLOQUÉ" : "REVUE"}
                         </span>
                       ) : (
-                        <span className="text-gray-700 text-xs">—</span>
+                        <span className="text-gray-500 text-xs">—</span>
                       )}
                     </td>
                   </motion.tr>

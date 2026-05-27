@@ -213,7 +213,7 @@ function HeroCarousel({ slides }: { slides: CarouselSlide[] }) {
         </div>
 
         <div className="mt-16 flex flex-wrap items-center gap-2">
-          <span className="text-gray-600 text-xs font-mono tracking-widest mr-2">{t("home.certifiedBy")}</span>
+          <span className="text-gray-400 text-xs font-mono tracking-widest mr-2">{t("home.certifiedBy")}</span>
           {CERTIFICATIONS.map((c) => (
             <span key={c} className="text-gray-500 border border-gray-800 text-xs font-mono px-2 py-0.5 rounded">{c}</span>
           ))}
@@ -222,15 +222,17 @@ function HeroCarousel({ slides }: { slides: CarouselSlide[] }) {
 
       {total > 1 && (
         <>
-          <button onClick={() => go(idx - 1)} className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center border border-white/20 bg-black/30 text-white hover:bg-black/50 transition-colors">
-            <ChevronLeft className="h-5 w-5" />
+          <button onClick={() => go(idx - 1)} aria-label={t("common.prevSlide")} className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center border border-white/20 bg-black/30 text-white hover:bg-black/50 transition-colors">
+            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
           </button>
-          <button onClick={() => go(idx + 1)} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center border border-white/20 bg-black/30 text-white hover:bg-black/50 transition-colors">
-            <ChevronRight className="h-5 w-5" />
+          <button onClick={() => go(idx + 1)} aria-label={t("common.nextSlide")} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center border border-white/20 bg-black/30 text-white hover:bg-black/50 transition-colors">
+            <ChevronRight className="h-5 w-5" aria-hidden="true" />
           </button>
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
             {slides.map((_, i) => (
-              <button key={i} onClick={() => go(i)} className={`w-2 h-2 rounded-full transition-colors ${i === idx ? "bg-blue-400" : "bg-white/30 hover:bg-white/60"}`} />
+              <button key={i} onClick={() => go(i)} aria-label={t("common.goToSlide", { n: i + 1 })} aria-current={i === idx ? "true" : undefined} className="flex items-center justify-center w-11 h-11">
+                <span className={`block w-2 h-2 rounded-full transition-colors ${i === idx ? "bg-blue-400" : "bg-white/30 hover:bg-white/60"}`} />
+              </button>
             ))}
           </div>
         </>
@@ -374,7 +376,7 @@ export default function HomePage() {
       {loadingSlides ? (
         <section className="bg-gray-950" style={{ minHeight: "92vh" }}>
           <div className="container flex items-center justify-center" style={{ minHeight: "92vh" }}>
-            <span className="text-gray-700 font-mono text-sm animate-pulse">{t("home.loading")}</span>
+            <span className="text-gray-400 font-mono text-sm animate-pulse">{t("home.loading")}</span>
           </div>
         </section>
       ) : slides.length > 0 ? (
@@ -410,7 +412,7 @@ export default function HomePage() {
               <div className="text-3xl font-black text-white tracking-tight">
                 <CountUp target={s.value} suffix={s.suffix} />
               </div>
-              <div className="mt-1 text-xs text-gray-500 font-mono tracking-wide">{s.label}</div>
+              <div className="mt-1 text-xs text-gray-400 font-mono tracking-wide">{s.label}</div>
             </div>
           ))}
         </div>
@@ -439,7 +441,7 @@ export default function HomePage() {
               {THREAT_STATS.map((s) => (
                 <div key={s.label} className="border-l-2 border-blue-600 pl-4">
                   <div className="text-2xl font-black text-white">{s.value}</div>
-                  <div className="text-xs text-gray-500 mt-1 leading-tight">{s.label}</div>
+                  <div className="text-xs text-gray-400 mt-1 leading-tight">{s.label}</div>
                 </div>
               ))}
             </div>
@@ -509,12 +511,12 @@ export default function HomePage() {
               >
                 <div className="flex items-start justify-between mb-6">
                   <cap.icon className="h-6 w-6 text-blue-500" />
-                  <span className="text-[10px] font-mono tracking-widest text-gray-600 border border-gray-700 px-2 py-0.5">
+                  <span className="text-[10px] font-mono tracking-widest text-gray-400 border border-gray-700 px-2 py-0.5">
                     {cap.tag}
                   </span>
                 </div>
                 <h3 className="text-white font-bold text-lg mb-2">{cap.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed mb-5">{cap.desc}</p>
+                <p className="text-gray-400 text-sm leading-relaxed mb-5">{cap.desc}</p>
                 <div className="flex flex-wrap gap-2">
                   {cap.metrics.map((m) => (
                     <span key={m} className="text-[11px] font-mono text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5">
@@ -561,7 +563,7 @@ export default function HomePage() {
                   <div className="text-center lg:text-center">
                     <div className="text-blue-500 font-mono text-xs mb-1">{step.time}</div>
                     <div className="text-white font-bold text-sm mb-1">{step.label}</div>
-                    <div className="text-gray-500 text-xs leading-relaxed">{step.desc}</div>
+                    <div className="text-gray-400 text-xs leading-relaxed">{step.desc}</div>
                   </div>
                 </div>
               ))}
@@ -580,7 +582,7 @@ export default function HomePage() {
                 <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
                   {t("home.protectionDomains")}
                 </h2>
-                <p className="mt-3 text-gray-500 text-sm max-w-lg">
+                <p className="mt-3 text-gray-400 text-sm max-w-lg">
                   {t("home.protectionDomainsDesc")}
                 </p>
               </div>
@@ -588,7 +590,7 @@ export default function HomePage() {
 
             <div className={`grid gap-px bg-gray-800 ${categories.length <= 3 ? "md:grid-cols-3" : "md:grid-cols-3 lg:grid-cols-5"}`}>
               {loadingCats ? (
-                <p className="col-span-full text-center text-gray-600 py-12 font-mono text-sm">
+                <p className="col-span-full text-center text-gray-400 py-12 font-mono text-sm">
                   {t("home.loadingDomains")}
                 </p>
               ) : (
@@ -632,7 +634,7 @@ export default function HomePage() {
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {loadingTop ? (
-                <p className="col-span-full text-center text-gray-600 py-12 font-mono text-sm">
+                <p className="col-span-full text-center text-gray-400 py-12 font-mono text-sm">
                   {t("home.loading")}
                 </p>
               ) : (
@@ -678,9 +680,9 @@ export default function HomePage() {
                 <div className="border-t border-gray-800 pt-6 flex items-center justify-between">
                   <div>
                     <div className="text-white font-semibold text-sm">{testimonial.author}</div>
-                    <div className="text-gray-500 text-xs mt-0.5">{testimonial.company}</div>
+                    <div className="text-gray-400 text-xs mt-0.5">{testimonial.company}</div>
                   </div>
-                  <span className="text-[10px] font-mono tracking-widest text-gray-600 border border-gray-700 px-2 py-0.5">
+                  <span className="text-[10px] font-mono tracking-widest text-gray-400 border border-gray-700 px-2 py-0.5">
                     {testimonial.sector}
                   </span>
                 </div>
@@ -689,9 +691,9 @@ export default function HomePage() {
           </div>
 
           <div className="mt-16 flex flex-wrap items-center gap-8 justify-center">
-            <span className="text-gray-700 text-xs font-mono tracking-widest">{t("home.trustedBy")}</span>
+            <span className="text-gray-400 text-xs font-mono tracking-widest">{t("home.trustedBy")}</span>
             {["Groupe A", "Banque B", "Énergie C", "Infra D", "Santé E", "Défense F"].map((name) => (
-              <span key={name} className="text-gray-600 font-bold text-sm tracking-wide">{name}</span>
+              <span key={name} className="text-gray-400 font-bold text-sm tracking-wide">{name}</span>
             ))}
           </div>
         </div>
@@ -710,7 +712,7 @@ export default function HomePage() {
               <div key={item.title} className="bg-gray-950 p-8 hover:bg-gray-900/60 transition-colors">
                 <item.icon className="h-5 w-5 text-blue-500 mb-5" />
                 <h3 className="text-white font-bold text-base mb-2">{item.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
+                <p className="text-gray-400 text-sm leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
