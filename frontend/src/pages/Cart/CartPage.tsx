@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Trash2, ShoppingCart, ArrowRight, Package, Lock, Tag, X, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "../../components/ui/Button";
+import { PageTransition } from "../../components/ui/PageTransition";
 import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../hooks/useAuth";
 import { toast } from "../../hooks/useToast";
@@ -86,6 +87,7 @@ export default function CartPage() {
   const finalTotal = promo ? promo.discountedTotal : total;
 
   return (
+    <PageTransition>
     <div className="container py-12 pb-20">
       <div className="flex items-center gap-3 mb-8">
         <ShoppingCart className="h-5 w-5 text-blue-500" />
@@ -237,5 +239,6 @@ export default function CartPage() {
         </aside>
       </div>
     </div>
+    </PageTransition>
   );
 }

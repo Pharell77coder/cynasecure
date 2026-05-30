@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { ServiceCard } from "../../components/shared/ServiceCard";
+import { PageTransition } from "../../components/ui/PageTransition";
 import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../hooks/useAuth";
 import { toast } from "../../hooks/useToast";
@@ -118,6 +119,7 @@ export default function ServiceDetailsPage() {
     setImgIdx((i) => (i + dir + imgs.length) % imgs.length);
 
   return (
+    <PageTransition>
     <div className="relative">
       <div
         className="pointer-events-none absolute top-0 right-0 w-[600px] h-[600px] opacity-10"
@@ -397,5 +399,6 @@ export default function ServiceDetailsPage() {
         )}
       </div>
     </div>
+    </PageTransition>
   );
 }

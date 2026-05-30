@@ -10,6 +10,7 @@ import {
 import { apiFetch } from "../../api/apiFetch";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import { PageTransition } from "../../components/ui/PageTransition";
 import { UserNav } from "../../components/layout/UserNav";
 import { subscriptionsApi } from "../../api/subscriptions";
 import { toast } from "../../hooks/useToast";
@@ -149,7 +150,7 @@ export default function MySubscriptionsPage() {
     .reduce((sum, s) => sum + s.price, 0);
 
   return (
-    <>
+    <PageTransition>
       <UserNav />
 
       <div className="pointer-events-none fixed inset-0 overflow-hidden -z-10">
@@ -353,6 +354,6 @@ export default function MySubscriptionsPage() {
           </div>
         )}
       </div>
-    </>
+    </PageTransition>
   );
 }

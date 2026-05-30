@@ -26,6 +26,7 @@ import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../hooks/useAuth";
 import { checkoutApi, CheckoutAddress } from "../../api/checkout";
 import { formatPrice } from "../../lib/utils";
+import { PageTransition } from "../../components/ui/PageTransition";
 import { useTranslation } from "react-i18next";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
@@ -55,7 +56,7 @@ const EMPTY_ADDRESS: AddressFormData = {
   phone: "",
 };
 
-/* ── Step indicator ─────────────────────────────── */
+/* Step indicator */
 function StepIndicator({ step, isAuthenticated }: { step: Step; isAuthenticated: boolean }) {
   const { t } = useTranslation();
 
@@ -107,7 +108,7 @@ function StepIndicator({ step, isAuthenticated }: { step: Step; isAuthenticated:
   );
 }
 
-/* ── Auth step ───────────────────────────────────── */
+/* Auth step */
 function AuthStep({ onGuest }: { onGuest: (email: string) => void }) {
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
@@ -187,7 +188,7 @@ function AuthStep({ onGuest }: { onGuest: (email: string) => void }) {
   );
 }
 
-/* ── Address step ────────────────────────────────── */
+/* Address step */
 function AddressStep({
   form,
   onChange,
@@ -259,7 +260,7 @@ function AddressStep({
   );
 }
 
-/* ── Stripe payment form ────────────────────────── */
+/* Stripe payment form */
 function StripePaymentForm({
   clientSecret,
   orderId,
@@ -335,7 +336,7 @@ function StripePaymentForm({
   );
 }
 
-/* ── Payment step ────────────────────────────────── */
+/* Payment step */
 function PaymentStep({
   address,
   items,
@@ -477,7 +478,7 @@ function PaymentStep({
   );
 }
 
-/* ── Confirmation step ───────────────────────────── */
+/* Confirmation step */
 function ConfirmationStep({
   paymentId,
   invoiceNumber,
@@ -560,7 +561,7 @@ function ConfirmationStep({
   );
 }
 
-/* ── Main CheckoutPage ───────────────────────────── */
+/* Main CheckoutPage */
 export default function CheckoutPage() {
   const { t } = useTranslation();
   const { items, total, clearCart, promo } = useCart();
@@ -605,6 +606,7 @@ export default function CheckoutPage() {
   const isGuest = !isAuthenticated;
 
   return (
+    <PageTransition>
     <PayPalScriptProvider options={{ clientId: PAYPAL_CLIENT_ID, currency: "EUR" }}>
       <div className="container py-12 pb-20">
         <div className="flex items-center gap-3 mb-8">
@@ -684,5 +686,6 @@ export default function CheckoutPage() {
         </div>
       </div>
     </PayPalScriptProvider>
+    </PageTransition>
   );
 }

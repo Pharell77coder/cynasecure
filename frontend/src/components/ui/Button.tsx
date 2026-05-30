@@ -11,10 +11,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean;
 }
 
-/* 🎨 Variants XDR */
 const variants: Record<Variant, string> = {
   primary:
-    "bg-blue-600 text-white hover:bg-blue-500 active:scale-[0.98] border border-blue-500/40",
+    "bg-blue-600 text-white hover:bg-blue-500 active:scale-[0.98] border border-blue-500/40 hover:shadow-lg hover:shadow-blue-600/20",
 
   outline:
     "border border-gray-700 text-gray-300 hover:border-blue-500 hover:text-blue-400 hover:bg-gray-800/40",
@@ -26,7 +25,6 @@ const variants: Record<Variant, string> = {
     "bg-red-600 text-white hover:bg-red-500 active:scale-[0.98] border border-red-500/40",
 };
 
-/* 📏 Tailles XDR */
 const sizes: Record<Size, string> = {
   sm: "h-9 px-3 text-sm",
   md: "h-11 px-5 text-sm",
@@ -34,7 +32,6 @@ const sizes: Record<Size, string> = {
   icon: "h-10 w-10 flex items-center justify-center",
 };
 
-/* 🚀 Composant final */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", fullWidth, children, ...rest }, ref) => (
     <button

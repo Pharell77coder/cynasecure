@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Shield, Lock, Eye, Users, Zap, Globe, ArrowRight } from "lucide-react";
 import { Button } from "../../components/ui/Button";
+import { PageTransition } from "../../components/ui/PageTransition";
 import { useTranslation } from "react-i18next";
 import React from "react";
 
@@ -38,9 +39,10 @@ export default function AProposPage() {
   ];
 
   return (
+    <PageTransition>
     <div className="bg-gray-950 min-h-screen">
 
-      {/* ── En-tête ─────────────────────────────────────────────────── */}
+      {/* En-tête */}
       <section className="relative overflow-hidden pt-28 pb-20 border-b border-gray-800">
         <div
           className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[500px] opacity-10 pointer-events-none"
@@ -71,7 +73,7 @@ export default function AProposPage() {
         </div>
       </section>
 
-      {/* ── Chiffres clés ────────────────────────────────────────────── */}
+      {/* Chiffres clés */}
       <section className="border-b border-gray-800">
         <div className="container grid grid-cols-2 md:grid-cols-4">
           {CHIFFRES.map((c, i) => (
@@ -87,7 +89,7 @@ export default function AProposPage() {
         </div>
       </section>
 
-      {/* ── Notre histoire ───────────────────────────────────────────── */}
+      {/* Notre histoire */}
       <section className="py-24 border-b border-gray-800">
         <div className="container grid lg:grid-cols-2 gap-16 items-start">
           <div>
@@ -139,7 +141,7 @@ export default function AProposPage() {
         </div>
       </section>
 
-      {/* ── Valeurs ──────────────────────────────────────────────────── */}
+      {/* Valeurs */}
       <section className="py-24 border-b border-gray-800 bg-gray-900">
         <div className="container">
           <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("legal.aboutValues")}</div>
@@ -162,7 +164,7 @@ export default function AProposPage() {
         </div>
       </section>
 
-      {/* ── Certifications ────────────────────────────────────────────── */}
+      {/* Certifications */}
       <section className="py-20 border-b border-gray-800">
         <div className="container">
           <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("legal.aboutCompliance")}</div>
@@ -186,7 +188,7 @@ export default function AProposPage() {
         </div>
       </section>
 
-      {/* ── CTA ───────────────────────────────────────────────────────── */}
+      {/* CTA */}
       <section className="py-20">
         <div className="container flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div>
@@ -216,5 +218,6 @@ export default function AProposPage() {
       </section>
 
     </div>
+    </PageTransition>
   );
 }

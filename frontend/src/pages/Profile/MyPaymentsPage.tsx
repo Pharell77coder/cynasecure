@@ -7,6 +7,7 @@ import {
 
 import { apiFetch } from "../../api/apiFetch";
 import { Card } from "../../components/ui/Card";
+import { PageTransition } from "../../components/ui/PageTransition";
 import { UserNav } from "../../components/layout/UserNav";
 
 interface Payment {
@@ -81,7 +82,7 @@ export default function MyPaymentsPage() {
   const paidCount = payments.filter((p) => p.status === "paid").length;
 
   return (
-    <>
+    <PageTransition>
       <UserNav />
 
       <div className="pointer-events-none fixed inset-0 overflow-hidden -z-10">
@@ -194,6 +195,6 @@ export default function MyPaymentsPage() {
           </div>
         )}
       </div>
-    </>
+    </PageTransition>
   );
 }

@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Card } from "../../components/ui/Card";
+import { PageTransition } from "../../components/ui/PageTransition";
 import React from "react";
 
 export function AuthLayout({ children }: { children: ReactNode }) {
@@ -10,6 +11,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
   const isRegister = pathname === "/inscription";
 
   return (
+    <PageTransition>
     <div className="container flex justify-center py-16">
       <Card className="w-full max-w-md p-8">
 
@@ -59,5 +61,6 @@ export function AuthLayout({ children }: { children: ReactNode }) {
         <div className="mt-6">{children}</div>
       </Card>
     </div>
+    </PageTransition>
   );
 }

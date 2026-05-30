@@ -4,6 +4,7 @@ import { CheckCircle2, XCircle, Loader2, Shield } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { authApi } from "../../api/auth";
 import { Button } from "../../components/ui/Button";
+import { PageTransition } from "../../components/ui/PageTransition";
 
 export default function VerifyEmailChangePage() {
   const { t } = useTranslation();
@@ -32,6 +33,7 @@ export default function VerifyEmailChangePage() {
   }, [token]);
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
       <div className="w-full max-w-md text-center space-y-6">
         <div className="inline-flex items-center gap-1.5 border border-blue-500/20 bg-blue-500/10 text-blue-400 text-[10px] font-mono tracking-widest px-2.5 py-1 rounded">
@@ -69,5 +71,6 @@ export default function VerifyEmailChangePage() {
         )}
       </div>
     </div>
+    </PageTransition>
   );
 }

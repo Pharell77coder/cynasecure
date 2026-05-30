@@ -14,6 +14,7 @@ import { Elements, CardElement, useStripe, useElements } from "@stripe/react-str
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
+import { PageTransition } from "../../components/ui/PageTransition";
 import { UserNav } from "../../components/layout/UserNav";
 import { useAuth } from "../../hooks/useAuth";
 import { toast } from "../../hooks/useToast";
@@ -59,7 +60,7 @@ function PasswordField({ label, value, onChange, placeholder }: {
   );
 }
 
-// ── Email Change Section ──────────────────────────────────────────────────────
+// Email Change Section
 function EmailChangeSection({ currentEmail }: { currentEmail: string }) {
   const [open, setOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
@@ -134,7 +135,7 @@ function EmailChangeSection({ currentEmail }: { currentEmail: string }) {
   );
 }
 
-// ── 2FA Section ───────────────────────────────────────────────────────────────
+// 2FA Section
 function TwoFactorSection() {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [setup, setSetup] = useState<{ secret: string; qrContent: string } | null>(null);
@@ -302,7 +303,7 @@ function TwoFactorSection() {
   );
 }
 
-// ── Address Section ───────────────────────────────────────────────────────────
+// Address Section
 const EMPTY_ADDR: AddressPayload = {
   firstName: "", lastName: "", company: "",
   line1: "", line2: "", city: "", region: "",
@@ -506,7 +507,7 @@ function AddressSection() {
   );
 }
 
-// ── Add Card Form (Stripe Elements) ──────────────────────────────────────────
+// Add Card Form (Stripe Elements)
 function AddCardForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: () => void }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -557,7 +558,7 @@ function AddCardForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel:
   );
 }
 
-// ── Payment Methods Section ───────────────────────────────────────────────────
+// Payment Methods Section
 function PaymentMethodsSection() {
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
@@ -659,7 +660,7 @@ function PaymentMethodsSection() {
   );
 }
 
-// ── Main ProfilePage ──────────────────────────────────────────────────────────
+// Main ProfilePage
 export default function ProfilePage() {
   const { user, logout, updateProfile } = useAuth();
   const navigate = useNavigate();
@@ -728,7 +729,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <>
+    <PageTransition>
       <UserNav />
 
       <div className="pointer-events-none fixed inset-0 overflow-hidden -z-10">
@@ -933,6 +934,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-    </>
+    </PageTransition>
   );
 }

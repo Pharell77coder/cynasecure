@@ -13,6 +13,7 @@ import {
 
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import { PageTransition } from "../../components/ui/PageTransition";
 import { UserNav } from "../../components/layout/UserNav";
 import { subscriptionsApi } from "../../api/subscriptions";
 import { apiFetch } from "../../api/apiFetch";
@@ -157,7 +158,7 @@ export default function UserDashboardPage() {
     : "?";
 
   return (
-    <>
+    <PageTransition>
       <UserNav />
 
       {/* Background glows */}
@@ -399,6 +400,6 @@ export default function UserDashboardPage() {
           </section>
         )}
       </div>
-    </>
+    </PageTransition>
   );
 }

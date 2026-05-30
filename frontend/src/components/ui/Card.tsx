@@ -10,7 +10,7 @@ export function Card({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
         "bg-gray-900 border border-gray-800 rounded-none p-6",
 
         // Hover discret, professionnel
-        "transition-colors hover:bg-gray-800 hover:border-blue-500/30",
+        "transition-[colors,transform] duration-200 hover:bg-gray-800 hover:border-blue-500/30 hover:-translate-y-0.5 hover:shadow-md",
 
         // Ombre très légère, pas de glow
         "shadow-sm",

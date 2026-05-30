@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { PageTransition } from "../../components/ui/PageTransition";
 
 const SECTIONS = [
   {
@@ -328,9 +329,10 @@ export default function ConfidentialitePage() {
   const disclaimer = t("legal.unofficialTranslation");
 
   return (
+    <PageTransition>
     <div className="bg-gray-950 min-h-screen">
 
-      {/* ── En-tête ─────────────────────────────────────────────────── */}
+      {/* En-tête */}
       <section className="relative overflow-hidden pt-28 pb-16 border-b border-gray-800">
         <div
           className="absolute top-0 right-1/4 w-[600px] h-[400px] opacity-10 pointer-events-none"
@@ -359,7 +361,7 @@ export default function ConfidentialitePage() {
         </div>
       </section>
 
-      {/* ── Contenu ──────────────────────────────────────────────────── */}
+      {/* Contenu */}
       <div className="container max-w-4xl py-16">
 
         {/* Unofficial translation disclaimer (EN/ES only) */}
@@ -406,5 +408,6 @@ export default function ConfidentialitePage() {
       </div>
 
     </div>
+    </PageTransition>
   );
 }

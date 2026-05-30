@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
+import { PageTransition } from "../../components/ui/PageTransition";
 import { ShieldAlert, ArrowLeft } from "lucide-react";
 import React from "react";
 
 export default function NotFoundPage() {
   return (
+    <PageTransition>
     <div className="relative flex min-h-[80vh] items-center justify-center px-6 text-center">
 
       {/* Glow bleu */}
@@ -57,5 +59,6 @@ export default function NotFoundPage() {
         </Link>
       </div>
     </div>
+    </PageTransition>
   );
 }

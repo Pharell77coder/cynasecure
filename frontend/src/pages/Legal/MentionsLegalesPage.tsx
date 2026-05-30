@@ -1,5 +1,6 @@
 import { Mail, MapPin, Phone, Shield } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { PageTransition } from "../../components/ui/PageTransition";
 import React from "react";
 
 const SECTIONS = [
@@ -208,9 +209,10 @@ export default function MentionsLegalesPage() {
   const disclaimer = t("legal.unofficialTranslation");
 
   return (
+    <PageTransition>
     <div className="bg-gray-950 min-h-screen">
 
-      {/* ── En-tête ─────────────────────────────────────────────────── */}
+      {/* En-tête */}
       <section className="relative overflow-hidden pt-28 pb-16 border-b border-gray-800">
         <div
           className="absolute top-0 right-0 w-[500px] h-[400px] opacity-10 pointer-events-none"
@@ -239,7 +241,7 @@ export default function MentionsLegalesPage() {
         </div>
       </section>
 
-      {/* ── Contenu ──────────────────────────────────────────────────── */}
+      {/* Contenu */}
       <div className="container max-w-4xl py-16">
 
         {/* Unofficial translation disclaimer (EN/ES only) */}
@@ -286,5 +288,6 @@ export default function MentionsLegalesPage() {
       </div>
 
     </div>
+    </PageTransition>
   );
 }

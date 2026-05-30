@@ -10,6 +10,7 @@ import { apiFetch } from "../../api/apiFetch";
 import { checkoutApi } from "../../api/checkout";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import { PageTransition } from "../../components/ui/PageTransition";
 import { UserNav } from "../../components/layout/UserNav";
 
 interface OrderItem {
@@ -85,7 +86,7 @@ export default function MyOrdersPage() {
   const toggleExpand = (id: number) => {
     setExpanded((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) { next.delete(id); } else { next.add(id); }
       return next;
     });
   };
@@ -93,7 +94,7 @@ export default function MyOrdersPage() {
   const inputCls = "bg-gray-900 border border-gray-700 text-white text-sm px-3 py-2 focus:outline-none focus:border-blue-500";
 
   return (
-    <>
+    <PageTransition>
       <UserNav />
 
       <div className="pointer-events-none fixed inset-0 overflow-hidden -z-10">
@@ -238,6 +239,6 @@ export default function MyOrdersPage() {
           </section>
         ))}
       </div>
-    </>
+    </PageTransition>
   );
 }

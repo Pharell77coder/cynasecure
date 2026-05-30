@@ -4,6 +4,7 @@ import { Package, Users, Activity, TrendingUp, ArrowRight, CheckCircle2, XCircle
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Card } from "../../components/ui/Card";
+import { FadeIn } from "../../components/ui/FadeIn";
 import { adminApi } from "../../api/admin";
 import type { ChartData } from "../../api/admin";
 import type { Subscription } from "./AdminSubscriptionsPage";
@@ -56,7 +57,7 @@ export default function AdminDashboardPage() {
       .then(([s, subs]) => {
         setStats(s);
         setRecentSubs(
-          [...subs].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()).slice(0, 6)
+          [...subs.items].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()).slice(0, 6)
         );
       })
       .catch(() => toast("Erreur lors du chargement des statistiques", "error"))
@@ -92,6 +93,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* KPI Cards */}
+      <FadeIn direction="none">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Services" value={stats.services} icon={Package} to="/admin/services"
@@ -114,6 +116,7 @@ export default function AdminDashboardPage() {
           gradCls="from-amber-500/10 to-transparent"
         />
       </div>
+      </FadeIn>
 
       {/* Charts */}
       <div className="space-y-6">

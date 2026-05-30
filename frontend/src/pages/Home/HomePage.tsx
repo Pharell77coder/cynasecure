@@ -28,14 +28,18 @@ import {
   Layers,
   ScanLine,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "../../components/ui/Button";
 import { ServiceCard } from "../../components/shared/ServiceCard";
+import { FadeIn } from "../../components/ui/FadeIn";
+import { PageTransition } from "../../components/ui/PageTransition";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { homeApi, type CarouselSlide, type HomeCategory, type HomeService } from "../../api/home";
 import { type Service } from "../../api/services";
 import { useTranslation } from "react-i18next";
 import React from "react";
 
-/* ─── Ticker de menaces ───────────────────────────────────────────── */
+/* Ticker de menaces */
 function getThreatEvents(t: (k: string) => string) {
   return [
     { type: t("home.threatBlocked"), label: t("home.threat1Label"), severity: "high" },
@@ -97,7 +101,7 @@ function ThreatTicker() {
   );
 }
 
-/* ─── Stat counter animé ──────────────────────────────────────────────── */
+/* Stat counter animé */
 function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
@@ -129,10 +133,10 @@ function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
   );
 }
 
-/* ─── Certifications (noms de standards — non traduits) ─────────────── */
+/* Certifications (noms de standards — non traduits) */
 const CERTIFICATIONS = ["ISO 27001", "SOC 2 Type II", "ANSSI PRIS", "HDS", "PCI DSS", "RGPD"];
 
-/* ─── Carousel principal ──────────────────────────────────────────────── */
+/* Carousel principal */
 function HeroCarousel({ slides }: { slides: CarouselSlide[] }) {
   const { t } = useTranslation();
   const [idx, setIdx] = useState(0);
@@ -241,9 +245,9 @@ function HeroCarousel({ slides }: { slides: CarouselSlide[] }) {
   );
 }
 
-/* ════════════════════════════════════════════════════════════════════════ */
 export default function HomePage() {
   const { t } = useTranslation();
+  const reduced = useReducedMotion();
 
   const [slides, setSlides] = useState<CarouselSlide[]>([]);
   const [categories, setCategories] = useState<HomeCategory[]>([]);
@@ -369,406 +373,441 @@ export default function HomePage() {
     { value: "4.5M€", label: t("home.breachCost") },
   ];
 
+  const heroMotion = reduced
+    ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0 } }
+    : { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, ease: "easeOut" } };
+
   return (
-    <div className="space-y-0">
+    <PageTransition>
+      <div className="space-y-0">
 
-      {/* HERO */}
-      {loadingSlides ? (
-        <section className="bg-gray-950" style={{ minHeight: "92vh" }}>
-          <div className="container flex items-center justify-center" style={{ minHeight: "92vh" }}>
-            <span className="text-gray-400 font-mono text-sm animate-pulse">{t("home.loading")}</span>
-          </div>
-        </section>
-      ) : slides.length > 0 ? (
-        <HeroCarousel slides={slides} />
-      ) : (
-        <section className="relative bg-gray-950 overflow-hidden" style={{ minHeight: "92vh" }}>
-          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
-          <div className="relative container flex flex-col justify-center pt-28 pb-24" style={{ minHeight: "92vh" }}>
-            <h1 className="text-white font-black leading-none tracking-tight mb-6" style={{ fontSize: "clamp(2.8rem, 6vw, 5rem)", letterSpacing: "-0.03em" }}>
-              {t("home.stopAttacks")}
-              <br /><span className="text-blue-400">{t("home.beforeTheyHit")}</span>
-            </h1>
-            <div className="flex flex-wrap items-center gap-4">
-              <Link to="/inscription">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 gap-2 rounded-none">
-                  {t("home.startPoc")} <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
+        {/* HERO */}
+        {loadingSlides ? (
+          <section className="bg-gray-950" style={{ minHeight: "92vh" }}>
+            <div className="container flex items-center justify-center" style={{ minHeight: "92vh" }}>
+              <span className="text-gray-400 font-mono text-sm animate-pulse">{t("home.loading")}</span>
             </div>
-          </div>
-        </section>
-      )}
-
-      {/* STATS */}
-      <section className="bg-gray-900 border-y border-gray-800">
-        <div className="container grid grid-cols-2 md:grid-cols-4">
-          {STATS.map((s, i) => (
-            <div
-              key={s.label}
-              className={`py-10 px-8 text-center ${i < 3 ? "border-r border-gray-800" : ""}`}
-            >
-              <s.icon className="h-5 w-5 text-blue-500 mx-auto mb-3 opacity-70" />
-              <div className="text-3xl font-black text-white tracking-tight">
-                <CountUp target={s.value} suffix={s.suffix} />
-              </div>
-              <div className="mt-1 text-xs text-gray-400 font-mono tracking-wide">{s.label}</div>
+          </section>
+        ) : slides.length > 0 ? (
+          <HeroCarousel slides={slides} />
+        ) : (
+          <section className="relative bg-gray-950 overflow-hidden" style={{ minHeight: "92vh" }}>
+            <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
+            <div className="relative container flex flex-col justify-center pt-28 pb-24" style={{ minHeight: "92vh" }}>
+              <motion.h1
+                className="text-white font-black leading-none tracking-tight mb-6"
+                style={{ fontSize: "clamp(2.8rem, 6vw, 5rem)", letterSpacing: "-0.03em" }}
+                {...heroMotion}
+              >
+                {t("home.stopAttacks")}
+                <br /><span className="text-blue-400">{t("home.beforeTheyHit")}</span>
+              </motion.h1>
+              <motion.div
+                className="flex flex-wrap items-center gap-4"
+                initial={heroMotion.initial}
+                animate={heroMotion.animate}
+                transition={{ ...heroMotion.transition, delay: reduced ? 0 : 0.2 }}
+              >
+                <Link to="/inscription">
+                  <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 gap-2 rounded-none">
+                    {t("home.startPoc")} <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </motion.div>
             </div>
-          ))}
-        </div>
-      </section>
+          </section>
+        )}
 
-      {/* THREAT INTELLIGENCE */}
-      <section className="bg-gray-950 py-28">
-        <div className="container grid lg:grid-cols-2 gap-20 items-center">
-          <div>
-            <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.context")}</div>
-            <h2 className="text-4xl font-black text-white leading-tight tracking-tight mb-6" style={{ letterSpacing: "-0.02em" }}>
-              {t("home.threatLandscape")}
-              <br />
-              <span className="text-gray-500">{t("home.threatLandscapeChanged")}</span>
-            </h2>
-            <div className="space-y-6 text-gray-400 text-sm leading-loose">
-              <p>
-                {t("home.threatContextP1").replace(/<1>/g, "").replace(/<\/1>/g, "")}
-              </p>
-              <p>
-                {t("home.threatContextP2").replace(/<1>/g, "").replace(/<\/1>/g, "")}
-              </p>
-            </div>
-
-            <div className="mt-10 grid grid-cols-3 gap-6">
-              {THREAT_STATS.map((s) => (
-                <div key={s.label} className="border-l-2 border-blue-600 pl-4">
-                  <div className="text-2xl font-black text-white">{s.value}</div>
-                  <div className="text-xs text-gray-400 mt-1 leading-tight">{s.label}</div>
+        {/* STATS */}
+        <FadeIn>
+          <section className="bg-gray-900 border-y border-gray-800">
+            <div className="container grid grid-cols-2 md:grid-cols-4">
+              {STATS.map((s, i) => (
+                <div
+                  key={s.label}
+                  className={`py-10 px-8 text-center ${i < 3 ? "border-r border-gray-800" : ""}`}
+                >
+                  <s.icon className="h-5 w-5 text-blue-500 mx-auto mb-3 opacity-70" />
+                  <div className="text-3xl font-black text-white tracking-tight">
+                    <CountUp target={s.value} suffix={s.suffix} />
+                  </div>
+                  <div className="mt-1 text-xs text-gray-400 font-mono tracking-wide">{s.label}</div>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
+        </FadeIn>
 
-          <div className="space-y-4">
-            <div className="border border-red-500/20 bg-red-500/5 rounded-none p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <AlertTriangle className="h-4 w-4 text-red-400" />
-                <span className="text-red-400 font-mono text-xs tracking-widest">{t("home.legacyApproach")}</span>
-              </div>
-              <p className="text-white text-sm font-semibold mb-3">{COMPARISON[0].label}</p>
-              <ul className="space-y-2">
-                {COMPARISON[0].issues!.map((issue) => (
-                  <li key={issue} className="flex items-center gap-2 text-sm text-gray-400">
-                    <span className="text-red-500 text-lg leading-none">×</span>
-                    {issue}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="border border-blue-500/30 bg-blue-500/5 rounded-none p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <CheckCircle className="h-4 w-4 text-blue-400" />
-                <span className="text-blue-400 font-mono text-xs tracking-widest">{t("home.cynasecureApproach")}</span>
-              </div>
-              <p className="text-white text-sm font-semibold mb-3">{COMPARISON[1].label}</p>
-              <ul className="space-y-2">
-                {COMPARISON[1].advantages!.map((adv) => (
-                  <li key={adv} className="flex items-center gap-2 text-sm text-gray-300">
-                    <span className="text-blue-400 text-lg leading-none">✓</span>
-                    {adv}
-                  </li>
-                ))}
-              </ul>
-              <Link to="/catalogue" className="mt-5 inline-flex items-center gap-1 text-blue-400 text-xs font-mono hover:text-blue-300 transition-colors">
-                {t("home.viewPlatform")} <ArrowUpRight className="h-3 w-3" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CAPACITÉS */}
-      <section className="bg-gray-900 py-28 border-y border-gray-800">
-        <div className="container">
-          <div className="mb-16">
-            <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.platform")}</div>
-            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-              <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
-                {t("home.sixCapabilities")}
-              </h2>
-              <Link to="/catalogue">
-                <Button variant="ghost" className="text-blue-400 border border-blue-500/30 hover:bg-blue-500/10 rounded-none font-mono text-xs tracking-wide gap-2">
-                  {t("home.fullCatalogue")} <ArrowRight className="h-3 w-3" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-gray-800">
-            {CAPABILITIES.map((cap) => (
-              <div
-                key={cap.title}
-                className="bg-gray-900 p-8 hover:bg-gray-800/60 transition-colors group"
-              >
-                <div className="flex items-start justify-between mb-6">
-                  <cap.icon className="h-6 w-6 text-blue-500" />
-                  <span className="text-[10px] font-mono tracking-widest text-gray-400 border border-gray-700 px-2 py-0.5">
-                    {cap.tag}
-                  </span>
+        {/* THREAT INTELLIGENCE */}
+        <FadeIn>
+          <section className="bg-gray-950 py-28">
+            <div className="container grid lg:grid-cols-2 gap-20 items-center">
+              <div>
+                <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.context")}</div>
+                <h2 className="text-4xl font-black text-white leading-tight tracking-tight mb-6" style={{ letterSpacing: "-0.02em" }}>
+                  {t("home.threatLandscape")}
+                  <br />
+                  <span className="text-gray-500">{t("home.threatLandscapeChanged")}</span>
+                </h2>
+                <div className="space-y-6 text-gray-400 text-sm leading-loose">
+                  <p>
+                    {t("home.threatContextP1").replace(/<1>/g, "").replace(/<\/1>/g, "")}
+                  </p>
+                  <p>
+                    {t("home.threatContextP2").replace(/<1>/g, "").replace(/<\/1>/g, "")}
+                  </p>
                 </div>
-                <h3 className="text-white font-bold text-lg mb-2">{cap.title}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed mb-5">{cap.desc}</p>
-                <div className="flex flex-wrap gap-2">
-                  {cap.metrics.map((m) => (
-                    <span key={m} className="text-[11px] font-mono text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5">
-                      {m}
-                    </span>
+
+                <div className="mt-10 grid grid-cols-3 gap-6">
+                  {THREAT_STATS.map((s) => (
+                    <div key={s.label} className="border-l-2 border-blue-600 pl-4">
+                      <div className="text-2xl font-black text-white">{s.value}</div>
+                      <div className="text-xs text-gray-400 mt-1 leading-tight">{s.label}</div>
+                    </div>
                   ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* TIMELINE D'INCIDENT */}
-      <section className="bg-gray-950 py-28">
-        <div className="container">
-          <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.automatedResponse")}</div>
-          <h2 className="text-4xl font-black text-white tracking-tight mb-4" style={{ letterSpacing: "-0.02em" }}>
-            {t("home.detectionToRemediation")}
-            <br />
-            <span className="text-gray-500">{t("home.inUnderTwoMin")}</span>
-          </h2>
-          <p className="text-gray-400 text-sm max-w-xl mb-16 leading-relaxed">
-            {t("home.soarDesc")}
-          </p>
-
-          <div className="relative">
-            <div className="absolute top-8 left-0 right-0 h-px bg-gray-800 hidden lg:block" />
-
-            <div className="grid lg:grid-cols-5 gap-8 lg:gap-4">
-              {INCIDENT_STEPS.map((step, i) => (
-                <div key={step.label} className="relative">
-                  <div className="hidden lg:flex items-center justify-center w-16 h-16 border border-blue-500/30 bg-gray-950 rounded-none mb-6 mx-auto relative z-10">
-                    <step.icon className="h-6 w-6 text-blue-400" />
+              <div className="space-y-4">
+                <div className="border border-red-500/20 bg-red-500/5 rounded-none p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <AlertTriangle className="h-4 w-4 text-red-400" />
+                    <span className="text-red-400 font-mono text-xs tracking-widest">{t("home.legacyApproach")}</span>
                   </div>
-
-                  <div className="lg:hidden flex items-center gap-4 mb-4">
-                    <div className="flex items-center justify-center w-10 h-10 border border-blue-500/30 bg-gray-950 flex-shrink-0">
-                      <step.icon className="h-4 w-4 text-blue-400" />
-                    </div>
-                    <div className="h-px flex-1 bg-gray-800" />
-                  </div>
-
-                  <div className="text-center lg:text-center">
-                    <div className="text-blue-500 font-mono text-xs mb-1">{step.time}</div>
-                    <div className="text-white font-bold text-sm mb-1">{step.label}</div>
-                    <div className="text-gray-400 text-xs leading-relaxed">{step.desc}</div>
-                  </div>
+                  <p className="text-white text-sm font-semibold mb-3">{COMPARISON[0].label}</p>
+                  <ul className="space-y-2">
+                    {COMPARISON[0].issues!.map((issue) => (
+                      <li key={issue} className="flex items-center gap-2 text-sm text-gray-400">
+                        <span className="text-red-500 text-lg leading-none">×</span>
+                        {issue}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* DOMAINES */}
-      {(loadingCats || categories.length > 0) && (
-        <section className="bg-gray-900 py-28 border-y border-gray-800">
-          <div className="container space-y-12">
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-              <div>
-                <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.coverage")}</div>
-                <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
-                  {t("home.protectionDomains")}
-                </h2>
-                <p className="mt-3 text-gray-400 text-sm max-w-lg">
-                  {t("home.protectionDomainsDesc")}
-                </p>
-              </div>
-            </div>
-
-            <div className={`grid gap-px bg-gray-800 ${categories.length <= 3 ? "md:grid-cols-3" : "md:grid-cols-3 lg:grid-cols-5"}`}>
-              {loadingCats ? (
-                <p className="col-span-full text-center text-gray-400 py-12 font-mono text-sm">
-                  {t("home.loadingDomains")}
-                </p>
-              ) : (
-                categories.map((c) => (
-                  <Link key={c.id} to={`/catalogue?cat=${c.slug}`} className="group bg-gray-900 hover:bg-gray-800/60 transition-colors p-8 flex flex-col gap-4">
-                    {c.imagePath ? (
-                      <img src={`/${c.imagePath}`} alt={c.name} className="w-12 h-12 object-cover" />
-                    ) : (
-                      <div className="w-12 h-12 bg-gray-800 border border-gray-700 flex items-center justify-center">
-                        <Shield className="h-5 w-5 text-blue-500" />
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-white font-bold text-sm">{c.name}</p>
-                    </div>
+                <div className="border border-blue-500/30 bg-blue-500/5 rounded-none p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <CheckCircle className="h-4 w-4 text-blue-400" />
+                    <span className="text-blue-400 font-mono text-xs tracking-widest">{t("home.cynasecureApproach")}</span>
+                  </div>
+                  <p className="text-white text-sm font-semibold mb-3">{COMPARISON[1].label}</p>
+                  <ul className="space-y-2">
+                    {COMPARISON[1].advantages!.map((adv) => (
+                      <li key={adv} className="flex items-center gap-2 text-sm text-gray-300">
+                        <span className="text-blue-400 text-lg leading-none">✓</span>
+                        {adv}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link to="/catalogue" className="mt-5 inline-flex items-center gap-1 text-blue-400 text-xs font-mono hover:text-blue-300 transition-colors">
+                    {t("home.viewPlatform")} <ArrowUpRight className="h-3 w-3" />
                   </Link>
-                ))
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* SOLUTIONS POPULAIRES */}
-      {(loadingTop || topProducts.length > 0) && (
-        <section className="bg-gray-950 py-28">
-          <div className="container space-y-12">
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-              <div>
-                <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.inProduction")}</div>
-                <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
-                  {t("home.mostAdopted")}
-                </h2>
-              </div>
-              <Link to="/catalogue">
-                <Button variant="ghost" className="text-blue-400 border border-blue-500/30 hover:bg-blue-500/10 rounded-none font-mono text-xs tracking-wide gap-2 flex-shrink-0">
-                  {t("home.allSolutions")} <ArrowRight className="h-3 w-3" />
-                </Button>
-              </Link>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {loadingTop ? (
-                <p className="col-span-full text-center text-gray-400 py-12 font-mono text-sm">
-                  {t("home.loading")}
-                </p>
-              ) : (
-                topProducts.map((s) => (
-                  <ServiceCard
-                    key={s.id}
-                    service={{
-                      id: s.id,
-                      name: s.name,
-                      description: s.description ?? "",
-                      priceMonthly: s.priceMonthly ?? 0,
-                      priceYearly: null,
-                      image: s.image,
-                      category: s.category ?? "",
-                      categorySlug: s.categorySlug ?? "",
-                      type: s.type ?? "saas",
-                      badge: undefined,
-                      features: [],
-                      isAvailable: true,
-                    } as Service}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* TÉMOIGNAGES */}
-      <section className="bg-gray-900 py-28 border-y border-gray-800">
-        <div className="container">
-          <div className="text-blue-500 font-mono text-xs tracking-widest mb-12">{t("home.clientFeedback")}</div>
-
-          <div className="grid lg:grid-cols-2 gap-px bg-gray-800">
-            {TESTIMONIALS.map((testimonial) => (
-              <div key={testimonial.author} className="bg-gray-900 p-10">
-                <div className="text-4xl text-blue-600 font-serif leading-none mb-6 select-none">
-                  "
                 </div>
-                <blockquote className="text-gray-300 text-base leading-relaxed mb-8 italic">
-                  {testimonial.quote}
-                </blockquote>
-                <div className="border-t border-gray-800 pt-6 flex items-center justify-between">
-                  <div>
-                    <div className="text-white font-semibold text-sm">{testimonial.author}</div>
-                    <div className="text-gray-400 text-xs mt-0.5">{testimonial.company}</div>
+              </div>
+            </div>
+          </section>
+        </FadeIn>
+
+        {/* CAPACITÉS */}
+        <FadeIn>
+          <section className="bg-gray-900 py-28 border-y border-gray-800">
+            <div className="container">
+              <div className="mb-16">
+                <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.platform")}</div>
+                <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+                  <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+                    {t("home.sixCapabilities")}
+                  </h2>
+                  <Link to="/catalogue">
+                    <Button variant="ghost" className="text-blue-400 border border-blue-500/30 hover:bg-blue-500/10 rounded-none font-mono text-xs tracking-wide gap-2">
+                      {t("home.fullCatalogue")} <ArrowRight className="h-3 w-3" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-gray-800">
+                {CAPABILITIES.map((cap) => (
+                  <div
+                    key={cap.title}
+                    className="bg-gray-900 p-8 hover:bg-gray-800/60 transition-colors group"
+                  >
+                    <div className="flex items-start justify-between mb-6">
+                      <cap.icon className="h-6 w-6 text-blue-500" />
+                      <span className="text-[10px] font-mono tracking-widest text-gray-400 border border-gray-700 px-2 py-0.5">
+                        {cap.tag}
+                      </span>
+                    </div>
+                    <h3 className="text-white font-bold text-lg mb-2">{cap.title}</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed mb-5">{cap.desc}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {cap.metrics.map((m) => (
+                        <span key={m} className="text-[11px] font-mono text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5">
+                          {m}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                  <span className="text-[10px] font-mono tracking-widest text-gray-400 border border-gray-700 px-2 py-0.5">
-                    {testimonial.sector}
-                  </span>
+                ))}
+              </div>
+            </div>
+          </section>
+        </FadeIn>
+
+        {/* TIMELINE D'INCIDENT */}
+        <FadeIn>
+          <section className="bg-gray-950 py-28">
+            <div className="container">
+              <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.automatedResponse")}</div>
+              <h2 className="text-4xl font-black text-white tracking-tight mb-4" style={{ letterSpacing: "-0.02em" }}>
+                {t("home.detectionToRemediation")}
+                <br />
+                <span className="text-gray-500">{t("home.inUnderTwoMin")}</span>
+              </h2>
+              <p className="text-gray-400 text-sm max-w-xl mb-16 leading-relaxed">
+                {t("home.soarDesc")}
+              </p>
+
+              <div className="relative">
+                <div className="absolute top-8 left-0 right-0 h-px bg-gray-800 hidden lg:block" />
+
+                <div className="grid lg:grid-cols-5 gap-8 lg:gap-4">
+                  {INCIDENT_STEPS.map((step, i) => (
+                    <div key={step.label} className="relative">
+                      <div className="hidden lg:flex items-center justify-center w-16 h-16 border border-blue-500/30 bg-gray-950 rounded-none mb-6 mx-auto relative z-10">
+                        <step.icon className="h-6 w-6 text-blue-400" />
+                      </div>
+
+                      <div className="lg:hidden flex items-center gap-4 mb-4">
+                        <div className="flex items-center justify-center w-10 h-10 border border-blue-500/30 bg-gray-950 flex-shrink-0">
+                          <step.icon className="h-4 w-4 text-blue-400" />
+                        </div>
+                        <div className="h-px flex-1 bg-gray-800" />
+                      </div>
+
+                      <div className="text-center lg:text-center">
+                        <div className="text-blue-500 font-mono text-xs mb-1">{step.time}</div>
+                        <div className="text-white font-bold text-sm mb-1">{step.label}</div>
+                        <div className="text-gray-400 text-xs leading-relaxed">{step.desc}</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          </section>
+        </FadeIn>
 
-          <div className="mt-16 flex flex-wrap items-center gap-8 justify-center">
-            <span className="text-gray-400 text-xs font-mono tracking-widest">{t("home.trustedBy")}</span>
-            {["Groupe A", "Banque B", "Énergie C", "Infra D", "Santé E", "Défense F"].map((name) => (
-              <span key={name} className="text-gray-400 font-bold text-sm tracking-wide">{name}</span>
-            ))}
-          </div>
-        </div>
-      </section>
+        {/* DOMAINES */}
+        {(loadingCats || categories.length > 0) && (
+          <FadeIn>
+            <section className="bg-gray-900 py-28 border-y border-gray-800">
+              <div className="container space-y-12">
+                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                  <div>
+                    <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.coverage")}</div>
+                    <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+                      {t("home.protectionDomains")}
+                    </h2>
+                    <p className="mt-3 text-gray-400 text-sm max-w-lg">
+                      {t("home.protectionDomainsDesc")}
+                    </p>
+                  </div>
+                </div>
 
-      {/* ARCHITECTURE */}
-      <section className="bg-gray-950 py-28">
-        <div className="container">
-          <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.architecture")}</div>
-          <h2 className="text-4xl font-black text-white tracking-tight mb-16" style={{ letterSpacing: "-0.02em" }}>
-            {t("home.builtForCritical")}
-          </h2>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-gray-800">
-            {ARCH_ITEMS.map((item) => (
-              <div key={item.title} className="bg-gray-950 p-8 hover:bg-gray-900/60 transition-colors">
-                <item.icon className="h-5 w-5 text-blue-500 mb-5" />
-                <h3 className="text-white font-bold text-base mb-2">{item.title}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">{item.desc}</p>
+                <div className={`grid gap-px bg-gray-800 ${categories.length <= 3 ? "md:grid-cols-3" : "md:grid-cols-3 lg:grid-cols-5"}`}>
+                  {loadingCats ? (
+                    <p className="col-span-full text-center text-gray-400 py-12 font-mono text-sm">
+                      {t("home.loadingDomains")}
+                    </p>
+                  ) : (
+                    categories.map((c) => (
+                      <Link key={c.id} to={`/catalogue?cat=${c.slug}`} className="group bg-gray-900 hover:bg-gray-800/60 transition-colors p-8 flex flex-col gap-4">
+                        {c.imagePath ? (
+                          <img src={`/${c.imagePath}`} alt={c.name} className="w-12 h-12 object-cover" />
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-800 border border-gray-700 flex items-center justify-center">
+                            <Shield className="h-5 w-5 text-blue-500" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-white font-bold text-sm">{c.name}</p>
+                        </div>
+                      </Link>
+                    ))
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+            </section>
+          </FadeIn>
+        )}
 
-      {/* CTA FINAL */}
-      <section className="relative bg-blue-700 overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
-            backgroundSize: "32px 32px",
-          }}
-        />
+        {/* SOLUTIONS POPULAIRES */}
+        {(loadingTop || topProducts.length > 0) && (
+          <FadeIn>
+            <section className="bg-gray-950 py-28">
+              <div className="container space-y-12">
+                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                  <div>
+                    <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.inProduction")}</div>
+                    <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+                      {t("home.mostAdopted")}
+                    </h2>
+                  </div>
+                  <Link to="/catalogue">
+                    <Button variant="ghost" className="text-blue-400 border border-blue-500/30 hover:bg-blue-500/10 rounded-none font-mono text-xs tracking-wide gap-2 flex-shrink-0">
+                      {t("home.allSolutions")} <ArrowRight className="h-3 w-3" />
+                    </Button>
+                  </Link>
+                </div>
 
-        <div className="relative container py-24 flex flex-col lg:flex-row items-center justify-between gap-12">
-          <div>
-            <div className="text-blue-200 font-mono text-xs tracking-widest mb-4">{t("home.noCommitment")}</div>
-            <h2 className="text-4xl font-black text-white leading-tight" style={{ letterSpacing: "-0.02em" }}>
-              {t("home.evaluatePlatform")}
-              <br />
-              {t("home.yourInfrastructure")}
-            </h2>
-            <p className="mt-4 text-blue-100/70 text-sm max-w-md leading-relaxed">
-              {t("home.pocDesc")}
-            </p>
-          </div>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {loadingTop ? (
+                    <p className="col-span-full text-center text-gray-400 py-12 font-mono text-sm">
+                      {t("home.loading")}
+                    </p>
+                  ) : (
+                    topProducts.map((s) => (
+                      <ServiceCard
+                        key={s.id}
+                        service={{
+                          id: s.id,
+                          name: s.name,
+                          description: s.description ?? "",
+                          longDescription: null,
+                          priceMonthly: s.priceMonthly ?? 0,
+                          priceYearly: null,
+                          image: s.image,
+                          category: s.category ?? "",
+                          categorySlug: s.categorySlug ?? "",
+                          type: s.type === "one_shot" ? "one_shot" : "saas",
+                          badge: undefined,
+                          features: [],
+                          isAvailable: true,
+                        } as Service}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+            </section>
+          </FadeIn>
+        )}
 
-          <div className="flex flex-col gap-3 flex-shrink-0">
-            <Link to="/inscription">
-              <Button
-                size="lg"
-                className="bg-white text-blue-700 hover:bg-blue-50 font-bold px-10 rounded-none gap-2 w-full"
-              >
-                {t("home.startPocBtn")}
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link to="/contact">
-              <Button
-                variant="ghost"
-                size="lg"
-                className="text-white border border-white/30 hover:bg-white/10 rounded-none gap-2 font-mono text-sm tracking-wide w-full"
-              >
-                {t("home.talkToExpert")}
-                <Users className="h-4 w-4" />
-              </Button>
-            </Link>
-            <p className="text-blue-200/50 text-xs text-center font-mono">
-              {t("home.responseTime")}
-            </p>
-          </div>
-        </div>
-      </section>
-    </div>
+        {/* TÉMOIGNAGES */}
+        <FadeIn>
+          <section className="bg-gray-900 py-28 border-y border-gray-800">
+            <div className="container">
+              <div className="text-blue-500 font-mono text-xs tracking-widest mb-12">{t("home.clientFeedback")}</div>
+
+              <div className="grid lg:grid-cols-2 gap-px bg-gray-800">
+                {TESTIMONIALS.map((testimonial) => (
+                  <div key={testimonial.author} className="bg-gray-900 p-10">
+                    <div className="text-4xl text-blue-600 font-serif leading-none mb-6 select-none">
+                      "
+                    </div>
+                    <blockquote className="text-gray-300 text-base leading-relaxed mb-8 italic">
+                      {testimonial.quote}
+                    </blockquote>
+                    <div className="border-t border-gray-800 pt-6 flex items-center justify-between">
+                      <div>
+                        <div className="text-white font-semibold text-sm">{testimonial.author}</div>
+                        <div className="text-gray-400 text-xs mt-0.5">{testimonial.company}</div>
+                      </div>
+                      <span className="text-[10px] font-mono tracking-widest text-gray-400 border border-gray-700 px-2 py-0.5">
+                        {testimonial.sector}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-16 flex flex-wrap items-center gap-8 justify-center">
+                <span className="text-gray-400 text-xs font-mono tracking-widest">{t("home.trustedBy")}</span>
+                {["Groupe A", "Banque B", "Énergie C", "Infra D", "Santé E", "Défense F"].map((name) => (
+                  <span key={name} className="text-gray-400 font-bold text-sm tracking-wide">{name}</span>
+                ))}
+              </div>
+            </div>
+          </section>
+        </FadeIn>
+
+        {/* ARCHITECTURE */}
+        <FadeIn>
+          <section className="bg-gray-950 py-28">
+            <div className="container">
+              <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.architecture")}</div>
+              <h2 className="text-4xl font-black text-white tracking-tight mb-16" style={{ letterSpacing: "-0.02em" }}>
+                {t("home.builtForCritical")}
+              </h2>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-gray-800">
+                {ARCH_ITEMS.map((item) => (
+                  <div key={item.title} className="bg-gray-950 p-8 hover:bg-gray-900/60 transition-colors">
+                    <item.icon className="h-5 w-5 text-blue-500 mb-5" />
+                    <h3 className="text-white font-bold text-base mb-2">{item.title}</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        </FadeIn>
+
+        {/* CTA FINAL */}
+        <FadeIn>
+          <section className="relative bg-blue-700 overflow-hidden">
+            <div
+              className="absolute inset-0 opacity-[0.07]"
+              style={{
+                backgroundImage:
+                  "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
+                backgroundSize: "32px 32px",
+              }}
+            />
+
+            <div className="relative container py-24 flex flex-col lg:flex-row items-center justify-between gap-12">
+              <div>
+                <div className="text-blue-200 font-mono text-xs tracking-widest mb-4">{t("home.noCommitment")}</div>
+                <h2 className="text-4xl font-black text-white leading-tight" style={{ letterSpacing: "-0.02em" }}>
+                  {t("home.evaluatePlatform")}
+                  <br />
+                  {t("home.yourInfrastructure")}
+                </h2>
+                <p className="mt-4 text-blue-100/70 text-sm max-w-md leading-relaxed">
+                  {t("home.pocDesc")}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 flex-shrink-0">
+                <Link to="/inscription">
+                  <Button
+                    size="lg"
+                    className="bg-blue-700 text-white hover:bg-blue-600 active:bg-blue-800 font-bold px-10 rounded-none gap-2 w-full cursor-pointer transition-colors duration-150"
+                  >
+                    {t("home.startPocBtn")}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link to="/contact">
+                  <Button
+                    variant="ghost"
+                    size="lg"
+                    className="text-white border border-white/30 hover:bg-white/10 rounded-none gap-2 font-mono text-sm tracking-wide w-full"
+                  >
+                    {t("home.talkToExpert")}
+                    <Users className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <p className="text-blue-200/50 text-xs text-center font-mono">
+                  {t("home.responseTime")}
+                </p>
+              </div>
+            </div>
+          </section>
+        </FadeIn>
+
+      </div>
+    </PageTransition>
   );
 }

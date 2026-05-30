@@ -15,10 +15,12 @@ import { ServiceCard } from "../../components/shared/ServiceCard";
 import { servicesApi, type Service, type SearchCriteria } from "../../api/services";
 import { toast } from "../../hooks/useToast";
 import { cn } from "../../lib/utils";
+import { PageTransition } from "../../components/ui/PageTransition";
+import { FadeIn } from "../../components/ui/FadeIn";
 import { useTranslation } from "react-i18next";
 import React from "react";
 
-/* ─── Types ────────────────────────────────────────────────────────────── */
+/* Types */
 type SortMode = "relevance" | "price_asc" | "price_desc" | "newest";
 type TypeFilter = "all" | "saas" | "one_shot";
 type ViewMode = "grid" | "list";
@@ -36,7 +38,7 @@ function validType(v: string | null): TypeFilter {
     : "all";
 }
 
-/* ─── Skeleton card ────────────────────────────────────────────────────── */
+/* Skeleton card */
 function SkeletonCard() {
   return (
     <div className="bg-gray-900 border border-gray-800 p-6 animate-pulse">
@@ -52,7 +54,7 @@ function SkeletonCard() {
   );
 }
 
-/* ─── Sort dropdown ────────────────────────────────────────────────────── */
+/* Sort dropdown */
 function SortDropdown({ value, onChange }: { value: SortMode; onChange: (v: SortMode) => void }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -101,7 +103,7 @@ function SortDropdown({ value, onChange }: { value: SortMode; onChange: (v: Sort
   );
 }
 
-/* ─── Pagination ───────────────────────────────────────────────────────── */
+/* Pagination */
 function Pagination({ page, total, onChange }: { page: number; total: number; onChange: (p: number) => void }) {
   const { t } = useTranslation();
   if (total <= 1) return null;
@@ -135,7 +137,6 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
   );
 }
 
-/* ════════════════════════════════════════════════════════════════════════ */
 export default function CataloguePage() {
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
@@ -146,7 +147,7 @@ export default function CataloguePage() {
     { value: "one_shot", label: t("catalogue.typeOneShot"), tag: "ONE" },
   ];
 
-  /* ── Filtres ── */
+  /* Filtres */
   const [q, setQ]             = useState(params.get("q") ?? "");
   const [debouncedQ, setDQ]   = useState(q);
   const [cats, setCats]       = useState<Set<string>>(new Set(params.get("cats")?.split(",").filter(Boolean) ?? []));
@@ -158,12 +159,12 @@ export default function CataloguePage() {
   const [sort, setSort]       = useState<SortMode>(validSort(params.get("sort")));
   const [type, setType]       = useState<TypeFilter>(validType(params.get("type")));
 
-  /* ── UI ── */
+  /* UI */
   const [viewMode, setViewMode]     = useState<ViewMode>("grid");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [page, setPage]             = useState(1);
 
-  /* ── Données ── */
+  /* Données */
   const [allCategories, setAllCategories] = useState<{ slug: string; name: string }[]>([]);
   const [results, setResults]             = useState<Service[]>([]);
   const [total, setTotal]                 = useState(0);
@@ -224,7 +225,7 @@ export default function CataloguePage() {
   useEffect(() => { setPage(1); }, [debouncedQ, cats, dPmin, dPmax, dispo, sort, type]);
 
   const toggleCat = (slug: string) =>
-    setCats((prev) => { const n = new Set(prev); n.has(slug) ? n.delete(slug) : n.add(slug); return n; });
+    setCats((prev) => { const n = new Set(prev); if (n.has(slug)) { n.delete(slug); } else { n.add(slug); } return n; });
 
   const resetAll = () => {
     setQ(""); setDQ("");
@@ -241,9 +242,11 @@ export default function CataloguePage() {
   const hasPriceFilter = pmin !== "" || pmax !== "";
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-gray-950">
 
-      {/* ── Header ─────────────────────────────────────────────────────── */}
+      {/* Header */}
+      <FadeIn>
       <div className="bg-gray-950 border-b border-gray-800">
         <div className="container py-12">
           <div className="flex items-center gap-2 font-mono text-xs text-gray-400 mb-6">
@@ -286,7 +289,9 @@ export default function CataloguePage() {
         </div>
       </div>
 
-      {/* ── Toolbar ─────────────────────────────────────────────────────── */}
+      </FadeIn>
+
+      {/* Toolbar */}
       <div className="border-b border-gray-800 bg-gray-900 sticky top-0 z-30">
         <div className="container flex items-center justify-between gap-4 py-3">
           <div className="flex items-center gap-1">
@@ -334,11 +339,11 @@ export default function CataloguePage() {
         </div>
       </div>
 
-      {/* ── Corps principal ──────────────────────────────────────────────── */}
+      {/* Corps principal */}
       <div className="container py-10">
         <div className={cn("flex gap-8", !sidebarOpen && "block")}>
 
-          {/* ── Sidebar ─────────────────────────────────────────────────── */}
+          {/* Sidebar */}
           {sidebarOpen && (
             <aside className="w-56 flex-shrink-0">
               <div className="sticky top-20 space-y-1">
@@ -427,7 +432,7 @@ export default function CataloguePage() {
             </aside>
           )}
 
-          {/* ── Grille ──────────────────────────────────────────────────── */}
+          {/* Grille */}
           <div className="flex-1 min-w-0">
 
             {hasFilters && (
@@ -526,5 +531,6 @@ export default function CataloguePage() {
         </div>
       </div>
     </div>
+    </PageTransition>
   );
 }
