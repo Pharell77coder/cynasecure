@@ -23,6 +23,9 @@ class HomeCarouselSlide
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $imagePath = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $videoPath = null;
+
     #[ORM\Column(length: 60, nullable: true)]
     private ?string $ctaLabel = null;
 
@@ -64,6 +67,9 @@ class HomeCarouselSlide
 
     public function getImagePath(): ?string { return $this->imagePath; }
     public function setImagePath(?string $v): static { $this->imagePath = $v; return $this; }
+
+    public function getVideoPath(): ?string { return $this->videoPath; }
+    public function setVideoPath(?string $v): static { $this->videoPath = $v; return $this; }
 
     public function getCtaLabel(): ?string { return $this->ctaLabel; }
     public function setCtaLabel(?string $v): static { $this->ctaLabel = $v; return $this; }

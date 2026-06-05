@@ -14,9 +14,12 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use OpenApi\Attributes as OA;
 
 #[Route('/api/admin/home')]
 #[IsGranted('ROLE_ADMIN')]
+#[OA\Tag(name: 'Admin')]
+#[OA\SecurityRequirement(['cookieAuth' => []])]
 class AdminHomeController extends AbstractController
 {
     /* ── helpers ── */
@@ -28,6 +31,7 @@ class AdminHomeController extends AbstractController
             'title'     => $s->getTitle(),
             'subtitle'  => $s->getSubtitle(),
             'imagePath' => $s->getImagePath(),
+            'videoPath' => $s->getVideoPath(),
             'ctaLabel'  => $s->getCtaLabel(),
             'ctaUrl'    => $s->getCtaUrl(),
             'position'  => $s->getPosition(),
@@ -61,10 +65,9 @@ class AdminHomeController extends AbstractController
         ];
     }
 
-    /* ══════════════════════════════════════════════════════
-       CARROUSEL
-    ══════════════════════════════════════════════════════ */
+    // Carrousel
 
+    #[OA\Response(response: 200, description: 'Liste des slides du carrousel')]
     #[Route('/carousel', name: 'admin_home_carousel_list', methods: ['GET'])]
     public function listSlides(HomeCarouselSlideRepository $repo): JsonResponse
     {
@@ -72,6 +75,7 @@ class AdminHomeController extends AbstractController
         return $this->json(array_map($this->slideJson(...), $slides));
     }
 
+    #[OA\Response(response: 201, description: 'Slide du carrousel créée')]
     #[Route('/carousel', name: 'admin_home_carousel_create', methods: ['POST'])]
     public function createSlide(Request $req, EntityManagerInterface $em): JsonResponse
     {
@@ -85,6 +89,7 @@ class AdminHomeController extends AbstractController
             ->setTitle(substr($d['title'], 0, 120))
             ->setSubtitle(isset($d['subtitle']) ? substr($d['subtitle'], 0, 240) : null)
             ->setImagePath($d['imagePath'] ?? null)
+            ->setVideoPath($d['videoPath'] ?? null)
             ->setCtaLabel(isset($d['ctaLabel']) ? substr($d['ctaLabel'], 0, 60) : null)
             ->setCtaUrl(isset($d['ctaUrl']) ? substr($d['ctaUrl'], 0, 255) : null)
             ->setPosition(max(0, (int) ($d['position'] ?? 0)))
@@ -96,6 +101,7 @@ class AdminHomeController extends AbstractController
         return $this->json($this->slideJson($slide), 201);
     }
 
+    #[OA\Response(response: 200, description: 'Ordre des slides du carrousel mis à jour')]
     #[Route('/carousel/reorder', name: 'admin_home_carousel_reorder', methods: ['PATCH'])]
     public function reorderSlides(Request $req, EntityManagerInterface $em, HomeCarouselSlideRepository $repo): JsonResponse
     {
@@ -110,6 +116,7 @@ class AdminHomeController extends AbstractController
         return $this->json(['ok' => true]);
     }
 
+    #[OA\Response(response: 200, description: 'Slide du carrousel mise à jour')]
     #[Route('/carousel/{id}', name: 'admin_home_carousel_update', requirements: ['id' => '\d+'], methods: ['PATCH'])]
     public function updateSlide(int $id, Request $req, EntityManagerInterface $em, HomeCarouselSlideRepository $repo): JsonResponse
     {
@@ -118,18 +125,20 @@ class AdminHomeController extends AbstractController
 
         $d = json_decode($req->getContent(), true) ?? [];
 
-        if (isset($d['title']))     $slide->setTitle(substr($d['title'], 0, 120));
-        if (array_key_exists('subtitle', $d)) $slide->setSubtitle($d['subtitle'] ? substr($d['subtitle'], 0, 240) : null);
+        if (isset($d['title']))                $slide->setTitle(substr($d['title'], 0, 120));
+        if (array_key_exists('subtitle', $d))  $slide->setSubtitle($d['subtitle'] ? substr($d['subtitle'], 0, 240) : null);
         if (array_key_exists('imagePath', $d)) $slide->setImagePath($d['imagePath'] ?: null);
-        if (array_key_exists('ctaLabel', $d)) $slide->setCtaLabel($d['ctaLabel'] ? substr($d['ctaLabel'], 0, 60) : null);
-        if (array_key_exists('ctaUrl', $d)) $slide->setCtaUrl($d['ctaUrl'] ? substr($d['ctaUrl'], 0, 255) : null);
-        if (isset($d['position'])) $slide->setPosition(max(0, (int) $d['position']));
-        if (isset($d['isActive'])) $slide->setIsActive((bool) $d['isActive']);
+        if (array_key_exists('videoPath', $d)) $slide->setVideoPath($d['videoPath'] ?: null);
+        if (array_key_exists('ctaLabel', $d))  $slide->setCtaLabel($d['ctaLabel'] ? substr($d['ctaLabel'], 0, 60) : null);
+        if (array_key_exists('ctaUrl', $d))    $slide->setCtaUrl($d['ctaUrl'] ? substr($d['ctaUrl'], 0, 255) : null);
+        if (isset($d['position']))             $slide->setPosition(max(0, (int) $d['position']));
+        if (isset($d['isActive']))             $slide->setIsActive((bool) $d['isActive']);
 
         $em->flush();
         return $this->json($this->slideJson($slide));
     }
 
+    #[OA\Response(response: 200, description: 'Slide du carrousel supprimée')]
     #[Route('/carousel/{id}', name: 'admin_home_carousel_delete', requirements: ['id' => '\d+'], methods: ['DELETE'])]
     public function deleteSlide(int $id, EntityManagerInterface $em, HomeCarouselSlideRepository $repo): JsonResponse
     {
@@ -141,10 +150,9 @@ class AdminHomeController extends AbstractController
         return $this->json(['ok' => true]);
     }
 
-    /* ══════════════════════════════════════════════════════
-       CONTENU TEXTE
-    ══════════════════════════════════════════════════════ */
+    // Contenu texte
 
+    #[OA\Response(response: 200, description: 'Contenu textuel de la page d\'accueil')]
     #[Route('/content/{slug}', name: 'admin_home_content_get', methods: ['GET'])]
     public function getContent(string $slug, HomeContentRepository $repo): JsonResponse
     {
@@ -153,6 +161,7 @@ class AdminHomeController extends AbstractController
         return $this->json(['slug' => $c->getSlug(), 'title' => $c->getTitle(), 'content' => $c->getContent()]);
     }
 
+    #[OA\Response(response: 200, description: 'Contenu textuel sauvegardé')]
     #[Route('/content/{slug}', name: 'admin_home_content_save', methods: ['PUT'])]
     public function saveContent(string $slug, Request $req, EntityManagerInterface $em, HomeContentRepository $repo): JsonResponse
     {
@@ -167,10 +176,9 @@ class AdminHomeController extends AbstractController
         return $this->json(['slug' => $c->getSlug(), 'title' => $c->getTitle(), 'content' => $c->getContent()]);
     }
 
-    /* ══════════════════════════════════════════════════════
-       CATÉGORIES HOME
-    ══════════════════════════════════════════════════════ */
+    // Catégories home
 
+    #[OA\Response(response: 200, description: 'Liste des catégories de la page d\'accueil')]
     #[Route('/categories', name: 'admin_home_categories_list', methods: ['GET'])]
     public function listCategories(EntityManagerInterface $em): JsonResponse
     {
@@ -178,6 +186,7 @@ class AdminHomeController extends AbstractController
         return $this->json(array_map($this->catJson(...), $cats));
     }
 
+    #[OA\Response(response: 200, description: 'Ordre des catégories mis à jour')]
     #[Route('/categories/reorder', name: 'admin_home_categories_reorder', methods: ['PATCH'])]
     public function reorderCategories(Request $req, EntityManagerInterface $em): JsonResponse
     {
@@ -193,6 +202,7 @@ class AdminHomeController extends AbstractController
         return $this->json(['ok' => true]);
     }
 
+    #[OA\Response(response: 200, description: 'Position et image de la catégorie mises à jour')]
     #[Route('/categories/{id}/home', name: 'admin_home_categories_update', requirements: ['id' => '\d+'], methods: ['PATCH'])]
     public function updateCategoryHome(int $id, Request $req, EntityManagerInterface $em): JsonResponse
     {
@@ -212,10 +222,9 @@ class AdminHomeController extends AbstractController
         return $this->json($this->catJson($cat));
     }
 
-    /* ══════════════════════════════════════════════════════
-       TOP PRODUITS
-    ══════════════════════════════════════════════════════ */
+    // Top produits
 
+    #[OA\Response(response: 200, description: 'Liste des services mis en avant sur la page d\'accueil')]
     #[Route('/top-products', name: 'admin_home_top_list', methods: ['GET'])]
     public function listTop(EntityManagerInterface $em): JsonResponse
     {
@@ -223,6 +232,7 @@ class AdminHomeController extends AbstractController
         return $this->json(array_map($this->serviceJson(...), $all));
     }
 
+    #[OA\Response(response: 200, description: 'Ordre des produits mis en avant actualisé')]
     #[Route('/top-products/reorder', name: 'admin_home_top_reorder', methods: ['PATCH'])]
     public function reorderTop(Request $req, EntityManagerInterface $em): JsonResponse
     {
@@ -238,6 +248,7 @@ class AdminHomeController extends AbstractController
         return $this->json(['ok' => true]);
     }
 
+    #[OA\Response(response: 200, description: 'Service ajouté aux produits mis en avant')]
     #[Route('/top-products/{serviceId}', name: 'admin_home_top_add', requirements: ['serviceId' => '\d+'], methods: ['POST'])]
     public function addTop(int $serviceId, EntityManagerInterface $em): JsonResponse
     {
@@ -254,6 +265,7 @@ class AdminHomeController extends AbstractController
         return $this->json($this->serviceJson($svc));
     }
 
+    #[OA\Response(response: 200, description: 'Service retiré des produits mis en avant')]
     #[Route('/top-products/{serviceId}', name: 'admin_home_top_remove', requirements: ['serviceId' => '\d+'], methods: ['DELETE'])]
     public function removeTop(int $serviceId, EntityManagerInterface $em): JsonResponse
     {

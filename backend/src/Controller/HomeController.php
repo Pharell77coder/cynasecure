@@ -9,11 +9,14 @@ use App\Repository\HomeContentRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use OpenApi\Attributes as OA;
 use Symfony\Component\Routing\Attribute\Route;
 
+#[OA\Tag(name: 'Home')]
 #[Route('/api/home')]
 class HomeController extends AbstractController
 {
+    #[OA\Response(response: 200, description: 'Slides du carousel actifs')]
     #[Route('/carousel', name: 'home_carousel', methods: ['GET'])]
     public function carousel(HomeCarouselSlideRepository $repo): JsonResponse
     {
@@ -22,12 +25,14 @@ class HomeController extends AbstractController
             'title'     => $s->getTitle(),
             'subtitle'  => $s->getSubtitle(),
             'imagePath' => $s->getImagePath(),
+            'videoPath' => $s->getVideoPath(),
             'ctaLabel'  => $s->getCtaLabel(),
             'ctaUrl'    => $s->getCtaUrl(),
             'position'  => $s->getPosition(),
         ], $repo->findActiveOrdered()));
     }
 
+    #[OA\Response(response: 200, description: 'Contenu de la page d\'accueil')]
     #[Route('/content/{slug}', name: 'home_content', methods: ['GET'])]
     public function content(string $slug, HomeContentRepository $repo): JsonResponse
     {
@@ -38,6 +43,7 @@ class HomeController extends AbstractController
         return $this->json(['slug' => $c->getSlug(), 'title' => $c->getTitle(), 'content' => $c->getContent()]);
     }
 
+    #[OA\Response(response: 200, description: 'Catégories en avant sur la page d\'accueil')]
     #[Route('/categories', name: 'home_categories', methods: ['GET'])]
     public function categories(EntityManagerInterface $em): JsonResponse
     {
@@ -57,6 +63,7 @@ class HomeController extends AbstractController
         ], $cats));
     }
 
+    #[OA\Response(response: 200, description: 'Produits phares de la page d\'accueil')]
     #[Route('/top-products', name: 'home_top_products', methods: ['GET'])]
     public function topProducts(EntityManagerInterface $em): JsonResponse
     {
