@@ -338,14 +338,6 @@ export default function ConfidentialitePage() {
           className="absolute top-0 right-1/4 w-[600px] h-[400px] opacity-10 pointer-events-none"
           style={{ background: "radial-gradient(circle, #2563eb 0%, transparent 70%)" }}
         />
-        <div
-          className="absolute inset-0 opacity-[0.03] pointer-events-none"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-          }}
-        />
 
         <div className="relative container max-w-4xl">
           <div className="text-blue-500 font-mono text-xs tracking-widest mb-5">{t("legal.tag")}</div>

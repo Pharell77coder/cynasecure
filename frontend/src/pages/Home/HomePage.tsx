@@ -136,7 +136,19 @@ function HeroCarousel({ slides }: { slides: CarouselSlide[] }) {
 
   return (
     <div className="relative w-full overflow-hidden" style={{ minHeight: "92vh" }}>
-      {slide.imagePath ? (
+      {slide.videoPath ? (
+        <video
+          key={slide.videoPath}
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+          style={{ opacity: fade ? 1 : 0 }}
+          src={`/${slide.videoPath}`}
+          autoPlay
+          muted
+          loop
+          playsInline
+          aria-hidden="true"
+        />
+      ) : slide.imagePath ? (
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-300"
           style={{ backgroundImage: `url(/${slide.imagePath})`, opacity: fade ? 1 : 0 }}
@@ -144,13 +156,6 @@ function HeroCarousel({ slides }: { slides: CarouselSlide[] }) {
       ) : null}
       <div className="absolute inset-0 bg-gray-950/80" />
 
-      <div
-        className="absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage: "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
-      />
 
       <div
         className="relative container flex flex-col justify-center pt-28 pb-24"
@@ -372,7 +377,6 @@ export default function HomePage() {
           <HeroCarousel slides={slides} />
         ) : (
           <section className="relative bg-gray-950 overflow-hidden" style={{ minHeight: "92vh" }}>
-            <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
             <div className="relative container flex flex-col justify-center pt-28 pb-24" style={{ minHeight: "92vh" }}>
               <motion.div
                 className="mb-6"
@@ -774,15 +778,6 @@ export default function HomePage() {
         {/* CTA FINAL */}
         <Reveal variant="fadeIn">
           <section className="relative bg-blue-700 overflow-hidden">
-            <div
-              className="absolute inset-0 opacity-[0.06]"
-              style={{
-                backgroundImage:
-                  "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
-                backgroundSize: "32px 32px",
-              }}
-              aria-hidden="true"
-            />
 
             <div className="relative container py-24 flex flex-col lg:flex-row items-center justify-between gap-12">
               <div>

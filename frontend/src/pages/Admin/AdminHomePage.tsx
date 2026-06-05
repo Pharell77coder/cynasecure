@@ -13,10 +13,12 @@ import {
   ChevronUp,
   ChevronDown,
   ImageOff,
+  Video,
+  Image,
 } from "lucide-react";
 import { adminHomeApi, type CarouselSlide, type HomeCategory, type HomeService } from "../../api/home";
 
-/* ─── helpers ─────────────────────────────────────────────── */
+/* helpers */
 
 function Toast({ msg, ok }: { msg: string; ok: boolean }) {
   return (
@@ -40,20 +42,23 @@ function SectionTitle({ label, sub }: { label: string; sub: string }) {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
-   A) CAROUSEL
-══════════════════════════════════════════════════════════════ */
+// Carrousel
+
+type MediaMode = "image" | "video";
 
 interface SlideFormData {
   title: string;
   subtitle: string;
   imagePath: string;
+  videoPath: string;
   ctaLabel: string;
   ctaUrl: string;
   isActive: boolean;
 }
 
-const SLIDE_EMPTY: SlideFormData = { title: "", subtitle: "", imagePath: "", ctaLabel: "", ctaUrl: "", isActive: true };
+const SLIDE_EMPTY: SlideFormData = {
+  title: "", subtitle: "", imagePath: "", videoPath: "", ctaLabel: "", ctaUrl: "", isActive: true,
+};
 
 function SlideModal({
   slide,
@@ -64,11 +69,16 @@ function SlideModal({
   onClose: () => void;
   onSave: (data: SlideFormData) => Promise<void>;
 }) {
+  const initVideoPath = slide?.videoPath ?? "";
+  const initImagePath = slide?.imagePath ?? "";
+  const initMode: MediaMode = initVideoPath ? "video" : "image";
+
   const [form, setForm] = useState<SlideFormData>(
     slide
-      ? { title: slide.title, subtitle: slide.subtitle ?? "", imagePath: slide.imagePath ?? "", ctaLabel: slide.ctaLabel ?? "", ctaUrl: slide.ctaUrl ?? "", isActive: slide.isActive }
+      ? { title: slide.title, subtitle: slide.subtitle ?? "", imagePath: initImagePath, videoPath: initVideoPath, ctaLabel: slide.ctaLabel ?? "", ctaUrl: slide.ctaUrl ?? "", isActive: slide.isActive }
       : SLIDE_EMPTY
   );
+  const [mediaMode, setMediaMode] = useState<MediaMode>(initMode);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -76,17 +86,31 @@ function SlideModal({
 
   const set = (k: keyof SlideFormData, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
 
+  const switchMode = (mode: MediaMode) => {
+    setMediaMode(mode);
+    if (mode === "image") set("videoPath", "");
+    else set("imagePath", "");
+  };
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setError("");
     try {
-      const path = await adminHomeApi.uploadImage(file);
-      set("imagePath", path);
+      const path = await adminHomeApi.uploadFile(file);
+      if (mediaMode === "video") {
+        set("videoPath", path);
+        set("imagePath", "");
+      } else {
+        set("imagePath", path);
+        set("videoPath", "");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur upload");
     } finally {
       setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
@@ -105,9 +129,15 @@ function SlideModal({
     }
   };
 
+  const currentMedia = mediaMode === "video" ? form.videoPath : form.imagePath;
+
+  const acceptAttr = mediaMode === "video"
+    ? "video/mp4,video/webm,video/ogg"
+    : "image/jpeg,image/png,image/webp";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div role="dialog" aria-modal="true" aria-labelledby="slide-modal-title" className="w-full max-w-lg bg-gray-900 border border-gray-700">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 overflow-y-auto">
+      <div role="dialog" aria-modal="true" aria-labelledby="slide-modal-title" className="w-full max-w-lg bg-gray-900 border border-gray-700 my-4">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
           <h3 id="slide-modal-title" className="text-white font-bold">{slide ? "Modifier la slide" : "Nouvelle slide"}</h3>
           <button onClick={onClose} aria-label="Fermer" className="text-gray-400 hover:text-white"><X className="h-4 w-4" aria-hidden="true" /></button>
@@ -116,33 +146,93 @@ function SlideModal({
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           {error && <p className="text-red-400 text-sm font-mono">{error}</p>}
 
-          {/* Image */}
+          {/* Sélecteur Image / Vidéo */}
           <div>
-            <label className="block text-xs font-mono text-gray-400 mb-2">IMAGE</label>
-            <div className="flex items-center gap-3">
-              {form.imagePath ? (
-                <img src={`/${form.imagePath}`} alt="" className="w-16 h-10 object-cover border border-gray-700" />
-              ) : (
-                <div className="w-16 h-10 bg-gray-800 border border-gray-700 flex items-center justify-center">
-                  <ImageOff className="h-4 w-4 text-gray-500" />
-                </div>
-              )}
+            <p className="block text-xs font-mono text-gray-400 mb-2">MÉDIA</p>
+            <div className="flex border border-gray-700">
               <button
                 type="button"
-                onClick={() => fileRef.current?.click()}
-                disabled={uploading}
-                className="flex items-center gap-2 px-3 py-1.5 text-xs font-mono border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 transition-colors disabled:opacity-50"
+                onClick={() => switchMode("image")}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-mono transition-colors ${
+                  mediaMode === "image" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-gray-800"
+                }`}
               >
-                <Upload className="h-3 w-3" />
-                {uploading ? "Upload…" : "Choisir un fichier"}
+                <Image className="h-3 w-3" aria-hidden="true" />
+                Image
               </button>
-              {form.imagePath && (
-                <button type="button" onClick={() => set("imagePath", "")} className="text-gray-500 hover:text-red-400">
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleUpload} />
+              <button
+                type="button"
+                onClick={() => switchMode("video")}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-mono border-l border-gray-700 transition-colors ${
+                  mediaMode === "video" ? "bg-blue-600 text-white border-blue-600" : "text-gray-400 hover:text-white hover:bg-gray-800"
+                }`}
+              >
+                <Video className="h-3 w-3" aria-hidden="true" />
+                Vidéo courte
+              </button>
             </div>
+          </div>
+
+          {/* Zone d'upload */}
+          <div>
+            <div className="flex items-center gap-3">
+              {/* Prévisualisation */}
+              {currentMedia ? (
+                mediaMode === "video" ? (
+                  <video
+                    src={`/${currentMedia}`}
+                    className="w-24 h-14 object-cover border border-gray-700 flex-shrink-0"
+                    muted
+                    playsInline
+                  />
+                ) : (
+                  <img src={`/${currentMedia}`} alt="" className="w-24 h-14 object-cover border border-gray-700 flex-shrink-0" />
+                )
+              ) : (
+                <div className="w-24 h-14 bg-gray-800 border border-gray-700 flex items-center justify-center flex-shrink-0">
+                  {mediaMode === "video"
+                    ? <Video className="h-5 w-5 text-gray-500" aria-hidden="true" />
+                    : <ImageOff className="h-5 w-5 text-gray-500" aria-hidden="true" />
+                  }
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs font-mono border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 transition-colors disabled:opacity-50"
+                >
+                  <Upload className="h-3 w-3" aria-hidden="true" />
+                  {uploading ? "Upload…" : "Choisir un fichier"}
+                </button>
+                {currentMedia && (
+                  <button
+                    type="button"
+                    onClick={() => mediaMode === "video" ? set("videoPath", "") : set("imagePath", "")}
+                    aria-label="Supprimer le média"
+                    className="text-gray-500 hover:text-red-400 transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+
+              <input
+                ref={fileRef}
+                type="file"
+                accept={acceptAttr}
+                className="hidden"
+                onChange={handleUpload}
+              />
+            </div>
+
+            {mediaMode === "video" && (
+              <p className="mt-2 text-[11px] text-gray-500 font-mono">
+                Formats acceptés : MP4, WebM, OGG — durée recommandée &lt; 30 s
+              </p>
+            )}
           </div>
 
           {/* Titre */}
@@ -264,12 +354,21 @@ function CarouselSection({ onToast }: { onToast: (msg: string, ok: boolean) => v
   };
 
   const handleSave = async (data: SlideFormData) => {
+    const payload = {
+      title: data.title,
+      subtitle: data.subtitle,
+      imagePath: data.imagePath || null,
+      videoPath: data.videoPath || null,
+      ctaLabel: data.ctaLabel,
+      ctaUrl: data.ctaUrl,
+      isActive: data.isActive,
+    };
     if (modal === "new") {
-      const created = await adminHomeApi.createSlide({ ...data, position: slides.length });
+      const created = await adminHomeApi.createSlide({ ...payload, position: slides.length });
       setSlides((prev) => [...prev, created]);
       onToast("Slide créée", true);
     } else if (modal) {
-      const updated = await adminHomeApi.updateSlide(modal.id, data);
+      const updated = await adminHomeApi.updateSlide(modal.id, payload);
       setSlides((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
       onToast("Slide mise à jour", true);
     }
@@ -297,11 +396,16 @@ function CarouselSection({ onToast }: { onToast: (msg: string, ok: boolean) => v
               <GripVertical className="h-4 w-4 text-gray-600 flex-shrink-0" aria-hidden="true" />
 
               {/* Miniature */}
-              {s.imagePath ? (
+              {s.videoPath ? (
+                <div className="relative w-14 h-8 bg-gray-800 border border-gray-700 flex items-center justify-center flex-shrink-0">
+                  <Video className="h-4 w-4 text-blue-400" aria-hidden="true" />
+                  <span className="absolute bottom-0 right-0 bg-blue-600 text-white text-[8px] font-mono px-0.5">VID</span>
+                </div>
+              ) : s.imagePath ? (
                 <img src={`/${s.imagePath}`} alt="" className="w-14 h-8 object-cover border border-gray-700 flex-shrink-0" />
               ) : (
                 <div className="w-14 h-8 bg-gray-700 border border-gray-700 flex items-center justify-center flex-shrink-0">
-                  <ImageOff className="h-3 w-3 text-gray-500" />
+                  <ImageOff className="h-3 w-3 text-gray-500" aria-hidden="true" />
                 </div>
               )}
 
@@ -345,9 +449,7 @@ function CarouselSection({ onToast }: { onToast: (msg: string, ok: boolean) => v
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
-   B) CONTENU TEXTE
-══════════════════════════════════════════════════════════════ */
+// Contenu texte
 
 function ContentSection({ onToast }: { onToast: (msg: string, ok: boolean) => void }) {
   const [content, setContent] = useState("");
@@ -416,9 +518,7 @@ function ContentSection({ onToast }: { onToast: (msg: string, ok: boolean) => vo
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
-   C) CATÉGORIES
-══════════════════════════════════════════════════════════════ */
+// Catégories
 
 function CategoriesSection({ onToast }: { onToast: (msg: string, ok: boolean) => void }) {
   const [cats, setCats] = useState<HomeCategory[]>([]);
@@ -571,9 +671,7 @@ function CategoriesSection({ onToast }: { onToast: (msg: string, ok: boolean) =>
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
-   D) TOP PRODUITS
-══════════════════════════════════════════════════════════════ */
+// Top produits
 
 function TopProductsSection({ onToast }: { onToast: (msg: string, ok: boolean) => void }) {
   const [services, setServices] = useState<HomeService[]>([]);
@@ -688,9 +786,7 @@ function TopProductsSection({ onToast }: { onToast: (msg: string, ok: boolean) =
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
-   PAGE PRINCIPALE
-══════════════════════════════════════════════════════════════ */
+// Page principale
 
 export default function AdminHomePage() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);

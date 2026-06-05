@@ -29,7 +29,7 @@ export interface Payment {
   fraud: { score: number; level: "ok" | "review" | "blocked" } | null;
 }
 
-function StatCard({ label, value, icon: Icon }: { label: string; value: string | number; icon: any }) {
+function StatCard({ label, value, icon: Icon }: { label: string; value: string | number; icon: React.ElementType }) {
   return (
     <div className="p-6 bg-gray-900 border border-gray-800 hover:bg-gray-800 transition-colors">
       <div className="flex items-center justify-between">
@@ -91,15 +91,6 @@ export default function AdminPaiementsPage() {
         aria-hidden="true"
       />
 
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
-        aria-hidden="true"
-      />
 
       <section className="relative py-10 border-b border-gray-900">
         <div className="container space-y-4">

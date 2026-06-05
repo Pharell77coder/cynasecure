@@ -1,12 +1,11 @@
 import { FormEvent, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, User, Eye, EyeOff, Shield, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { ErrorMessage } from "../../components/ui/ErrorMessage";
 import { AuthLayout } from "./AuthLayout";
 import { useAuth } from "../../hooks/useAuth";
-import { authApi } from "../../api/auth";
 import { checkPasswordStrength } from "../../lib/utils";
 import { useTranslation } from "react-i18next";
 import React from "react";
@@ -14,6 +13,7 @@ import React from "react";
 export default function RegisterPage() {
   const { register } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -22,10 +22,6 @@ export default function RegisterPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [verified, setVerified] = useState(false);
-  const [registeredEmail, setRegisteredEmail] = useState("");
-  const [resendLoading, setResendLoading] = useState(false);
-  const [resendMessage, setResendMessage] = useState("");
 
   const strength = checkPasswordStrength(password);
 
@@ -46,64 +42,14 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const res = await register(displayName, email, password);
-      if (res.needsVerification) {
-        setRegisteredEmail(email);
-        setVerified(true);
-      }
+      await register(displayName, email, password);
+      navigate("/dashboard");
     } catch (err: unknown) {
       setError((err as { message?: string })?.message || t("auth.errors.registerError"));
     } finally {
       setLoading(false);
     }
   };
-
-  const handleResend = async () => {
-    setResendLoading(true);
-    setResendMessage("");
-    try {
-      await authApi.resendVerification(registeredEmail);
-      setResendMessage("Un nouveau lien a été envoyé.");
-    } catch {
-      setResendMessage("Une erreur est survenue, réessayez.");
-    } finally {
-      setResendLoading(false);
-    }
-  };
-
-  if (verified) {
-    return (
-      <AuthLayout>
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-3">{t("auth.checkYourEmail")}</h1>
-          <p className="text-slate-400 mb-2">
-            {t("auth.verificationSentTo")}{" "}
-            <span className="text-white font-medium">{registeredEmail}</span>.
-          </p>
-          <p className="text-slate-500 text-sm mb-6">
-            {t("auth.verificationLinkValid")}
-          </p>
-          <button
-            type="button"
-            onClick={handleResend}
-            disabled={resendLoading}
-            className="text-blue-400 hover:underline text-sm disabled:opacity-50"
-          >
-            {resendLoading ? t("auth.sending") : t("auth.resendEmail")}
-          </button>
-          {resendMessage && (
-            <p className="text-green-400 text-sm mt-2" aria-live="polite">{resendMessage}</p>
-          )}
-          <p className="mt-6 text-slate-500 text-sm">
-            {t("auth.alreadyAccount")}{" "}
-            <Link to="/connexion" className="text-blue-400 hover:underline">
-              {t("auth.loginLink")}
-            </Link>
-          </p>
-        </div>
-      </AuthLayout>
-    );
-  }
 
   return (
     <AuthLayout>
@@ -113,15 +59,6 @@ export default function RegisterPage() {
         aria-hidden="true"
       />
 
-      <div
-        className="absolute inset-0 opacity-[0.04] pointer-events-none"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
-        aria-hidden="true"
-      />
 
       <div className="text-center mb-10 relative">
         <div className="inline-flex items-center gap-2 border border-blue-500/30 bg-blue-500/10 text-blue-400 text-[11px] font-mono tracking-widest px-3 py-1.5 rounded">

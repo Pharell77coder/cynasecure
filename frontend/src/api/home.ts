@@ -5,6 +5,7 @@ export interface CarouselSlide {
   title: string;
   subtitle: string | null;
   imagePath: string | null;
+  videoPath: string | null;
   ctaLabel: string | null;
   ctaUrl: string | null;
   position: number;
@@ -81,7 +82,18 @@ export const adminHomeApi = {
   reorderTopProducts: (ids: number[]) =>
     apiFetch<{ ok: boolean }>("/api/admin/home/top-products/reorder", { method: "PATCH", body: JSON.stringify(ids) }),
 
-  // Upload
+  // Upload (images et vidéos courtes)
+  uploadFile: async (file: File): Promise<string> => {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/admin/upload", { method: "POST", body: fd, credentials: "include" });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as { message?: string }).message ?? "Échec upload");
+    }
+    const data = (await res.json()) as { path: string };
+    return data.path;
+  },
   uploadImage: async (file: File): Promise<string> => {
     const fd = new FormData();
     fd.append("file", file);

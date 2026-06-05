@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, Shield } from "lucide-react";
 import { Button } from "../../components/ui/Button";
@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import React from "react";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
@@ -26,9 +26,16 @@ export default function LoginPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
   const [emailUnverified, setEmailUnverified] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
+
+  useEffect(() => {
+    if (isAuthenticated && loginSuccess) {
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, loginSuccess, navigate, from]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -54,7 +61,7 @@ export default function LoginPage() {
         return;
       }
       toast("Connexion réussie", "success");
-      navigate(from, { replace: true });
+      setLoginSuccess(true);
     } catch (err: unknown) {
       const msg = (err as { message?: string })?.message || t("auth.errors.loginError");
       if ((err as { emailUnverified?: boolean })?.emailUnverified) {
@@ -93,15 +100,6 @@ export default function LoginPage() {
         aria-hidden="true"
       />
 
-      <div
-        className="absolute inset-0 opacity-[0.04] pointer-events-none"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
-        aria-hidden="true"
-      />
 
       <div className="text-center mb-10 relative">
         <div className="inline-flex items-center gap-2 border border-blue-500/30 bg-blue-500/10 text-blue-400 text-[11px] font-mono tracking-widest px-3 py-1.5 rounded">

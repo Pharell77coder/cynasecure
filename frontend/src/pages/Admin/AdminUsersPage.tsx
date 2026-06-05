@@ -43,8 +43,8 @@ export default function AdminUsersPage() {
       setItems((prev) => prev.filter((u) => u.id !== id));
       setTotal((t) => t - 1);
       toast("Utilisateur supprimé", "success");
-    } catch (err: any) {
-      toast(err.message || "Erreur lors de la suppression", "error");
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Erreur lors de la suppression", "error");
     }
   };
 
@@ -60,15 +60,6 @@ export default function AdminUsersPage() {
         aria-hidden="true"
       />
 
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
-        aria-hidden="true"
-      />
 
       <section className="relative py-10 border-b border-gray-900">
         <div className="container space-y-4">
@@ -129,13 +120,13 @@ export default function AdminUsersPage() {
                     <td className="px-6 py-4">
                       <span
                         className={`inline-flex items-center gap-1 px-3 py-1 text-[11px] font-mono tracking-widest border ${
-                          u.role === "admin"
+                          u.roles?.includes("ROLE_ADMIN")
                             ? "bg-blue-500/10 text-blue-400 border-blue-500/30"
                             : "bg-gray-700/30 text-gray-400 border-gray-700"
                         }`}
                       >
-                        {u.role === "admin" && <Shield size={12} aria-hidden="true" />}
-                        {u.role.toUpperCase()}
+                        {u.roles?.includes("ROLE_ADMIN") && <Shield size={12} aria-hidden="true" />}
+                        {u.roles?.includes("ROLE_ADMIN") ? "ADMIN" : "USER"}
                       </span>
                     </td>
 

@@ -171,14 +171,6 @@ export default function AdminPromoPage() {
         style={{ background: "radial-gradient(circle, #2563eb 0%, transparent 70%)" }}
         aria-hidden="true"
       />
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage: "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
-        aria-hidden="true"
-      />
 
       <section className="relative py-10 border-b border-gray-900">
         <div className="container space-y-4">
