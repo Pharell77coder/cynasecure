@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 import { ScrollToTop } from "../ui/ScrollToTop";
+import { CookieConsent } from "../ui/CookieConsent";
 import { useTranslation } from "react-i18next";
 import React from "react";
 
@@ -26,6 +27,7 @@ export function PublicLayout() {
 
       <Footer />
       <ScrollToTop />
+      <CookieConsent />
     </div>
   );
 }

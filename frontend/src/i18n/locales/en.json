@@ -546,5 +546,19 @@
     "removeFilter": "Remove this filter",
     "clearSearch": "Clear search",
     "searchLabel": "Search for a solution"
+  },
+  "cookies": {
+    "title": "We use cookies",
+    "desc": "CynaSecure uses cookies to ensure the platform works correctly, remember your preferences and analyze traffic anonymously. No advertising cookies are used.",
+    "acceptAll": "Accept all",
+    "rejectAll": "Reject all",
+    "customize": "Customize",
+    "save": "Save my choices",
+    "necessary": "Essential",
+    "necessaryDesc": "Required for the platform to function (session, cart, security). Cannot be disabled.",
+    "analytics": "Analytics",
+    "analyticsDesc": "Help us understand how you use the site (pages viewed, time spent). Anonymized data.",
+    "learnMore": "Privacy policy",
+    "poweredBy": "GDPR compliant"
   }
 }
