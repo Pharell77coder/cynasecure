@@ -42,9 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.emailUnverified) {
         return { emailUnverified: true };
       }
-      if (res.user) {
-        setUser(res.user);
-      }
+      setUser(res);
       return {};
     } catch (err: unknown) {
       const data = (err as { data?: { emailUnverified?: boolean } })?.data;
@@ -56,8 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (displayName: string, email: string, password: string) => {
-    const res = await authApi.register(displayName, email, password);
-    return { needsVerification: res.needsVerification };
+    await authApi.register(displayName, email, password);
+    await login(email, password);
+    return { needsVerification: false };
   };
 
   const updateProfile = async (data: Partial<User>) => {

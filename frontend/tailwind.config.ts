@@ -18,23 +18,39 @@ export default {
       },
 
       colors: {
-        /* 🌑 Mode sombre premium */
-        background: "#0B0B0D",          // Noir profond
-        surface: "#111113",             // Surface sombre
-        "surface-elevated": "#1A1A1D",  // Cartes / panels
-        foreground: "#FFFFFF",          // Texte blanc
+        /* Sombre premium */
+        background: "#0B0B0D",
+        surface: "#111113",
+        "surface-elevated": "#1A1A1D",
+        foreground: "#FFFFFF",
 
-        /* 🎨 Neutres modernes */
+        /* Sections claires — alternance sombre/clair */
+        light: {
+          bg: "#F8FAFC",
+          surface: "#F1F5F9",
+          border: "#E2E8F0",
+          muted: "#64748B",
+          text: "#1E293B",
+        },
+
+        /* Neutres */
         muted: {
           DEFAULT: "#2A2A2E",
           foreground: "#A1A1AA",
         },
 
-        /* 🔵 Couleur principale (bleu néon premium) */
+        /* Bleu principal */
         primary: {
           DEFAULT: "#3B82F6",
           foreground: "#FFFFFF",
           glow: "#3B82F6",
+        },
+
+        /* Orange CTA — Trust & Authority (UIPro recommendation) */
+        cta: {
+          DEFAULT: "#F97316",
+          hover: "#EA6C00",
+          foreground: "#FFFFFF",
         },
 
         /* 🟥 Danger / erreurs */
@@ -87,6 +103,10 @@ export default {
           "0%, 100%": { boxShadow: "0 0 20px rgba(59,130,246,0.25)" },
           "50%": { boxShadow: "0 0 35px rgba(59,130,246,0.45)" },
         },
+        "pulse-glow-orange": {
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(249,115,22,0)" },
+          "50%": { boxShadow: "0 0 20px 4px rgba(249,115,22,0.3)" },
+        },
         marquee: {
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(-50%)" },
@@ -95,13 +115,29 @@ export default {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.3" },
         },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
+        "slide-up": {
+          from: { opacity: "0", transform: "translateY(24px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        shimmer: {
+          from: { backgroundPosition: "-200% 0" },
+          to: { backgroundPosition: "200% 0" },
+        },
       },
 
       animation: {
         "fade-in": "fade-in 0.25s ease-out",
         "pulse-glow": "pulse-glow 2.5s ease-in-out infinite",
+        "pulse-glow-orange": "pulse-glow-orange 2s ease-in-out infinite",
         marquee: "marquee 36s linear infinite",
         "dot-pulse": "dot-pulse 1.5s ease-in-out infinite",
+        float: "float 3s ease-in-out infinite",
+        "slide-up": "slide-up 0.4s ease-out",
+        shimmer: "shimmer 2s linear infinite",
       },
     },
   },

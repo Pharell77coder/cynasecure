@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 import { authApi } from "../../api/auth";
 import { AuthLayout } from "./AuthLayout";
+import React from "react";
 
 export default function VerifyEmailPage() {
   const { t } = useTranslation();
@@ -37,7 +39,7 @@ export default function VerifyEmailPage() {
         )}
         {status === "success" && (
           <>
-            <div className="mb-4 text-4xl">✅</div>
+            <CheckCircle2 className="mx-auto mb-4 text-green-400" size={48} />
             <h1 className="text-xl font-bold text-white mb-2">{t("auth.verifyEmailSuccess")}</h1>
             <p className="text-slate-400 mb-6">{message}</p>
             <Link
@@ -50,7 +52,7 @@ export default function VerifyEmailPage() {
         )}
         {status === "error" && (
           <>
-            <div className="mb-4 text-4xl">❌</div>
+            <AlertCircle className="mx-auto mb-4 text-red-400" size={48} />
             <h1 className="text-xl font-bold text-white mb-2">{t("auth.verifyEmailError")}</h1>
             <p className="text-slate-400 mb-6">{message}</p>
             <Link

@@ -5,19 +5,22 @@ interface LogoMarqueeProps {
   label?: string;
   items: string[];
   className?: string;
+  variant?: "dark" | "light";
 }
 
-export function LogoMarquee({ label, items, className }: LogoMarqueeProps) {
+export function LogoMarquee({ label, items, className, variant = "light" }: LogoMarqueeProps) {
   const reduced = useReducedMotion();
   const doubled = [...items, ...items];
 
+  const isDark = variant === "dark";
+
   return (
-    <div className={`relative overflow-hidden border-y border-white/5 bg-gray-900/50 py-10 ${className ?? ""}`}>
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-gray-950 to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-gray-950 to-transparent" />
+    <div className={`relative overflow-hidden py-10 ${isDark ? "bg-gray-900/50 border-y border-white/5" : "section-white border-y border-light-border"} ${className ?? ""}`}>
+      <div className={`pointer-events-none absolute inset-y-0 left-0 z-10 w-24 ${isDark ? "bg-gradient-to-r from-gray-950 to-transparent" : "bg-gradient-to-r from-white to-transparent"}`} />
+      <div className={`pointer-events-none absolute inset-y-0 right-0 z-10 w-24 ${isDark ? "bg-gradient-to-l from-gray-950 to-transparent" : "bg-gradient-to-l from-white to-transparent"}`} />
 
       {label && (
-        <p className="mb-6 text-center font-mono text-[0.65rem] tracking-[0.2em] uppercase text-gray-500">
+        <p className={`mb-6 text-center font-mono text-[0.65rem] tracking-[0.2em] uppercase ${isDark ? "text-gray-500" : "text-slate-400"}`}>
           {label}
         </p>
       )}
@@ -29,7 +32,7 @@ export function LogoMarquee({ label, items, className }: LogoMarqueeProps) {
         {doubled.map((item, i) => (
           <div
             key={i}
-            className="mx-10 flex shrink-0 items-center text-gray-500 font-mono text-xs tracking-[0.15em] uppercase transition-colors duration-300 hover:text-gray-300"
+            className={`mx-10 flex shrink-0 items-center font-mono text-xs tracking-[0.15em] uppercase transition-colors duration-300 ${isDark ? "text-gray-500 hover:text-gray-300" : "text-slate-400 hover:text-slate-700"}`}
           >
             {item}
           </div>

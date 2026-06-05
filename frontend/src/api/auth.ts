@@ -13,7 +13,7 @@ export interface User {
 
 export const authApi = {
   login: (email: string, password: string, rememberMe = false) =>
-    apiFetch<{ token: string; user: User; requires2fa?: boolean; emailUnverified?: boolean }>(
+    apiFetch<User & { requires2fa?: boolean; emailUnverified?: boolean }>(
       `/api/login${rememberMe ? "?_remember_me=1" : ""}`,
       {
         method: "POST",

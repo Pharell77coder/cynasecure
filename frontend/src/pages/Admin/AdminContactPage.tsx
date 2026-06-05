@@ -247,8 +247,8 @@ export default function AdminContactPage() {
       const updated = await contactApi.admin.reply(id, reply);
       setMessages((prev) => prev.map((m) => m.id === id ? { ...m, ...updated } : m));
       toast("Réponse envoyée à l'utilisateur", "success");
-    } catch (err: any) {
-      toast(err.message || "Erreur lors de l'envoi", "error");
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Erreur lors de l'envoi", "error");
     }
   };
 

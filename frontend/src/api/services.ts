@@ -1,9 +1,5 @@
 import { apiFetch } from "./apiFetch";
 
-/* ─────────────────────────────────────────────── */
-/* TYPES                                           */
-/* ─────────────────────────────────────────────── */
-
 export interface ServiceFeature {
   label: string;
   included: boolean;
@@ -67,11 +63,7 @@ export interface CreateServicePayload {
   trialAvailable?: boolean;
 }
 
-export interface UpdateServicePayload extends Partial<CreateServicePayload> {}
-
-/* ─────────────────────────────────────────────── */
-/* API PUBLIC SERVICES (USERS)                     */
-/* ─────────────────────────────────────────────── */
+export type UpdateServicePayload = Partial<CreateServicePayload>
 
 export const servicesApi = {
   // LISTE PUBLIQUE
@@ -96,10 +88,7 @@ export const servicesApi = {
   getSimilar: (id: string | number, limit = 6) =>
     apiFetch<Service[]>(`/api/services/${id}/similar?limit=${limit}`),
 
-  /* ─────────────────────────────────────────────── */
-  /* API ADMIN SERVICES                              */
-  /* ─────────────────────────────────────────────── */
-
+  // API admin
   adminList: (page = 1, perPage = 20) =>
     apiFetch<{ items: Service[]; total: number; page: number; perPage: number; totalPages: number }>(
       `/api/admin/services?page=${page}&perPage=${perPage}`

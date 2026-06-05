@@ -5,6 +5,7 @@ import {
 import type { TooltipProps } from "recharts";
 import type { ChartData } from "../../../api/admin";
 import { formatPrice } from "../../../lib/utils";
+import React from "react";
 
 const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899", "#06B6D4", "#2563EB"];
 
@@ -24,7 +25,7 @@ function EmptyState() {
   );
 }
 
-/* ── Tooltip ventes ────────────────────────────── */
+/* Tooltip ventes */
 function SalesTooltip({ active, payload, label }: TooltipProps<number, string>) {
   if (!active || !payload?.length) return null;
   const entry = payload[0];
@@ -38,7 +39,7 @@ function SalesTooltip({ active, payload, label }: TooltipProps<number, string>) 
   );
 }
 
-/* ── Graphique 1 : ventes par période ────────── */
+/* Graphique 1 : ventes par période */
 export function SalesBarChart({ data, period }: { data: SalesPoint[]; period: "days" | "weeks" }) {
   const total    = data.reduce((s, d) => s + d.total, 0);
   const isEmpty  = total === 0;
@@ -73,7 +74,7 @@ export function SalesBarChart({ data, period }: { data: SalesPoint[]; period: "d
   );
 }
 
-/* ── Tooltip empilé ────────────────────────────── */
+/* Tooltip empilé */
 function StackedTooltip({ active, payload, label }: TooltipProps<number, string>) {
   if (!active || !payload?.length) return null;
   const total = payload.reduce((s, p) => s + (p.value as number ?? 0), 0);
@@ -95,7 +96,7 @@ function StackedTooltip({ active, payload, label }: TooltipProps<number, string>
   );
 }
 
-/* ── Graphique 2 : catégories empilées ────────── */
+/* Graphique 2 : catégories empilées */
 export function StackedCategoryChart({ data }: { data: StackedPoint[] }) {
   const cats = [...new Set(data.flatMap(d => Object.keys(d.categories)))];
   const isEmpty = cats.length === 0;
@@ -138,7 +139,7 @@ export function StackedCategoryChart({ data }: { data: StackedPoint[] }) {
   );
 }
 
-/* ── Tooltip camembert ─────────────────────────── */
+/* Tooltip camembert */
 function PieTooltip({ active, payload }: TooltipProps<number, string>) {
   if (!active || !payload?.length) return null;
   const entry = payload[0];
@@ -152,7 +153,7 @@ function PieTooltip({ active, payload }: TooltipProps<number, string>) {
   );
 }
 
-/* ── Graphique 3 : camembert catégories ─────── */
+/* Graphique 3 : camembert catégories */
 export function CategoryPieChart({ data }: { data: SharePoint[] }) {
   const total = data.reduce((s, d) => s + d.total, 0);
 

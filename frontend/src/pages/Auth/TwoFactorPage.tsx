@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { authApi } from "../../api/auth";
 import { useAuth } from "../../hooks/useAuth";
 import { AuthLayout } from "./AuthLayout";
+import React from "react";
 
 export default function TwoFactorPage() {
   const [code, setCode] = useState("");

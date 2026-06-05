@@ -4,7 +4,9 @@ export interface AdminUser {
   id: number;
   displayName: string;
   email: string;
-  role: "admin" | "user";
+  roles: string[];
+  createdAt: string | null;
+  emailVerifiedAt: string | null;
 }
 
 export interface Paginated<T> {

@@ -96,6 +96,16 @@
     color: #3B82F6;
   }
 
+  /* Eyebrow version sombre pour sections claires */
+  .eyebrow-dark {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #2563EB;
+  }
+
   .link-underline {
     background-image: linear-gradient(currentColor, currentColor);
     background-position: 0 100%;
@@ -104,6 +114,55 @@
     transition: background-size 250ms ease;
   }
   .link-underline:hover { background-size: 100% 1px; }
+
+  /* Bouton CTA orange */
+  .btn-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.75rem;
+    background-color: #F97316;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
+    transition: background-color 200ms ease, transform 150ms ease, box-shadow 200ms ease;
+  }
+  .btn-cta:hover {
+    background-color: #EA6C00;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(249,115,22,0.35);
+  }
+  .btn-cta:active { transform: scale(0.97); }
+
+  /* Carte section claire */
+  .card-light {
+    background: #ffffff;
+    border: 1px solid #E2E8F0;
+    transition: border-color 200ms, transform 200ms, box-shadow 200ms;
+  }
+  .card-light:hover {
+    border-color: #3B82F6;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(59,130,246,0.1);
+  }
+
+  /* Badge trust */
+  .badge-trust {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.75rem;
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    color: #1D4ED8;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
 }
 
 @layer utilities {
@@ -116,6 +175,16 @@
 
   .animate-marquee-pause:hover {
     animation-play-state: paused;
+  }
+
+  /* Section claire utilitaire */
+  .section-light {
+    background-color: #F8FAFC;
+    color: #1E293B;
+  }
+  .section-white {
+    background-color: #ffffff;
+    color: #1E293B;
   }
 }
 

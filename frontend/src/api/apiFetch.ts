@@ -25,7 +25,7 @@ export async function apiFetch<T = unknown>(
     const res = await fetch(`${BASE_URL}${path}`, {
       ...options,
       signal: controller.signal,
-      credentials: "include", // 🔥 indispensable pour les sessions Symfony
+      credentials: "include", // requis pour les sessions Symfony
       headers: {
         ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...(options.headers || {}),
@@ -34,12 +34,11 @@ export async function apiFetch<T = unknown>(
 
     clearTimeout(timeout);
 
-    // 🔥 204 No Content
     if (res.status === 204) {
       return {} as T;
     }
 
-    // 🔥 JSON ou texte brut
+    // JSON ou texte brut
     const data = await res
       .json()
       .catch(async () => await res.text().catch(() => null));
@@ -58,11 +57,11 @@ export async function apiFetch<T = unknown>(
     }
 
     return data as T;
-  } catch (err: any) {
-    if (err.name === "AbortError") {
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
       throw new Error("La requête a expiré (timeout).");
     }
-    if (err.statusCode) throw err;
-    throw new Error(err.message || "Erreur réseau.");
+    if (typeof err === "object" && err !== null && "statusCode" in err) throw err;
+    throw new Error(err instanceof Error ? err.message : "Erreur réseau.");
   }
 }

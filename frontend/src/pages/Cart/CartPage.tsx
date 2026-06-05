@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Trash2, ShoppingCart, ArrowRight, Package, Lock, Tag, X, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "../../components/ui/Button";
@@ -103,41 +104,48 @@ export default function CartPage() {
 
         {/* Items */}
         <div className="space-y-2">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center gap-4 border border-gray-800 bg-gray-900 p-4 hover:border-gray-700 transition-colors"
-            >
-              {item.image ? (
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="h-16 w-16 object-cover border border-gray-800 flex-shrink-0"
-                />
-              ) : (
-                <div className="h-16 w-16 bg-gray-800 border border-gray-700 flex items-center justify-center flex-shrink-0">
-                  <Package className="h-6 w-6 text-gray-500" />
-                </div>
-              )}
-
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-white truncate">{item.name}</h3>
-                <p className="text-xs text-gray-500 mt-0.5">{t("checkout.perpetualLicense")}</p>
-              </div>
-
-              <p className="text-lg font-bold text-white flex-shrink-0">
-                {formatPrice(item.priceMonthly)}
-              </p>
-
-              <button
-                onClick={() => removeFromCart(item.id)}
-                className="text-gray-500 hover:text-red-400 transition-colors flex-shrink-0 ml-1"
-                aria-label={t("checkout.remove")}
+          <AnimatePresence initial={false}>
+            {items.map((item) => (
+              <motion.div
+                key={item.id}
+                layout
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="overflow-hidden"
               >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
+                <div className="flex items-center gap-4 border border-gray-800 bg-gray-900 p-4 hover:border-gray-700 transition-colors">
+                  {item.image ? (
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="h-16 w-16 object-cover border border-gray-800 flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 bg-gray-800 border border-gray-700 flex items-center justify-center flex-shrink-0">
+                      <Package className="h-6 w-6 text-gray-500" />
+                    </div>
+                  )}
+
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-white truncate">{item.name}</h3>
+                    <p className="text-xs text-gray-500 mt-0.5">{t("checkout.perpetualLicense")}</p>
+                  </div>
+
+                  <p className="text-lg font-bold text-white flex-shrink-0">
+                    {formatPrice(item.priceMonthly)}
+                  </p>
+
+                  <button
+                    onClick={() => removeFromCart(item.id)}
+                    className="text-gray-500 hover:text-red-400 transition-colors flex-shrink-0 ml-1"
+                    aria-label={t("checkout.remove")}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
 
         {/* Summary */}

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { loadStripe } from "@stripe/stripe-js";
 import {
@@ -73,37 +74,49 @@ function StepIndicator({ step, isAuthenticated }: { step: Step; isAuthenticated:
 
   const idx = visibleSteps.findIndex((s) => s.key === step);
 
+  const progressPct = idx === 0 ? 0 : Math.round((idx / (visibleSteps.length - 1)) * 100);
+
   return (
-    <div className="flex items-center gap-0 mb-10">
-      {visibleSteps.map((s, i) => (
-        <React.Fragment key={s.key}>
-          <div className="flex items-center gap-2">
-            <div
-              className={`w-7 h-7 flex items-center justify-center text-xs font-bold border ${
-                i < idx
-                  ? "bg-blue-600 border-blue-600 text-white"
-                  : i === idx
-                  ? "bg-blue-600 border-blue-600 text-white"
-                  : "bg-gray-900 border-gray-700 text-gray-500"
-              }`}
-            >
-              {i < idx ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
+    <div className="mb-10">
+      <div className="flex items-center gap-0">
+        {visibleSteps.map((s, i) => (
+          <React.Fragment key={s.key}>
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-7 h-7 flex items-center justify-center text-xs font-bold border ${
+                  i < idx
+                    ? "bg-blue-600 border-blue-600 text-white"
+                    : i === idx
+                    ? "bg-blue-600 border-blue-600 text-white"
+                    : "bg-gray-900 border-gray-700 text-gray-500"
+                }`}
+              >
+                {i < idx ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
+              </div>
+              <span
+                className={`text-xs font-mono tracking-widest ${
+                  i === idx ? "text-white" : "text-gray-400"
+                }`}
+              >
+                {s.label.toUpperCase()}
+              </span>
             </div>
-            <span
-              className={`text-xs font-mono tracking-widest ${
-                i === idx ? "text-white" : "text-gray-400"
-              }`}
-            >
-              {s.label.toUpperCase()}
-            </span>
-          </div>
-          {i < visibleSteps.length - 1 && (
-            <div
-              className={`flex-1 mx-3 h-px ${i < idx ? "bg-blue-600" : "bg-gray-800"}`}
-            />
-          )}
-        </React.Fragment>
-      ))}
+            {i < visibleSteps.length - 1 && (
+              <div
+                className={`flex-1 mx-3 h-px ${i < idx ? "bg-blue-600" : "bg-gray-800"}`}
+              />
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+      <div className="w-full h-px bg-gray-800 mt-6 relative overflow-hidden">
+        <motion.div
+          className="absolute top-0 left-0 h-full bg-blue-600"
+          initial={false}
+          animate={{ width: `${progressPct}%` }}
+          transition={{ duration: 0.4, ease: "easeInOut" }}
+        />
+      </div>
     </div>
   );
 }

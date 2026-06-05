@@ -5,6 +5,7 @@ import { Card } from "../ui/Card";
 import { useCart } from "../../hooks/useCart";
 import { formatPrice } from "../../lib/utils";
 import type { Service } from "../../api/services";
+import { imageForCategory } from "../../lib/serviceImages";
 
 export function ServiceCard({ service }: { service: Service }) {
   const { addToCart, has } = useCart();
@@ -21,6 +22,12 @@ export function ServiceCard({ service }: { service: Service }) {
             src={`/${service.image}`}
             alt={service.name}
             className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
+          />
+        ) : service.categorySlug ? (
+          <img
+            src={imageForCategory(service.categorySlug)}
+            alt={service.name}
+            className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

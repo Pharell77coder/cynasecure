@@ -50,29 +50,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [promo, setPromo] = useState<PromoState | null>(null);
 
-  /* ────────────────────────────────────────────────
-     🔄 Chargement depuis localStorage
-     ──────────────────────────────────────────────── */
+  // Chargement depuis localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) setItems(JSON.parse(raw));
     } catch {
-      console.warn("Panier corrompu → reset");
+      console.warn("Panier illisible, réinitialisé");
       setItems([]);
     }
   }, []);
 
-  /* ────────────────────────────────────────────────
-     💾 Sauvegarde automatique
-     ──────────────────────────────────────────────── */
+  // Sauvegarde automatique
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
-  /* ────────────────────────────────────────────────
-     ➕ addToCart (one_shot uniquement)
-     ──────────────────────────────────────────────── */
+  // addToCart — un seul exemplaire par service (id unique)
   const addToCart = useCallback<CartContextValue["addToCart"]>((item) => {
     setItems((prev) => {
       if (prev.some((p) => p.id === item.id)) return prev;
@@ -87,30 +81,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  /* ────────────────────────────────────────────────
-     ❌ removeFromCart
-     ──────────────────────────────────────────────── */
   const removeFromCart = useCallback((id: number) => {
     setItems((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
-  /* ────────────────────────────────────────────────
-     🔄 setCycle (utile si tu veux un panier SaaS un jour)
-     ──────────────────────────────────────────────── */
+  // setCycle : change le cycle de facturation d'un article
   const setCycle = useCallback((id: number, cycle: BillingCycle) => {
     setItems((prev) =>
       prev.map((p) => (p.id === id ? { ...p, cycle } : p))
     );
   }, []);
 
-  /* ────────────────────────────────────────────────
-     🗑 clearCart
-     ──────────────────────────────────────────────── */
   const clearCart = useCallback(() => { setItems([]); setPromo(null); }, []);
 
-  /* ────────────────────────────────────────────────
-     💰 total (one_shot = prix unique)
-     ──────────────────────────────────────────────── */
+  // Total HT (yearly = mensuel × 12 × 0,83)
   const total = useMemo(
     () =>
       items.reduce((sum, it) => {
@@ -119,9 +103,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [items]
   );
 
-  /* ────────────────────────────────────────────────
-     📦 Valeur du contexte
-     ──────────────────────────────────────────────── */
   const value = useMemo<CartContextValue>(
     () => ({
       items,

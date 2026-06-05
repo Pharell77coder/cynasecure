@@ -172,18 +172,14 @@ function HeroCarousel({ slides }: { slides: CarouselSlide[] }) {
 
         <div className="flex flex-wrap items-center gap-4">
           {slide.ctaLabel && slide.ctaUrl ? (
-            <Link to={slide.ctaUrl}>
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 gap-2 rounded-none">
-                {slide.ctaLabel}
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+            <Link to={slide.ctaUrl} className="btn-cta text-sm font-bold px-8 py-3.5">
+              {slide.ctaLabel}
+              <ArrowRight className="h-4 w-4" />
             </Link>
           ) : (
-            <Link to="/inscription">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 gap-2 rounded-none">
-                {t("home.startPoc")}
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+            <Link to="/inscription" className="btn-cta text-sm font-bold px-8 py-3.5">
+              {t("home.startPoc")}
+              <ArrowRight className="h-4 w-4" />
             </Link>
           )}
           <Link to="/catalogue">
@@ -413,10 +409,8 @@ export default function HomePage() {
                 animate={heroMotion.animate}
                 transition={{ ...heroMotion.transition, delay: reduced ? 0 : 0.2 }}
               >
-                <Link to="/inscription">
-                  <Button size="lg" className="bg-blue-600 hover:bg-blue-500 active:scale-[0.97] text-white font-semibold px-8 gap-2 rounded-none transition-all duration-200">
-                    {t("home.startPoc")} <ArrowRight className="h-4 w-4" />
-                  </Button>
+                <Link to="/inscription" className="btn-cta text-sm font-bold px-8 py-3.5">
+                  {t("home.startPoc")} <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link to="/catalogue">
                   <Button variant="ghost" size="lg" className="text-white border border-white/20 hover:bg-white/10 active:scale-[0.97] rounded-none gap-2 font-mono text-sm tracking-wide transition-all duration-200">
@@ -440,20 +434,24 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* STATS */}
+        {/* STATS — section claire */}
         <Reveal variant="fadeIn">
-          <section className="bg-gray-900 border-y border-gray-800">
+          <section className="section-white border-y border-light-border">
             <div className="container grid grid-cols-2 md:grid-cols-4">
               {STATS.map((s, i) => (
                 <div
                   key={s.label}
-                  className={`py-10 px-8 text-center ${i < 3 ? "border-r border-gray-800" : ""}`}
+                  className={`py-10 px-8 text-center group cursor-default ${i < 3 ? "border-r border-light-border" : ""}`}
                 >
-                  <s.icon className="h-5 w-5 text-blue-500 mx-auto mb-3 opacity-70" aria-hidden="true" />
-                  <div className="text-3xl font-black text-white tabular-nums" style={{ letterSpacing: "-0.02em" }}>
+                  <div className="flex justify-center mb-3">
+                    <div className="h-10 w-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center group-hover:bg-blue-100 transition-colors duration-200">
+                      <s.icon className="h-4 w-4 text-blue-600" aria-hidden="true" />
+                    </div>
+                  </div>
+                  <div className="text-3xl font-black tabular-nums text-slate-900" style={{ letterSpacing: "-0.02em" }}>
                     <AnimatedCounter value={s.displayValue} className="tabular-nums" />
                   </div>
-                  <div className="mt-1 text-[0.65rem] text-gray-500 font-mono tracking-[0.1em] uppercase">{s.label}</div>
+                  <div className="mt-1 text-[0.65rem] text-slate-500 font-mono tracking-[0.1em] uppercase">{s.label}</div>
                 </div>
               ))}
             </div>
@@ -530,51 +528,50 @@ export default function HomePage() {
           </section>
         </Reveal>
 
-        {/* CAPACITÉS */}
-        <Reveal>
-          <section className="bg-gray-900 py-28 border-y border-gray-800">
-            <div className="container">
+        {/* CAPACITÉS — section claire avec stagger */}
+        <section className="section-light py-28 border-y border-light-border">
+          <div className="container">
+            <Reveal>
               <div className="mb-16">
-                <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.platform")}</div>
+                <div className="eyebrow-dark mb-4">{t("home.platform")}</div>
                 <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-                  <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+                  <h2 className="text-4xl font-black text-slate-900 tracking-tight" style={{ letterSpacing: "-0.02em" }}>
                     {t("home.sixCapabilities")}
                   </h2>
                   <Link to="/catalogue">
-                    <Button variant="ghost" className="text-blue-400 border border-blue-500/30 hover:bg-blue-500/10 rounded-none font-mono text-xs tracking-wide gap-2">
+                    <Button variant="ghost" className="text-blue-600 border border-blue-200 hover:bg-blue-50 rounded-none font-mono text-xs tracking-wide gap-2">
                       {t("home.fullCatalogue")} <ArrowRight className="h-3 w-3" />
                     </Button>
                   </Link>
                 </div>
               </div>
+            </Reveal>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-gray-800">
-                {CAPABILITIES.map((cap) => (
-                  <div
-                    key={cap.title}
-                    className="bg-gray-900 p-8 hover:bg-gray-800/60 transition-colors group"
-                  >
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {CAPABILITIES.map((cap, i) => (
+                <Reveal key={cap.title} delay={i * 0.07} variant="fadeUp">
+                  <div className="card-light p-8 h-full group cursor-default">
                     <div className="flex items-start justify-between mb-6">
-                      <cap.icon className="h-6 w-6 text-blue-500" />
-                      <span className="text-[10px] font-mono tracking-widest text-gray-400 border border-gray-700 px-2 py-0.5">
-                        {cap.tag}
-                      </span>
+                      <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors duration-200">
+                        <cap.icon className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <span className="badge-trust">{cap.tag}</span>
                     </div>
-                    <h3 className="text-white font-bold text-lg mb-2">{cap.title}</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed mb-5">{cap.desc}</p>
+                    <h3 className="text-slate-900 font-bold text-lg mb-2">{cap.title}</h3>
+                    <p className="text-slate-500 text-sm leading-relaxed mb-5">{cap.desc}</p>
                     <div className="flex flex-wrap gap-2">
                       {cap.metrics.map((m) => (
-                        <span key={m} className="text-[11px] font-mono text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5">
+                        <span key={m} className="text-[11px] font-mono text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 tabular-nums">
                           {m}
                         </span>
                       ))}
                     </div>
                   </div>
-                ))}
-              </div>
+                </Reveal>
+              ))}
             </div>
-          </section>
-        </Reveal>
+          </div>
+        </section>
 
         {/* TIMELINE D'INCIDENT */}
         <Reveal>
@@ -620,78 +617,79 @@ export default function HomePage() {
           </section>
         </Reveal>
 
-        {/* DOMAINES */}
+        {/* DOMAINES — section claire */}
         {(loadingCats || categories.length > 0) && (
-          <Reveal>
-            <section className="bg-gray-900 py-28 border-y border-gray-800">
-              <div className="container space-y-12">
+          <section className="section-white py-28 border-y border-light-border">
+            <div className="container space-y-12">
+              <Reveal>
                 <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
                   <div>
-                    <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.coverage")}</div>
-                    <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+                    <div className="eyebrow-dark mb-4">{t("home.coverage")}</div>
+                    <h2 className="text-4xl font-black text-slate-900 tracking-tight" style={{ letterSpacing: "-0.02em" }}>
                       {t("home.protectionDomains")}
                     </h2>
-                    <p className="mt-3 text-gray-400 text-sm max-w-lg">
+                    <p className="mt-3 text-slate-500 text-sm max-w-lg">
                       {t("home.protectionDomainsDesc")}
                     </p>
                   </div>
                 </div>
+              </Reveal>
 
-                <div className={`grid gap-px bg-gray-800 ${categories.length <= 3 ? "md:grid-cols-3" : "md:grid-cols-3 lg:grid-cols-5"}`}>
-                  {loadingCats ? (
-                    <p className="col-span-full text-center text-gray-400 py-12 font-mono text-sm">
-                      {t("home.loadingDomains")}
-                    </p>
-                  ) : (
-                    categories.map((c) => (
-                      <Link key={c.id} to={`/catalogue?cat=${c.slug}`} className="group bg-gray-900 hover:bg-gray-800/60 transition-colors p-8 flex flex-col gap-4">
+              <div className={`grid gap-4 ${categories.length <= 3 ? "md:grid-cols-3" : "md:grid-cols-3 lg:grid-cols-5"}`}>
+                {loadingCats ? (
+                  <p className="col-span-full text-center text-slate-400 py-12 font-mono text-sm">
+                    {t("home.loadingDomains")}
+                  </p>
+                ) : (
+                  categories.map((c, i) => (
+                    <Reveal key={c.id} delay={i * 0.06} variant="fadeUp">
+                      <Link to={`/catalogue?cat=${c.slug}`} className="card-light p-8 flex flex-col gap-4 group block h-full">
                         {c.imagePath ? (
-                          <img src={`/${c.imagePath}`} alt={c.name} className="w-12 h-12 object-cover" />
+                          <img src={`/${c.imagePath}`} alt={c.name} className="w-12 h-12 object-cover group-hover:scale-110 transition-transform duration-300" />
                         ) : (
-                          <div className="w-12 h-12 bg-gray-800 border border-gray-700 flex items-center justify-center">
-                            <Shield className="h-5 w-5 text-blue-500" />
+                          <div className="w-12 h-12 bg-blue-50 border border-blue-100 flex items-center justify-center group-hover:bg-blue-100 transition-colors duration-200">
+                            <Shield className="h-5 w-5 text-blue-600" />
                           </div>
                         )}
-                        <div>
-                          <p className="text-white font-bold text-sm">{c.name}</p>
-                        </div>
+                        <p className="text-slate-900 font-bold text-sm group-hover:text-blue-600 transition-colors duration-200">{c.name}</p>
                       </Link>
-                    ))
-                  )}
-                </div>
+                    </Reveal>
+                  ))
+                )}
               </div>
-            </section>
-          </Reveal>
+            </div>
+          </section>
         )}
 
-        {/* SOLUTIONS POPULAIRES */}
+        {/* SOLUTIONS POPULAIRES — section claire */}
         {(loadingTop || topProducts.length > 0) && (
-          <Reveal>
-            <section className="bg-gray-950 py-28">
-              <div className="container space-y-12">
+          <section className="section-light py-28 border-y border-light-border">
+            <div className="container space-y-12">
+              <Reveal>
                 <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
                   <div>
-                    <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.inProduction")}</div>
-                    <h2 className="text-4xl font-black text-white tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+                    <div className="eyebrow-dark mb-4">{t("home.inProduction")}</div>
+                    <h2 className="text-4xl font-black text-slate-900 tracking-tight" style={{ letterSpacing: "-0.02em" }}>
                       {t("home.mostAdopted")}
                     </h2>
                   </div>
                   <Link to="/catalogue">
-                    <Button variant="ghost" className="text-blue-400 border border-blue-500/30 hover:bg-blue-500/10 rounded-none font-mono text-xs tracking-wide gap-2 flex-shrink-0">
+                    <Button variant="ghost" className="text-blue-600 border border-blue-200 hover:bg-blue-50 rounded-none font-mono text-xs tracking-wide gap-2 flex-shrink-0">
                       {t("home.allSolutions")} <ArrowRight className="h-3 w-3" />
                     </Button>
                   </Link>
                 </div>
+              </Reveal>
 
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {loadingTop ? (
-                    <p className="col-span-full text-center text-gray-400 py-12 font-mono text-sm">
-                      {t("home.loading")}
-                    </p>
-                  ) : (
-                    topProducts.map((s) => (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {loadingTop ? (
+                  <p className="col-span-full text-center text-slate-400 py-12 font-mono text-sm">
+                    {t("home.loading")}
+                  </p>
+                ) : (
+                  topProducts.map((s, i) => (
+                    <Reveal key={s.id} delay={i * 0.08} variant="fadeUp">
                       <ServiceCard
-                        key={s.id}
                         service={{
                           id: s.id,
                           name: s.name,
@@ -708,12 +706,12 @@ export default function HomePage() {
                           isAvailable: true,
                         } as Service}
                       />
-                    ))
-                  )}
-                </div>
+                    </Reveal>
+                  ))
+                )}
               </div>
-            </section>
-          </Reveal>
+            </div>
+          </section>
         )}
 
         {/* TÉMOIGNAGES */}
@@ -753,66 +751,76 @@ export default function HomePage() {
           items={["Groupe A", "Banque B", "Énergie C", "Infra D", "Santé E", "Défense F", "Industrie G", "Telecom H"]}
         />
 
-        {/* ARCHITECTURE */}
-        <Reveal>
-          <section className="bg-gray-950 py-28">
-            <div className="container">
-              <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.architecture")}</div>
-              <h2 className="text-4xl font-black text-white tracking-tight mb-16" style={{ letterSpacing: "-0.02em" }}>
+        {/* ARCHITECTURE — section claire */}
+        <section className="section-white py-28 border-y border-light-border">
+          <div className="container">
+            <Reveal>
+              <div className="eyebrow-dark mb-4">{t("home.architecture")}</div>
+              <h2 className="text-4xl font-black text-slate-900 tracking-tight mb-16" style={{ letterSpacing: "-0.02em" }}>
                 {t("home.builtForCritical")}
               </h2>
+            </Reveal>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-gray-800">
-                {ARCH_ITEMS.map((item) => (
-                  <div key={item.title} className="bg-gray-950 p-8 hover:bg-gray-900/60 transition-colors duration-200">
-                    <item.icon className="h-5 w-5 text-blue-500 mb-5" aria-hidden="true" />
-                    <h3 className="text-white font-bold text-base mb-2">{item.title}</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">{item.desc}</p>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {ARCH_ITEMS.map((item, i) => (
+                <Reveal key={item.title} delay={i * 0.06} variant="fadeUp">
+                  <div className="card-light p-8 h-full group cursor-default">
+                    <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center mb-5 group-hover:bg-blue-100 transition-colors duration-200">
+                      <item.icon className="h-5 w-5 text-blue-600" aria-hidden="true" />
+                    </div>
+                    <h3 className="text-slate-900 font-bold text-base mb-2">{item.title}</h3>
+                    <p className="text-slate-500 text-sm leading-relaxed">{item.desc}</p>
                   </div>
-                ))}
-              </div>
+                </Reveal>
+              ))}
             </div>
-          </section>
-        </Reveal>
+          </div>
+        </section>
 
-        {/* CTA FINAL */}
+        {/* CTA FINAL — sombre avec orange CTA (Trust & Authority pattern) */}
         <Reveal variant="fadeIn">
-          <section className="relative bg-blue-700 overflow-hidden">
+          <section className="relative bg-slate-900 overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.15),transparent_60%)]" aria-hidden="true" />
 
             <div className="relative container py-24 flex flex-col lg:flex-row items-center justify-between gap-12">
               <div>
-                <div className="text-blue-200/60 font-mono text-xs tracking-widest mb-4">{t("home.noCommitment")}</div>
+                <div className="font-mono text-xs tracking-widest mb-4 text-slate-400">{t("home.noCommitment")}</div>
                 <h2 className="text-4xl font-black text-white leading-tight" style={{ letterSpacing: "-0.02em" }}>
                   {t("home.evaluatePlatform")}
                   <br />
-                  {t("home.yourInfrastructure")}
+                  <span className="text-blue-400">{t("home.yourInfrastructure")}</span>
                 </h2>
-                <p className="mt-4 text-blue-100/60 text-sm max-w-md leading-relaxed">
+                <p className="mt-4 text-slate-400 text-sm max-w-md leading-relaxed">
                   {t("home.pocDesc")}
                 </p>
+
+                {/* Badges trust */}
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {["ISO 27001", "SOC 2", "ANSSI PRIS", "RGPD"].map((b) => (
+                    <span key={b} className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 text-[11px] font-mono text-slate-300 tracking-wide">
+                      <span className="h-1.5 w-1.5 rounded-full bg-blue-400" aria-hidden="true" />
+                      {b}
+                    </span>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex flex-col gap-3 flex-shrink-0">
-                <Link to="/inscription">
-                  <Button
-                    size="lg"
-                    className="bg-white text-blue-700 hover:bg-blue-50 active:scale-[0.97] font-bold px-10 rounded-none gap-2 w-full cursor-pointer transition-all duration-200"
-                  >
-                    {t("home.startPocBtn")}
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
+              <div className="flex flex-col gap-3 flex-shrink-0 min-w-[260px]">
+                <Link to="/inscription" className="btn-cta justify-center text-sm font-bold px-8 py-3.5 animate-pulse-glow-orange">
+                  {t("home.startPocBtn")}
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link to="/contact">
                   <Button
                     variant="ghost"
                     size="lg"
-                    className="text-white border border-white/30 hover:bg-white/10 active:scale-[0.97] rounded-none gap-2 font-mono text-sm tracking-wide w-full transition-all duration-200"
+                    className="text-white border border-white/20 hover:bg-white/10 active:scale-[0.97] rounded-none gap-2 font-mono text-sm tracking-wide w-full transition-all duration-200"
                   >
                     {t("home.talkToExpert")}
                     <Users className="h-4 w-4" />
                   </Button>
                 </Link>
-                <p className="text-blue-200/40 text-xs text-center font-mono">
+                <p className="text-slate-500 text-xs text-center font-mono">
                   {t("home.responseTime")}
                 </p>
               </div>

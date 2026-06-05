@@ -42,53 +42,40 @@ export function Footer() {
   ];
 
   return (
-    <footer className="relative border-t border-gray-800 bg-gray-950 mt-32 pt-20 pb-10">
-
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] opacity-10 pointer-events-none"
-        style={{ background: "radial-gradient(circle, #2563eb 0%, transparent 70%)" }}
-        aria-hidden="true"
-      />
-
-
+    <footer className="relative border-t border-light-border bg-slate-50 pt-20 pb-10">
       <div className="relative container">
 
         <div className="grid gap-12 md:grid-cols-4">
 
-          {/* Identité */}
-          <div className="space-y-4">
+          <div className="space-y-5">
             <Link to="/" className="flex items-center gap-2" aria-label="CynaSecure — Accueil">
-              <img
-                src="/favicon.ico"
-                alt=""
-                aria-hidden="true"
-                className="h-5 w-5 object-contain"
-              />
-              <span className="text-xl font-bold tracking-tight text-white">
-                CynaSecure
-              </span>
+              <img src="/favicon.ico" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />
+              <span className="text-xl font-bold tracking-tight text-slate-900">CynaSecure</span>
             </Link>
 
-            <p className="text-sm text-gray-400 leading-relaxed max-w-xs">
+            <p className="text-sm text-slate-500 leading-relaxed max-w-xs">
               {t("common.footerDesc")}
             </p>
+
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {["ISO 27001", "SOC 2", "ANSSI"].map((c) => (
+                <span key={c} className="inline-flex items-center px-2 py-0.5 bg-blue-50 border border-blue-100 text-blue-700 font-mono text-[10px] tracking-wide">
+                  {c}
+                </span>
+              ))}
+            </div>
           </div>
 
-          {/* Sections */}
           {sections.map((section) => (
             <nav key={section.key} aria-label={section.title}>
-              <h2 className="mb-5 font-mono text-[0.65rem] font-medium tracking-[0.18em] uppercase text-gray-500 flex items-center gap-2">
+              <h2 className="mb-5 font-mono text-[0.65rem] font-medium tracking-[0.18em] uppercase text-slate-400 flex items-center gap-2">
                 {section.icon}
                 {section.title}
               </h2>
-
               <ul className="space-y-3">
                 {section.links.map((link) => (
                   <li key={link.label}>
-                    <Link
-                      to={link.to}
-                      className="text-sm text-gray-400 hover:text-white transition-colors duration-200 link-underline"
-                    >
+                    <Link to={link.to} className="text-sm text-slate-500 hover:text-blue-600 transition-colors duration-200">
                       {link.label}
                     </Link>
                   </li>
@@ -98,8 +85,8 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-16 border-t border-gray-800 pt-6 text-center">
-          <p className="text-xs text-gray-600 font-mono tracking-widest">
+        <div className="mt-16 border-t border-light-border pt-6 text-center">
+          <p className="text-xs text-slate-400 font-mono tracking-widest">
             {t("common.footerCopyright", { year: new Date().getFullYear() })}
           </p>
         </div>
