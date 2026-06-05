@@ -6,11 +6,13 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "../ui/Button";
 import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../hooks/useCart";
 import { contactApi } from "../../api/contact";
 import { useTranslation } from "react-i18next";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import React, { useEffect, useState } from "react";
 
 const LANGS = ["fr", "en", "es"] as const;
@@ -27,8 +29,10 @@ export function Navbar() {
   const { count } = useCart();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const [open, setOpen]     = useState(false);
-  const [unread, setUnread] = useState(0);
+  const [open, setOpen]       = useState(false);
+  const [unread, setUnread]   = useState(0);
+  const [scrolled, setScrolled] = useState(false);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     if (!isAuthenticated) { setUnread(0); return; }
@@ -37,18 +41,28 @@ export function Navbar() {
       .catch(() => {});
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
+
   const changeLang = (lang: Lang) => {
     i18n.changeLanguage(lang);
   };
 
   const linkStyle = ({ isActive }: { isActive: boolean }) =>
-    `text-sm font-medium tracking-wide transition-colors ${
-      isActive ? "text-blue-400" : "text-gray-400 hover:text-white"
+    `relative text-sm font-medium tracking-wide transition-colors group/navlink ${
+      isActive ? "text-white" : "text-gray-400 hover:text-white"
     }`;
 
+  const mobileDuration = reducedMotion ? 0 : 0.18;
+
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-800 bg-gray-950/80 backdrop-blur-xl">
-      <nav className="container flex h-16 items-center justify-between" aria-label="Navigation principale">
+    <header className={`sticky top-0 z-50 border-b bg-gray-950/80 backdrop-blur-xl transition-all duration-300 ${
+      scrolled ? "h-14 border-gray-700/80 bg-gray-950/98 shadow-[0_1px_0_rgba(255,255,255,0.04)]" : "h-16 border-gray-800/60"
+    }`}>
+      <nav className="container flex h-full items-center justify-between" aria-label="Navigation principale">
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2" aria-label="CynaSecure — Accueil">
@@ -66,33 +80,53 @@ export function Navbar() {
         {/* Desktop navigation */}
         <div className="hidden md:flex items-center gap-8">
           <NavLink to="/" end className={linkStyle}>
-            {t("nav.home")}
+            {({ isActive }) => (
+              <span className="link-underline" style={isActive ? { backgroundSize: "100% 1px" } : undefined}>
+                {t("nav.home")}
+              </span>
+            )}
           </NavLink>
 
           <NavLink to="/catalogue" className={linkStyle}>
-            {t("nav.solutions")}
+            {({ isActive }) => (
+              <span className="link-underline" style={isActive ? { backgroundSize: "100% 1px" } : undefined}>
+                {t("nav.solutions")}
+              </span>
+            )}
           </NavLink>
 
           <NavLink to="/contact" className={linkStyle}>
-            <span className="relative">
-              {t("nav.contact")}
-              {unread > 0 && (
-                <span className="absolute -top-2 -right-4 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white px-1" aria-label={`${unread} message(s) non lu(s)`}>
-                  {unread}
+            {({ isActive }) => (
+              <span className="relative inline-flex items-center gap-1">
+                <span className="link-underline" style={isActive ? { backgroundSize: "100% 1px" } : undefined}>
+                  {t("nav.contact")}
                 </span>
-              )}
-            </span>
+                {unread > 0 && (
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white px-1" aria-label={`${unread} message(s) non lu(s)`}>
+                    {unread}
+                  </span>
+                )}
+              </span>
+            )}
           </NavLink>
 
           {isAuthenticated && !isAdmin && (
             <NavLink to="/dashboard" className={linkStyle}>
-              {t("nav.dashboard")}
+              {({ isActive }) => (
+                <span className="link-underline" style={isActive ? { backgroundSize: "100% 1px" } : undefined}>
+                  {t("nav.dashboard")}
+                </span>
+              )}
             </NavLink>
           )}
 
           {isAdmin && (
             <NavLink to="/admin" className={linkStyle}>
-              {t("nav.admin")}
+              {({ isActive }) => (
+                <span className="link-underline" style={isActive ? { backgroundSize: "100% 1px" } : undefined}>
+                  {t("nav.admin")}
+                </span>
+              )}
             </NavLink>
           )}
         </div>
@@ -191,8 +225,16 @@ export function Navbar() {
       </nav>
 
       {/* Mobile menu */}
+      <AnimatePresence>
       {open && (
-        <div id="mobile-menu" className="md:hidden border-t border-gray-800 bg-gray-950">
+        <motion.div
+          id="mobile-menu"
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: mobileDuration, ease: "easeOut" }}
+          className="md:hidden border-t border-gray-800 bg-gray-950"
+        >
           <div className="container py-4 flex flex-col gap-4">
 
             <NavLink to="/" end className={linkStyle} onClick={() => setOpen(false)}>
@@ -245,8 +287,9 @@ export function Navbar() {
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </header>
   );
 }

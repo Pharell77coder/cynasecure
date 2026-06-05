@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import {
   Search,
@@ -482,15 +483,24 @@ export default function CataloguePage() {
                 {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
               </div>
             ) : (
-              <div className={cn("gap-px transition-opacity duration-200", fetching && "opacity-60",
-                viewMode === "grid" ? "grid md:grid-cols-2 xl:grid-cols-3 bg-gray-800" : "flex flex-col divide-y divide-gray-800"
-              )}>
-                {paginated.map((s) => (
-                  <div key={s.id} className={cn("bg-gray-950", viewMode === "list" && "hover:bg-gray-900 transition-colors")}>
-                    <ServiceCard service={s} />
-                  </div>
-                ))}
-              </div>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${type}-${sort}-${page}-${[...cats].join(",")}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className={cn("gap-px", fetching && "opacity-60",
+                    viewMode === "grid" ? "grid md:grid-cols-2 xl:grid-cols-3 bg-gray-800" : "flex flex-col divide-y divide-gray-800"
+                  )}
+                >
+                  {paginated.map((s) => (
+                    <div key={s.id} className={cn("bg-gray-950", viewMode === "list" && "hover:bg-gray-900 transition-colors")}>
+                      <ServiceCard service={s} />
+                    </div>
+                  ))}
+                </motion.div>
+              </AnimatePresence>
             )}
 
             {!loading && total === 0 && (

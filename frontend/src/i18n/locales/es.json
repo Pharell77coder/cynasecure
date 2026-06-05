@@ -281,6 +281,7 @@
     "stepConfirmation": "Confirmación"
   },
   "auth": {
+    "layoutSubtitle": "Inicie sesión o cree su cuenta",
     "loginTitle": "Iniciar sesión en la plataforma",
     "loginSubtitle": "Acceda a su espacio seguro y sus servicios.",
     "secureAuth": "AUTENTICACIÓN SEGURA",

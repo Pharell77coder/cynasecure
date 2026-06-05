@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { Shield, Lock, Eye, Users, Zap, Globe, ArrowRight } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { PageTransition } from "../../components/ui/PageTransition";
+import { Reveal } from "../../components/motion/Reveal";
+import { AnimatedCounter } from "../../components/motion/AnimatedCounter";
 import { useTranslation } from "react-i18next";
 import React from "react";
 
@@ -74,6 +76,7 @@ export default function AProposPage() {
       </section>
 
       {/* Chiffres clés */}
+      <Reveal variant="fadeIn">
       <section className="border-b border-gray-800">
         <div className="container grid grid-cols-2 md:grid-cols-4">
           {CHIFFRES.map((c, i) => (
@@ -81,13 +84,16 @@ export default function AProposPage() {
               key={c.label}
               className={`py-10 px-6 ${i < 3 ? "border-r border-gray-800" : ""}`}
             >
-              <div className="text-3xl font-black text-white tracking-tight">{c.valeur}</div>
+              <div className="text-3xl font-black text-white tabular-nums" style={{ letterSpacing: "-0.02em" }}>
+                <AnimatedCounter value={c.valeur} />
+              </div>
               <div className="mt-1 text-sm text-white font-semibold">{c.label}</div>
               <div className="mt-0.5 text-xs text-gray-600 font-mono">{c.note}</div>
             </div>
           ))}
         </div>
       </section>
+      </Reveal>
 
       {/* Notre histoire */}
       <section className="py-24 border-b border-gray-800">

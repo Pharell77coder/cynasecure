@@ -11,6 +11,12 @@ export default {
     },
 
     extend: {
+      fontFamily: {
+        sans: ["Inter", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "monospace"],
+        display: ["Inter", "system-ui", "sans-serif"],
+      },
+
       colors: {
         /* 🌑 Mode sombre premium */
         background: "#0B0B0D",          // Noir profond
@@ -72,7 +78,6 @@ export default {
         card: "0 4px 20px rgba(0,0,0,0.35)",
       },
 
-      /* 🎞 Animations modernes */
       keyframes: {
         "fade-in": {
           from: { opacity: "0", transform: "translateY(6px)" },
@@ -82,14 +87,25 @@ export default {
           "0%, 100%": { boxShadow: "0 0 20px rgba(59,130,246,0.25)" },
           "50%": { boxShadow: "0 0 35px rgba(59,130,246,0.45)" },
         },
+        marquee: {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(-50%)" },
+        },
+        "dot-pulse": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.3" },
+        },
       },
 
       animation: {
         "fade-in": "fade-in 0.25s ease-out",
         "pulse-glow": "pulse-glow 2.5s ease-in-out infinite",
+        marquee: "marquee 36s linear infinite",
+        "dot-pulse": "dot-pulse 1.5s ease-in-out infinite",
       },
     },
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   plugins: [require("@tailwindcss/typography")],
 } satisfies Config;

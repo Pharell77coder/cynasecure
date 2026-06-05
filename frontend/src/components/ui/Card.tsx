@@ -9,10 +9,8 @@ export function Card({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
         // Base XDR : sombre, carré, technique
         "bg-gray-900 border border-gray-800 rounded-none p-6",
 
-        // Hover discret, professionnel
-        "transition-[colors,transform] duration-200 hover:bg-gray-800 hover:border-blue-500/30 hover:-translate-y-0.5 hover:shadow-md",
+        "transition-[colors,transform,box-shadow] duration-200 hover:bg-gray-800 hover:border-white/10 hover:-translate-y-0.5 hover:ring-1 hover:ring-white/10 hover:shadow-md",
 
-        // Ombre très légère, pas de glow
         "shadow-sm",
 
         className,

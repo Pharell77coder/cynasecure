@@ -51,14 +51,24 @@ function fmt(d: string, pattern = "dd MMM yyyy") {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const ok = status === "ACTIVE" || status === "paid";
+  const isActive = status === "ACTIVE";
+  const ok = isActive || status === "paid";
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border ${
       ok
         ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
         : "bg-red-500/10 text-red-400 border-red-500/20"
     }`}>
-      {ok ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+      {isActive ? (
+        <span className="relative flex h-2 w-2">
+          <span className="animate-dot-pulse absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+        </span>
+      ) : ok ? (
+        <CheckCircle2 className="h-3 w-3" />
+      ) : (
+        <XCircle className="h-3 w-3" />
+      )}
       {status === "ACTIVE" ? "Actif" : status === "paid" ? "Payé" : status === "CANCELLED" ? "Annulé" : status}
     </span>
   );

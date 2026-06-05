@@ -86,17 +86,17 @@ export function Footer() {
           {/* Sections */}
           {sections.map((section) => (
             <nav key={section.key} aria-label={section.title}>
-              <h2 className="mb-4 text-sm font-semibold text-white flex items-center gap-2">
+              <h2 className="mb-5 font-mono text-[0.65rem] font-medium tracking-[0.18em] uppercase text-gray-500 flex items-center gap-2">
                 {section.icon}
                 {section.title}
               </h2>
 
-              <ul className="space-y-2 text-sm">
+              <ul className="space-y-3">
                 {section.links.map((link) => (
                   <li key={link.label}>
                     <Link
                       to={link.to}
-                      className="text-gray-500 hover:text-blue-400 transition-colors font-medium"
+                      className="text-sm text-gray-400 hover:text-white transition-colors duration-200 link-underline"
                     >
                       {link.label}
                     </Link>

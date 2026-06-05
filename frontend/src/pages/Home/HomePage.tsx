@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -28,16 +28,21 @@ import {
   Layers,
   ScanLine,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "../../components/ui/Button";
 import { ServiceCard } from "../../components/shared/ServiceCard";
 import { FadeIn } from "../../components/ui/FadeIn";
+import { Reveal } from "../../components/motion/Reveal";
+import { AnimatedCounter } from "../../components/motion/AnimatedCounter";
+import { LogoMarquee } from "../../components/motion/LogoMarquee";
 import { PageTransition } from "../../components/ui/PageTransition";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { homeApi, type CarouselSlide, type HomeCategory, type HomeService } from "../../api/home";
 import { type Service } from "../../api/services";
 import { useTranslation } from "react-i18next";
 import React from "react";
+
+const CYCLING_TERMS = ["SOC", "EDR", "XDR", "CSPM", "Zero Trust", "NDR"];
 
 /* Ticker de menaces */
 function getThreatEvents(t: (k: string) => string) {
@@ -98,38 +103,6 @@ function ThreatTicker() {
       <span className="text-white/50">—</span>
       <span className="text-white/70">{ev.label}</span>
     </div>
-  );
-}
-
-/* Stat counter animé */
-function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        observer.disconnect();
-        let start = 0;
-        const step = Math.ceil(target / 60);
-        const timer = setInterval(() => {
-          start = Math.min(start + step, target);
-          setCount(start);
-          if (start >= target) clearInterval(timer);
-        }, 20);
-      },
-      { threshold: 0.5 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [target]);
-
-  return (
-    <span ref={ref}>
-      {count.toLocaleString("fr-FR")}
-      {suffix}
-    </span>
   );
 }
 
@@ -255,6 +228,7 @@ export default function HomePage() {
   const [loadingSlides, setLoadingSlides] = useState(true);
   const [loadingCats, setLoadingCats] = useState(true);
   const [loadingTop, setLoadingTop] = useState(true);
+  const [cycleIdx, setCycleIdx] = useState(0);
 
   useEffect(() => {
     homeApi.getCarousel().then((d) => setSlides(Array.isArray(d) ? d : [])).finally(() => setLoadingSlides(false));
@@ -262,11 +236,17 @@ export default function HomePage() {
     homeApi.getTopProducts().then((d) => setTopProducts(Array.isArray(d) ? d : [])).finally(() => setLoadingTop(false));
   }, []);
 
+  useEffect(() => {
+    if (reduced) return;
+    const timer = setInterval(() => setCycleIdx((i) => (i + 1) % CYCLING_TERMS.length), 2400);
+    return () => clearInterval(timer);
+  }, [reduced]);
+
   const STATS = [
-    { value: 500, suffix: "+", label: t("home.statsProtected"), icon: Shield },
-    { value: 99, suffix: ".9%", label: t("home.statsUptime"), icon: Activity },
-    { value: 14, suffix: "s", label: t("home.statsMttd"), icon: Clock },
-    { value: 3200000, suffix: "", label: t("home.statsEvents"), icon: Database },
+    { displayValue: "500+", label: t("home.statsProtected"), icon: Shield },
+    { displayValue: "99%", label: t("home.statsUptime"), icon: Activity },
+    { displayValue: "14s", label: t("home.statsMttd"), icon: Clock },
+    { displayValue: "24/7", label: t("home.statsEvents"), icon: Database },
   ];
 
   const INCIDENT_STEPS = [
@@ -394,14 +374,35 @@ export default function HomePage() {
           <section className="relative bg-gray-950 overflow-hidden" style={{ minHeight: "92vh" }}>
             <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
             <div className="relative container flex flex-col justify-center pt-28 pb-24" style={{ minHeight: "92vh" }}>
-              <motion.h1
-                className="text-white font-black leading-none tracking-tight mb-6"
-                style={{ fontSize: "clamp(2.8rem, 6vw, 5rem)", letterSpacing: "-0.03em" }}
+              <motion.div
+                className="mb-6"
                 {...heroMotion}
               >
-                {t("home.stopAttacks")}
-                <br /><span className="text-blue-400">{t("home.beforeTheyHit")}</span>
-              </motion.h1>
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="h-px w-8 bg-blue-500" aria-hidden="true" />
+                  <span className="font-mono text-[0.7rem] tracking-[0.18em] uppercase text-blue-500">
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={cycleIdx}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                        className="inline-block tabular-nums"
+                      >
+                        {CYCLING_TERMS[cycleIdx]}
+                      </motion.span>
+                    </AnimatePresence>
+                  </span>
+                </div>
+                <h1
+                  className="text-white font-black leading-none tracking-tight mb-6"
+                  style={{ fontSize: "clamp(2.8rem, 6vw, 5rem)", letterSpacing: "-0.03em" }}
+                >
+                  {t("home.stopAttacks")}
+                  <br /><span className="text-blue-400">{t("home.beforeTheyHit")}</span>
+                </h1>
+              </motion.div>
               <motion.div
                 className="flex flex-wrap items-center gap-4"
                 initial={heroMotion.initial}
@@ -409,17 +410,34 @@ export default function HomePage() {
                 transition={{ ...heroMotion.transition, delay: reduced ? 0 : 0.2 }}
               >
                 <Link to="/inscription">
-                  <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 gap-2 rounded-none">
+                  <Button size="lg" className="bg-blue-600 hover:bg-blue-500 active:scale-[0.97] text-white font-semibold px-8 gap-2 rounded-none transition-all duration-200">
                     {t("home.startPoc")} <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
+                <Link to="/catalogue">
+                  <Button variant="ghost" size="lg" className="text-white border border-white/20 hover:bg-white/10 active:scale-[0.97] rounded-none gap-2 font-mono text-sm tracking-wide transition-all duration-200">
+                    {t("home.explorePlatform")}
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </motion.div>
+              <motion.div
+                className="mt-12 flex flex-wrap items-center gap-2"
+                initial={heroMotion.initial}
+                animate={heroMotion.animate}
+                transition={{ ...heroMotion.transition, delay: reduced ? 0 : 0.35 }}
+              >
+                <span className="text-gray-500 text-xs font-mono tracking-widest mr-2">{t("home.certifiedBy")}</span>
+                {CERTIFICATIONS.map((c) => (
+                  <span key={c} className="text-gray-600 border border-gray-800 text-xs font-mono px-2 py-0.5">{c}</span>
+                ))}
               </motion.div>
             </div>
           </section>
         )}
 
         {/* STATS */}
-        <FadeIn>
+        <Reveal variant="fadeIn">
           <section className="bg-gray-900 border-y border-gray-800">
             <div className="container grid grid-cols-2 md:grid-cols-4">
               {STATS.map((s, i) => (
@@ -427,19 +445,19 @@ export default function HomePage() {
                   key={s.label}
                   className={`py-10 px-8 text-center ${i < 3 ? "border-r border-gray-800" : ""}`}
                 >
-                  <s.icon className="h-5 w-5 text-blue-500 mx-auto mb-3 opacity-70" />
-                  <div className="text-3xl font-black text-white tracking-tight">
-                    <CountUp target={s.value} suffix={s.suffix} />
+                  <s.icon className="h-5 w-5 text-blue-500 mx-auto mb-3 opacity-70" aria-hidden="true" />
+                  <div className="text-3xl font-black text-white tabular-nums" style={{ letterSpacing: "-0.02em" }}>
+                    <AnimatedCounter value={s.displayValue} className="tabular-nums" />
                   </div>
-                  <div className="mt-1 text-xs text-gray-400 font-mono tracking-wide">{s.label}</div>
+                  <div className="mt-1 text-[0.65rem] text-gray-500 font-mono tracking-[0.1em] uppercase">{s.label}</div>
                 </div>
               ))}
             </div>
           </section>
-        </FadeIn>
+        </Reveal>
 
         {/* THREAT INTELLIGENCE */}
-        <FadeIn>
+        <Reveal>
           <section className="bg-gray-950 py-28">
             <div className="container grid lg:grid-cols-2 gap-20 items-center">
               <div>
@@ -506,10 +524,10 @@ export default function HomePage() {
               </div>
             </div>
           </section>
-        </FadeIn>
+        </Reveal>
 
         {/* CAPACITÉS */}
-        <FadeIn>
+        <Reveal>
           <section className="bg-gray-900 py-28 border-y border-gray-800">
             <div className="container">
               <div className="mb-16">
@@ -552,10 +570,10 @@ export default function HomePage() {
               </div>
             </div>
           </section>
-        </FadeIn>
+        </Reveal>
 
         {/* TIMELINE D'INCIDENT */}
-        <FadeIn>
+        <Reveal>
           <section className="bg-gray-950 py-28">
             <div className="container">
               <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.automatedResponse")}</div>
@@ -596,11 +614,11 @@ export default function HomePage() {
               </div>
             </div>
           </section>
-        </FadeIn>
+        </Reveal>
 
         {/* DOMAINES */}
         {(loadingCats || categories.length > 0) && (
-          <FadeIn>
+          <Reveal>
             <section className="bg-gray-900 py-28 border-y border-gray-800">
               <div className="container space-y-12">
                 <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
@@ -639,12 +657,12 @@ export default function HomePage() {
                 </div>
               </div>
             </section>
-          </FadeIn>
+          </Reveal>
         )}
 
         {/* SOLUTIONS POPULAIRES */}
         {(loadingTop || topProducts.length > 0) && (
-          <FadeIn>
+          <Reveal>
             <section className="bg-gray-950 py-28">
               <div className="container space-y-12">
                 <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
@@ -691,11 +709,11 @@ export default function HomePage() {
                 </div>
               </div>
             </section>
-          </FadeIn>
+          </Reveal>
         )}
 
         {/* TÉMOIGNAGES */}
-        <FadeIn>
+        <Reveal>
           <section className="bg-gray-900 py-28 border-y border-gray-800">
             <div className="container">
               <div className="text-blue-500 font-mono text-xs tracking-widest mb-12">{t("home.clientFeedback")}</div>
@@ -703,8 +721,8 @@ export default function HomePage() {
               <div className="grid lg:grid-cols-2 gap-px bg-gray-800">
                 {TESTIMONIALS.map((testimonial) => (
                   <div key={testimonial.author} className="bg-gray-900 p-10">
-                    <div className="text-4xl text-blue-600 font-serif leading-none mb-6 select-none">
-                      "
+                    <div className="text-4xl text-blue-600/40 font-mono leading-none mb-6 select-none" aria-hidden="true">
+                      &ldquo;
                     </div>
                     <blockquote className="text-gray-300 text-base leading-relaxed mb-8 italic">
                       {testimonial.quote}
@@ -721,19 +739,18 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-
-              <div className="mt-16 flex flex-wrap items-center gap-8 justify-center">
-                <span className="text-gray-400 text-xs font-mono tracking-widest">{t("home.trustedBy")}</span>
-                {["Groupe A", "Banque B", "Énergie C", "Infra D", "Santé E", "Défense F"].map((name) => (
-                  <span key={name} className="text-gray-400 font-bold text-sm tracking-wide">{name}</span>
-                ))}
-              </div>
             </div>
           </section>
-        </FadeIn>
+        </Reveal>
+
+        {/* MARQUEE — TRUSTED BY */}
+        <LogoMarquee
+          label={t("home.trustedBy")}
+          items={["Groupe A", "Banque B", "Énergie C", "Infra D", "Santé E", "Défense F", "Industrie G", "Telecom H"]}
+        />
 
         {/* ARCHITECTURE */}
-        <FadeIn>
+        <Reveal>
           <section className="bg-gray-950 py-28">
             <div className="container">
               <div className="text-blue-500 font-mono text-xs tracking-widest mb-4">{t("home.architecture")}</div>
@@ -743,8 +760,8 @@ export default function HomePage() {
 
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-gray-800">
                 {ARCH_ITEMS.map((item) => (
-                  <div key={item.title} className="bg-gray-950 p-8 hover:bg-gray-900/60 transition-colors">
-                    <item.icon className="h-5 w-5 text-blue-500 mb-5" />
+                  <div key={item.title} className="bg-gray-950 p-8 hover:bg-gray-900/60 transition-colors duration-200">
+                    <item.icon className="h-5 w-5 text-blue-500 mb-5" aria-hidden="true" />
                     <h3 className="text-white font-bold text-base mb-2">{item.title}</h3>
                     <p className="text-gray-400 text-sm leading-relaxed">{item.desc}</p>
                   </div>
@@ -752,29 +769,30 @@ export default function HomePage() {
               </div>
             </div>
           </section>
-        </FadeIn>
+        </Reveal>
 
         {/* CTA FINAL */}
-        <FadeIn>
+        <Reveal variant="fadeIn">
           <section className="relative bg-blue-700 overflow-hidden">
             <div
-              className="absolute inset-0 opacity-[0.07]"
+              className="absolute inset-0 opacity-[0.06]"
               style={{
                 backgroundImage:
                   "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
                 backgroundSize: "32px 32px",
               }}
+              aria-hidden="true"
             />
 
             <div className="relative container py-24 flex flex-col lg:flex-row items-center justify-between gap-12">
               <div>
-                <div className="text-blue-200 font-mono text-xs tracking-widest mb-4">{t("home.noCommitment")}</div>
+                <div className="text-blue-200/60 font-mono text-xs tracking-widest mb-4">{t("home.noCommitment")}</div>
                 <h2 className="text-4xl font-black text-white leading-tight" style={{ letterSpacing: "-0.02em" }}>
                   {t("home.evaluatePlatform")}
                   <br />
                   {t("home.yourInfrastructure")}
                 </h2>
-                <p className="mt-4 text-blue-100/70 text-sm max-w-md leading-relaxed">
+                <p className="mt-4 text-blue-100/60 text-sm max-w-md leading-relaxed">
                   {t("home.pocDesc")}
                 </p>
               </div>
@@ -783,7 +801,7 @@ export default function HomePage() {
                 <Link to="/inscription">
                   <Button
                     size="lg"
-                    className="bg-blue-700 text-white hover:bg-blue-600 active:bg-blue-800 font-bold px-10 rounded-none gap-2 w-full cursor-pointer transition-colors duration-150"
+                    className="bg-white text-blue-700 hover:bg-blue-50 active:scale-[0.97] font-bold px-10 rounded-none gap-2 w-full cursor-pointer transition-all duration-200"
                   >
                     {t("home.startPocBtn")}
                     <ArrowRight className="h-4 w-4" />
@@ -793,19 +811,19 @@ export default function HomePage() {
                   <Button
                     variant="ghost"
                     size="lg"
-                    className="text-white border border-white/30 hover:bg-white/10 rounded-none gap-2 font-mono text-sm tracking-wide w-full"
+                    className="text-white border border-white/30 hover:bg-white/10 active:scale-[0.97] rounded-none gap-2 font-mono text-sm tracking-wide w-full transition-all duration-200"
                   >
                     {t("home.talkToExpert")}
                     <Users className="h-4 w-4" />
                   </Button>
                 </Link>
-                <p className="text-blue-200/50 text-xs text-center font-mono">
+                <p className="text-blue-200/40 text-xs text-center font-mono">
                   {t("home.responseTime")}
                 </p>
               </div>
             </div>
           </section>
-        </FadeIn>
+        </Reveal>
 
       </div>
     </PageTransition>

@@ -18,6 +18,7 @@ import {
 import { Button } from "../../components/ui/Button";
 import { ServiceCard } from "../../components/shared/ServiceCard";
 import { PageTransition } from "../../components/ui/PageTransition";
+import { Reveal } from "../../components/motion/Reveal";
 import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../hooks/useAuth";
 import { toast } from "../../hooks/useToast";
@@ -388,14 +389,16 @@ export default function ServiceDetailsPage() {
         </div>
 
         {similar.length > 0 && (
-          <section className="mt-20 pt-12 border-t border-gray-800">
-            <h2 className="text-xl font-bold text-white mb-6">{t("service.similarServices")}</h2>
-            <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3">
-              {similar.map((s) => (
-                <ServiceCard key={s.id} service={s} />
-              ))}
-            </div>
-          </section>
+          <Reveal>
+            <section className="mt-20 pt-12 border-t border-gray-800">
+              <h2 className="text-xl font-bold text-white mb-6">{t("service.similarServices")}</h2>
+              <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3">
+                {similar.map((s) => (
+                  <ServiceCard key={s.id} service={s} />
+                ))}
+              </div>
+            </section>
+          </Reveal>
         )}
       </div>
     </div>
