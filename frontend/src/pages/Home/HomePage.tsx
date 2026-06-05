@@ -485,7 +485,7 @@ export default function HomePage() {
               </div>
 
               <div className="space-y-4">
-                <div className="border border-red-500/20 bg-red-500/5 rounded-xl p-6">
+                <div className="border border-red-500/20 bg-red-500/5 p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <AlertTriangle className="h-4 w-4 text-red-400" />
                     <span className="text-red-400 font-mono text-xs tracking-widest">{t("home.legacyApproach")}</span>
@@ -501,7 +501,7 @@ export default function HomePage() {
                   </ul>
                 </div>
 
-                <div className="border border-blue-500/30 bg-blue-500/5 rounded-xl p-6">
+                <div className="border border-blue-500/30 bg-blue-500/5 p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <CheckCircle className="h-4 w-4 text-blue-400" />
                     <span className="text-blue-400 font-mono text-xs tracking-widest">{t("home.cynasecureApproach")}</span>
@@ -589,7 +589,7 @@ export default function HomePage() {
                 <div className="grid lg:grid-cols-5 gap-8 lg:gap-4">
                   {INCIDENT_STEPS.map((step, i) => (
                     <div key={step.label} className="relative">
-                      <div className="hidden lg:flex items-center justify-center w-16 h-16 border border-blue-500/30 bg-gray-950 rounded-2xl mb-6 mx-auto relative z-10 shadow-lg shadow-blue-500/10">
+                      <div className="hidden lg:flex items-center justify-center w-16 h-16 border border-blue-500/30 bg-gray-950 mb-6 mx-auto relative z-10 shadow-lg shadow-blue-500/10">
                         <step.icon className="h-6 w-6 text-blue-400" />
                       </div>
 
