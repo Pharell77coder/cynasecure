@@ -174,19 +174,17 @@ function HeroCarousel({ slides }: { slides: CarouselSlide[] }) {
           {slide.ctaLabel && slide.ctaUrl ? (
             <Link to={slide.ctaUrl} className="btn-cta text-sm font-bold px-8 py-3.5">
               {slide.ctaLabel}
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 cta-arrow" />
             </Link>
           ) : (
             <Link to="/inscription" className="btn-cta text-sm font-bold px-8 py-3.5">
               {t("home.startPoc")}
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 cta-arrow" />
             </Link>
           )}
-          <Link to="/catalogue">
-            <Button variant="ghost" size="lg" className="text-white border border-white/20 hover:bg-white/10 rounded-none gap-2 font-mono text-sm tracking-wide">
-              {t("home.explorePlatform")}
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+          <Link to="/catalogue" className="btn-ghost-dark text-sm">
+            {t("home.explorePlatform")}
+            <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
 
@@ -410,13 +408,11 @@ export default function HomePage() {
                 transition={{ ...heroMotion.transition, delay: reduced ? 0 : 0.2 }}
               >
                 <Link to="/inscription" className="btn-cta text-sm font-bold px-8 py-3.5">
-                  {t("home.startPoc")} <ArrowRight className="h-4 w-4" />
+                  {t("home.startPoc")} <ArrowRight className="h-4 w-4 cta-arrow" />
                 </Link>
-                <Link to="/catalogue">
-                  <Button variant="ghost" size="lg" className="text-white border border-white/20 hover:bg-white/10 active:scale-[0.97] rounded-none gap-2 font-mono text-sm tracking-wide transition-all duration-200">
-                    {t("home.explorePlatform")}
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                <Link to="/catalogue" className="btn-ghost-dark text-sm">
+                  {t("home.explorePlatform")}
+                  <ChevronRight className="h-4 w-4" />
                 </Link>
               </motion.div>
               <motion.div
@@ -489,7 +485,7 @@ export default function HomePage() {
               </div>
 
               <div className="space-y-4">
-                <div className="border border-red-500/20 bg-red-500/5 rounded-none p-6">
+                <div className="border border-red-500/20 bg-red-500/5 rounded-xl p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <AlertTriangle className="h-4 w-4 text-red-400" />
                     <span className="text-red-400 font-mono text-xs tracking-widest">{t("home.legacyApproach")}</span>
@@ -505,7 +501,7 @@ export default function HomePage() {
                   </ul>
                 </div>
 
-                <div className="border border-blue-500/30 bg-blue-500/5 rounded-none p-6">
+                <div className="border border-blue-500/30 bg-blue-500/5 rounded-xl p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <CheckCircle className="h-4 w-4 text-blue-400" />
                     <span className="text-blue-400 font-mono text-xs tracking-widest">{t("home.cynasecureApproach")}</span>
@@ -539,7 +535,7 @@ export default function HomePage() {
                     {t("home.sixCapabilities")}
                   </h2>
                   <Link to="/catalogue">
-                    <Button variant="ghost" className="text-blue-600 border border-blue-200 hover:bg-blue-50 rounded-none font-mono text-xs tracking-wide gap-2">
+                    <Button variant="ghost" className="text-blue-600 border border-blue-200 hover:bg-blue-50 font-mono text-xs tracking-wide gap-2">
                       {t("home.fullCatalogue")} <ArrowRight className="h-3 w-3" />
                     </Button>
                   </Link>
@@ -593,7 +589,7 @@ export default function HomePage() {
                 <div className="grid lg:grid-cols-5 gap-8 lg:gap-4">
                   {INCIDENT_STEPS.map((step, i) => (
                     <div key={step.label} className="relative">
-                      <div className="hidden lg:flex items-center justify-center w-16 h-16 border border-blue-500/30 bg-gray-950 rounded-none mb-6 mx-auto relative z-10">
+                      <div className="hidden lg:flex items-center justify-center w-16 h-16 border border-blue-500/30 bg-gray-950 rounded-2xl mb-6 mx-auto relative z-10 shadow-lg shadow-blue-500/10">
                         <step.icon className="h-6 w-6 text-blue-400" />
                       </div>
 
@@ -674,7 +670,7 @@ export default function HomePage() {
                     </h2>
                   </div>
                   <Link to="/catalogue">
-                    <Button variant="ghost" className="text-blue-600 border border-blue-200 hover:bg-blue-50 rounded-none font-mono text-xs tracking-wide gap-2 flex-shrink-0">
+                    <Button variant="ghost" className="text-blue-600 border border-blue-200 hover:bg-blue-50 font-mono text-xs tracking-wide gap-2 flex-shrink-0">
                       {t("home.allSolutions")} <ArrowRight className="h-3 w-3" />
                     </Button>
                   </Link>
@@ -806,19 +802,13 @@ export default function HomePage() {
               </div>
 
               <div className="flex flex-col gap-3 flex-shrink-0 min-w-[260px]">
-                <Link to="/inscription" className="btn-cta justify-center text-sm font-bold px-8 py-3.5 animate-pulse-glow-orange">
+                <Link to="/inscription" className="btn-cta justify-center text-sm font-bold px-8 py-3.5 w-full">
                   {t("home.startPocBtn")}
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-4 w-4 cta-arrow" />
                 </Link>
-                <Link to="/contact">
-                  <Button
-                    variant="ghost"
-                    size="lg"
-                    className="text-white border border-white/20 hover:bg-white/10 active:scale-[0.97] rounded-none gap-2 font-mono text-sm tracking-wide w-full transition-all duration-200"
-                  >
-                    {t("home.talkToExpert")}
-                    <Users className="h-4 w-4" />
-                  </Button>
+                <Link to="/contact" className="btn-ghost-dark justify-center text-sm w-full">
+                  {t("home.talkToExpert")}
+                  <Users className="h-4 w-4" />
                 </Link>
                 <p className="text-slate-500 text-xs text-center font-mono">
                   {t("home.responseTime")}

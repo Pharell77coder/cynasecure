@@ -193,21 +193,20 @@ export function Navbar() {
           ) : (
             <>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="border-gray-700 text-gray-300 hover:bg-gray-800 hidden sm:flex min-h-[44px]"
+                className="text-gray-400 hover:text-white hidden sm:flex min-h-[44px]"
                 onClick={() => navigate("/connexion")}
               >
                 {t("nav.login")}
               </Button>
 
-              <Button
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-500 text-white min-h-[44px]"
+              <button
                 onClick={() => navigate("/inscription")}
+                className="btn-cta text-sm px-4 py-2 min-h-[44px]"
               >
                 {t("nav.register")}
-              </Button>
+              </button>
             </>
           )}
 

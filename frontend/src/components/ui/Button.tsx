@@ -13,22 +13,32 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-blue-600 text-white hover:bg-blue-500 active:scale-[0.98] border border-blue-500/40 hover:shadow-lg hover:shadow-blue-600/20",
+    "bg-gradient-to-br from-blue-600 to-blue-700 text-white " +
+    "hover:from-blue-500 hover:to-blue-600 " +
+    "active:scale-[0.97] active:from-blue-700 active:to-blue-800 " +
+    "shadow-sm hover:shadow-md hover:shadow-blue-600/20 " +
+    "border border-blue-500/30",
 
   outline:
-    "border border-gray-700 text-gray-300 hover:border-blue-500 hover:text-blue-400 hover:bg-gray-800/40",
+    "border border-gray-700 text-gray-300 bg-transparent " +
+    "hover:border-blue-500/60 hover:text-blue-400 hover:bg-blue-500/5 " +
+    "active:scale-[0.97]",
 
   ghost:
-    "text-gray-400 hover:text-white hover:bg-gray-800/40",
+    "text-gray-400 bg-transparent " +
+    "hover:text-white hover:bg-white/8 " +
+    "active:scale-[0.97]",
 
   danger:
-    "bg-red-600 text-white hover:bg-red-500 active:scale-[0.98] border border-red-500/40",
+    "bg-gradient-to-br from-red-600 to-red-700 text-white " +
+    "hover:from-red-500 hover:to-red-600 " +
+    "active:scale-[0.97] border border-red-500/30",
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-9 px-3 text-sm",
-  md: "h-11 px-5 text-sm",
-  lg: "h-12 px-6 text-base",
+  sm:   "h-9 px-3.5 text-sm gap-1.5",
+  md:   "h-11 px-5 text-sm gap-2",
+  lg:   "h-12 px-6 text-sm gap-2",
   icon: "h-10 w-10 flex items-center justify-center",
 };
 
@@ -37,7 +47,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-none font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:opacity-50 disabled:pointer-events-none",
+        "inline-flex items-center justify-center rounded-lg font-semibold",
+        "transition-all duration-200 ease-out",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent",
+        "disabled:opacity-50 disabled:pointer-events-none",
+        "cursor-pointer",
         variants[variant],
         sizes[size],
         fullWidth && "w-full",

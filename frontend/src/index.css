@@ -2,101 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
-/* -------------------------------------------------------
-   CynaSecure Design System — Dark Cybersecurity SaaS
-   Palette premium, minimaliste, inspirée Apple / Stripe.
-   ------------------------------------------------------- */
-
 @layer base {
   :root {
-    /* Backgrounds */
     --background: 222 47% 5%;
     --surface: 222 40% 8%;
     --surface-elevated: 222 35% 11%;
-
-    /* Text */
     --foreground: 210 40% 98%;
     --muted: 217 25% 16%;
     --muted-foreground: 215 16% 60%;
-
-    /* Brand */
-    --primary: 192 100% 50%;
+    --primary: 217 91% 60%;
     --primary-foreground: 222 47% 8%;
-
-    /* Borders / Inputs */
     --border: 217 25% 18%;
     --border-strong: 217 30% 24%;
     --input: 217 30% 14%;
-    --ring: 192 100% 50%;
-
-    /* Status */
+    --ring: 217 91% 60%;
     --destructive: 0 75% 60%;
     --destructive-foreground: 0 0% 100%;
     --success: 142 70% 45%;
-
-    /* Radius */
     --radius: 0.875rem;
-
-    /* Gradients */
-    --gradient-hero: radial-gradient(
-      ellipse at top right,
-      hsl(192 100% 50% / 0.15),
-      transparent 60%
-    );
-    --gradient-primary: linear-gradient(
-      135deg,
-      hsl(192 100% 50%),
-      hsl(192 100% 65%)
-    );
   }
 }
 
 @layer base {
-  * {
-    border-color: hsl(var(--border));
-  }
+  * { border-color: hsl(var(--border)); }
 
-  html,
-  body,
-  #root {
-    min-height: 100vh;
-  }
+  html, body, #root { min-height: 100vh; }
 
   body {
     background: hsl(var(--background));
     color: hsl(var(--foreground));
     font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  h1,
-  h2,
-  h3,
-  h4 {
+  h1, h2, h3, h4 {
     font-weight: 700;
     letter-spacing: -0.02em;
   }
 }
 
 @layer components {
-  .text-gradient-primary {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-  }
 
+  /* ── Typographie ── */
   .eyebrow {
     font-family: "JetBrains Mono", ui-monospace, monospace;
     font-size: 0.7rem;
     font-weight: 500;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: #3B82F6;
+    color: #60A5FA;
   }
 
-  /* Eyebrow version sombre pour sections claires */
   .eyebrow-dark {
     font-family: "JetBrains Mono", ui-monospace, monospace;
     font-size: 0.7rem;
@@ -115,53 +72,107 @@
   }
   .link-underline:hover { background-size: 100% 1px; }
 
-  /* Bouton CTA orange */
+  /* ── Bouton CTA primaire — bleu dégradé, coins arrondis ── */
   .btn-cta {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.75rem 1.75rem;
-    background-color: #F97316;
+    padding: 0.8rem 1.75rem;
+    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
     color: #fff;
     font-weight: 600;
     font-size: 0.9rem;
-    border: none;
+    border-radius: 10px;
+    border: 1px solid rgba(96,165,250,0.3);
     cursor: pointer;
-    transition: background-color 200ms ease, transform 150ms ease, box-shadow 200ms ease;
+    position: relative;
+    overflow: hidden;
+    transition: transform 200ms ease, box-shadow 200ms ease, filter 180ms ease;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+  .btn-cta::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+    pointer-events: none;
   }
   .btn-cta:hover {
-    background-color: #EA6C00;
     transform: translateY(-1px);
-    box-shadow: 0 8px 24px rgba(249,115,22,0.35);
+    box-shadow: 0 8px 24px rgba(37,99,235,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+    filter: brightness(1.08);
   }
-  .btn-cta:active { transform: scale(0.97); }
+  .btn-cta:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+  }
 
-  /* Carte section claire */
+  /* Arrow animation inside btn-cta — use group pattern */
+  .btn-cta .cta-arrow {
+    transition: transform 200ms ease;
+  }
+  .btn-cta:hover .cta-arrow {
+    transform: translateX(3px);
+  }
+
+  /* ── Bouton CTA secondaire — ghost sur fond sombre ── */
+  .btn-ghost-dark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8rem 1.75rem;
+    background: transparent;
+    color: rgba(255,255,255,0.8);
+    font-weight: 500;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    cursor: pointer;
+    transition: color 200ms ease, border-color 200ms ease, background 200ms ease, transform 150ms ease;
+  }
+  .btn-ghost-dark:hover {
+    color: #fff;
+    border-color: rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.06);
+  }
+  .btn-ghost-dark:active { transform: scale(0.97); }
+
+  /* ── Cartes sections claires ── */
   .card-light {
     background: #ffffff;
     border: 1px solid #E2E8F0;
-    transition: border-color 200ms, transform 200ms, box-shadow 200ms;
+    border-radius: 12px;
+    transition: border-color 220ms ease, transform 220ms ease, box-shadow 220ms ease;
   }
   .card-light:hover {
-    border-color: #3B82F6;
-    transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(59,130,246,0.1);
+    border-color: #93C5FD;
+    transform: translateY(-3px);
+    box-shadow: 0 16px 40px rgba(59,130,246,0.1), 0 4px 12px rgba(0,0,0,0.06);
   }
 
-  /* Badge trust */
+  /* ── Badge technique ── */
   .badge-trust {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.3rem 0.75rem;
+    padding: 0.25rem 0.65rem;
     background: #EFF6FF;
     border: 1px solid #BFDBFE;
+    border-radius: 6px;
     color: #1D4ED8;
     font-family: "JetBrains Mono", monospace;
     font-size: 0.65rem;
     font-weight: 500;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
+  }
+
+  /* ── Input focus ring ── */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 2px solid rgba(59,130,246,0.6);
+    outline-offset: 0;
   }
 }
 
@@ -173,22 +184,25 @@
     line-height: 1.1;
   }
 
-  .animate-marquee-pause:hover {
-    animation-play-state: paused;
+  .section-light  { background-color: #F8FAFC; color: #1E293B; }
+  .section-white  { background-color: #ffffff; color: #1E293B; }
+
+  .text-gradient-blue {
+    background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
-  /* Section claire utilitaire */
-  .section-light {
-    background-color: #F8FAFC;
-    color: #1E293B;
-  }
-  .section-white {
-    background-color: #ffffff;
-    color: #1E293B;
+  .glow-blue {
+    box-shadow: 0 0 40px rgba(59,130,246,0.15);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee { animation: none !important; }
-  * { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+  * {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
 }
