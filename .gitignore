@@ -1,2 +1,13 @@
 .DS_Store
 **/.DS_Store
+
+# Unrelated local project, not part of CynaSecure
+/mobile/*
+!/mobile/Captures_mobile/
+!/mobile/README.md
+
+# Personal documents, not for GitHub
+/docs/
+
+# Claude Code local tooling config
+.claude/
