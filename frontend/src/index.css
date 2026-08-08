@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Petrona:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Work+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Petrona", serif;
+  --font-body: "Work Sans", sans-serif;
+  --font-mono: "Space Mono", monospace;
+
+  --color-paper: #F0EEE5;
+  --color-paper-dim: #E6E3D6;
+  --color-ink: #1C1E24;
+  --color-ink-soft: #4A4C55;
+
+  --color-assistanat: #2B3A67;
+  --color-assistanat-tint: #7E93C9;
+  --color-assistanat-pale: #E9ECF5;
+
+  --color-entreprendre: #9A5324;
+  --color-entreprendre-tint: #D9A257;
+  --color-entreprendre-pale: #F5EADA;
+
+  --color-novis: #1F5F5B;
+  --color-novis-tint: #6FAFA9;
+  --color-novis-pale: #E4EFED;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.focus-ring {
+  outline: none;
+}
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 3px;
+}
