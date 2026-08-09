@@ -56,6 +56,7 @@ def create_product():
 
     new_product = Product(
         name=data['name'],
+        description=data.get('description'),
         slug=slug,
         price_monthly=data['price_monthly'],
         available=data.get('available', True),
@@ -88,6 +89,8 @@ def update_product(id):
 
     if 'name' in data:
         product.name = data['name']
+    if 'description' in data:
+        product.description = data['description']
     if 'slug' in data:
         product.slug = data['slug']
     if 'price_monthly' in data:

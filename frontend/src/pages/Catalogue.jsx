@@ -1,97 +1,118 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard.jsx';
+import { catalogService } from '../services/api.js';
 
-const API_URL = 'http://localhost:5000';
+const CATEGORY_DESCRIPTIONS = {
+  soc: 'Security Operations Center – Surveillance continue de votre SI, détection des incidents et réponse aux menaces en temps réel.',
+  edr: 'Endpoint Detection & Response – Protection avancée de vos postes de travail et serveurs contre les menaces modernes.',
+  xdr: "Extended Detection & Response – Corrélation des menaces sur l'ensemble de votre infrastructure hybride."
+};
 
-export default function Catalogue() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+const sortProducts = (products) =>
+  [...products].sort((a, b) => {
+    if (a.available !== b.available) return a.available ? -1 : 1;
+    return b.price_monthly - a.price_monthly;
+  });
+
+const Catalogue = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeCategory = searchParams.get('categorie') || 'all';
+  const catSlug = searchParams.get('cat');
+
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    Promise.all([
-      fetch(`${API_URL}/api/products`).then((r) => r.json()),
-      fetch(`${API_URL}/api/categories`).then((r) => r.json())
-    ])
-      .then(([p, c]) => {
-        setProducts(p);
-        setCategories(c);
+    Promise.all([catalogService.getCategories(), catalogService.getProducts()])
+      .then(([cats, prods]) => {
+        setCategories(cats);
+        setProducts(prods);
       })
-      .catch(() => setError('Impossible de charger le catalogue.'))
+      .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
-  const categoryBySlug = useMemo(() => {
-    const map = {};
-    categories.forEach((c) => (map[c.id] = c.slug));
-    return map;
-  }, [categories]);
+  const activeCategory = catSlug ? categories.find((c) => c.slug === catSlug) : null;
 
   const filteredProducts = useMemo(() => {
-    if (activeCategory === 'all') return products;
-    return products.filter((p) => categoryBySlug[p.category_id] === activeCategory);
-  }, [products, categoryBySlug, activeCategory]);
+    const base = activeCategory ? products.filter((p) => p.category_id === activeCategory.id) : products;
+    return sortProducts(base);
+  }, [products, activeCategory]);
 
-  const setCategory = (slug) => {
-    if (slug === 'all') {
-      searchParams.delete('categorie');
-    } else {
-      searchParams.set('categorie', slug);
-    }
-    setSearchParams(searchParams);
-  };
+  const selectCategory = (cat) => setSearchParams(cat ? { cat: cat.slug } : {});
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-16 text-center">
+        <span className="text-3xl">⚠️</span>
+        <p className="mt-4 text-gray-400">Impossible de charger le catalogue ({error}).</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-950 px-4 py-12 text-gray-100">
-      <div className="mx-auto max-w-6xl">
-        <h1 className="text-3xl font-bold text-white">Catalogue</h1>
-        <p className="mt-2 text-gray-400">Choisissez les services adaptés à votre organisation.</p>
+    <div>
+      {activeCategory ? (
+        <div className="border-b border-gray-800 bg-gradient-to-br from-[#0D0B3B] to-[#1E1B74] px-4 py-16 text-center">
+          <div className="mx-auto max-w-4xl">
+            <p className="text-sm text-blue-300">
+              <button onClick={() => selectCategory(null)} className="hover:underline">Catalogue</button> / {activeCategory.name}
+            </p>
+            <div className="mt-4 text-5xl">{activeCategory.icon}</div>
+            <h1 className="mt-4 text-3xl font-bold text-white">{activeCategory.name}</h1>
+            <p className="mt-3 text-gray-300">{CATEGORY_DESCRIPTIONS[activeCategory.slug] || activeCategory.name}</p>
+          </div>
+        </div>
+      ) : (
+        <div className="border-b border-gray-800 px-4 py-12 text-center">
+          <h1 className="text-3xl font-bold text-white">Nos solutions SaaS</h1>
+          <p className="mt-2 text-gray-400">Sécurisez votre infrastructure avec nos services de cybersécurité</p>
+        </div>
+      )}
 
-        {/* FILTRES */}
-        <div className="mt-8 flex flex-wrap gap-2">
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => setCategory('all')}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-              activeCategory === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-900 text-gray-400 border border-gray-800 hover:bg-gray-800'
-            }`}
+            onClick={() => selectCategory(null)}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${!catSlug ? 'bg-blue-600 text-white' : 'border border-gray-800 bg-gray-900 text-gray-400 hover:bg-gray-800'}`}
           >
-            Tout
+            Tous
           </button>
-          {categories.map((c) => (
+          {categories.map((cat) => (
             <button
-              key={c.id}
-              onClick={() => setCategory(c.slug)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                activeCategory === c.slug
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-900 text-gray-400 border border-gray-800 hover:bg-gray-800'
-              }`}
+              key={cat.id}
+              onClick={() => selectCategory(cat)}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${catSlug === cat.slug ? 'bg-blue-600 text-white' : 'border border-gray-800 bg-gray-900 text-gray-400 hover:bg-gray-800'}`}
             >
-              {c.icon} {c.name}
+              {cat.icon} {cat.name}
             </button>
           ))}
         </div>
 
-        {/* GRILLE PRODUITS */}
-        {error && <p className="mt-8 text-red-400">{error}</p>}
-        {loading ? (
-          <p className="mt-8 text-gray-400">Chargement...</p>
-        ) : filteredProducts.length === 0 ? (
-          <p className="mt-8 text-gray-500">Aucun produit dans cette catégorie.</p>
-        ) : (
-          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredProducts.map((p) => (
-              <ProductCard key={p.id} product={p} categorySlug={categoryBySlug[p.category_id]} />
-            ))}
+        <p className="mt-6 text-sm text-gray-500">
+          {loading ? 'Chargement...' : `${filteredProducts.length} service${filteredProducts.length > 1 ? 's' : ''} disponible${filteredProducts.length > 1 ? 's' : ''}`}
+        </p>
+
+        {!loading && filteredProducts.length > 0 && (
+          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredProducts.map((p) => {
+              const cat = categories.find((c) => c.id === p.category_id);
+              return <ProductCard key={p.id} product={p} categoryIcon={cat?.icon} variant="grid" />;
+            })}
+          </div>
+        )}
+
+        {!loading && filteredProducts.length === 0 && (
+          <div className="mt-16 text-center">
+            <span className="text-3xl">🔍</span>
+            <p className="mt-4 text-gray-500">Aucun service dans cette catégorie.</p>
           </div>
         )}
       </div>
     </div>
   );
-}
+};
+
+export default Catalogue;

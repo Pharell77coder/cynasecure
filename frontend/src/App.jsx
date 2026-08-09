@@ -2,60 +2,51 @@ import { Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { CartProvider } from './context/CartContext.jsx'
 import Layout from './components/Layout.jsx'
-import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute.jsx'
+import ProtectedRoute from './components/ProtectedRoute.jsx'
 
 import Home from './pages/Home.jsx'
 import Catalogue from './pages/Catalogue.jsx'
+import Product from './pages/Product.jsx'
+import Search from './pages/Search.jsx'
+import Cart from './pages/Cart.jsx'
 import Checkout from './pages/Checkout.jsx'
 import Account from './pages/Account.jsx'
-import LoginForm from './pages/LoginForm.jsx'
-import VerifyEmail from './pages/VerifyEmail.jsx'
+import Orders from './pages/Orders.jsx'
+import Contact from './pages/Contact.jsx'
+import Login from './pages/Login.jsx'
+import Register from './pages/Register.jsx'
+import ConfirmEmail from './pages/ConfirmEmail.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
 import NotFound from './pages/NotFound.jsx'
-
-import AdminLayout from './pages/admin/AdminLayout.jsx'
-import ProductManager from './pages/admin/ProductManager.jsx'
-import CategoryManager from './pages/admin/CategoryManager.jsx'
-import UserManager from './pages/admin/UserManager.jsx'
-import OrderManager from './pages/admin/OrderManager.jsx'
-import { AddressManager, PaymentMethodManager } from './pages/admin/AdminReadOnlyManagers.jsx'
 
 export default function App() {
   return (
     <AuthProvider>
       <CartProvider>
-        <div className="flex min-h-screen flex-col">
-          <Layout>
-            <Routes>
-              {/* Pages publiques */}
-              <Route path="/" element={<Home />} />
-              <Route path="/catalogue" element={<Catalogue />} />
-              <Route path="/login" element={<LoginForm />} />
-              <Route path="/verify-email" element={<VerifyEmail />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
+        <Layout>
+          <Routes>
+            {/* Pages publiques */}
+            <Route path="/" element={<Home />} />
+            <Route path="/catalogue" element={<Catalogue />} />
+            <Route path="/produits/:id" element={<Product />} />
+            <Route path="/recherche" element={<Search />} />
+            <Route path="/panier" element={<Cart />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/connexion" element={<Login />} />
+            <Route path="/inscription" element={<Register />} />
+            <Route path="/confirmation-email/:token" element={<ConfirmEmail />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-              {/* Pages nécessitant une connexion */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/paiement" element={<Checkout />} />
-                <Route path="/compte" element={<Account />} />
-              </Route>
+            {/* Pages nécessitant une connexion */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/compte" element={<Account />} />
+              <Route path="/commandes" element={<Orders />} />
+            </Route>
 
-              {/* Back office (réservé aux admins) */}
-              <Route element={<AdminRoute />}>
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route path="produits" element={<ProductManager />} />
-                  <Route path="categories" element={<CategoryManager />} />
-                  <Route path="utilisateurs" element={<UserManager />} />
-                  <Route path="commandes" element={<OrderManager />} />
-                  <Route path="adresses" element={<AddressManager />} />
-                  <Route path="paiements" element={<PaymentMethodManager />} />
-                </Route>
-              </Route>
-
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Layout>
-        </div>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Layout>
       </CartProvider>
     </AuthProvider>
   )

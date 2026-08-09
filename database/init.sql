@@ -108,8 +108,9 @@ INSERT INTO `products` (`id`, `name`, `slug`, `price_monthly`, `available`, `cat
 (6, 'Cyna XDR Enterprise', 'cyna-xdr-enterprise', 599, 1, 3),
 (7, 'Cyna XDR Ultimate', 'cyna-xdr-ultimate', 999, 0, 3);
 
--- À exécuter sur la base cynasecure existante (init.sql ne les contient pas encore).
--- Ajoute le nécessaire pour la vraie intégration Stripe + suivi des commandes.
+
+ALTER TABLE `products`
+  ADD COLUMN `description` TEXT DEFAULT NULL AFTER `name`;
 
 ALTER TABLE `users`
   ADD COLUMN `stripe_customer_id` VARCHAR(255) DEFAULT NULL AFTER `role`;
@@ -123,3 +124,6 @@ ALTER TABLE `payment_methods`
 -- (Optionnel mais recommandé) évite les doublons de moyens de paiement Stripe par utilisateur.
 ALTER TABLE `payment_methods`
   ADD UNIQUE KEY `UQ_payment_methods_stripe_id` (`stripe_payment_method_id`);
+
+ALTER TABLE `products`
+  ADD COLUMN `description` TEXT DEFAULT NULL AFTER `name`;

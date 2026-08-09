@@ -1,48 +1,34 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
-import {
-  Elements,
-  PaymentElement,
-  useStripe,
-  useElements
-} from '@stripe/react-stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { CartContext } from '../context/CartContext.jsx';
-import { AuthContext } from '../context/AuthContext.jsx';
+import { addressService, paymentService } from '../services/api.js';
+import Button from '../components/Button.jsx';
 
-const API_URL = 'http://localhost:5000';
+const STEPS = ['Adresse', 'Paiement', 'Confirmation'];
+
 let stripePromise = null;
-
-function getStripePromise(publishableKey) {
-  if (!stripePromise) {
-    stripePromise = loadStripe(publishableKey);
-  }
+function getStripePromise(key) {
+  if (!stripePromise) stripePromise = loadStripe(key);
   return stripePromise;
 }
 
-function AddressPicker({ addresses, selectedId, onSelect, onCreated }) {
+/* ── Étape 1 : Adresse ── */
+const StepAddress = ({ onNext, addresses, selectedId, onSelect, onCreated }) => {
   const [showForm, setShowForm] = useState(addresses.length === 0);
-  const [form, setForm] = useState({
-    first_name: '', last_name: '', address1: '', city: '', postal_code: '', country: 'France'
-  });
+  const [form, setForm] = useState({ first_name: '', last_name: '', address1: '', city: '', postal_code: '', country: 'France' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
-  const handleSubmit = async (e) => {
+  const handleCreate = async (e) => {
     e.preventDefault();
     setSaving(true);
     setError('');
     try {
-      const res = await fetch(`${API_URL}/api/addresses`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(form)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+      const data = await addressService.create(form);
       onCreated(data.address);
       setShowForm(false);
     } catch (err) {
@@ -53,43 +39,25 @@ function AddressPicker({ addresses, selectedId, onSelect, onCreated }) {
   };
 
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-      <h2 className="mb-4 text-lg font-semibold text-white">Adresse de facturation</h2>
-
+    <div className="space-y-4">
       {addresses.length > 0 && !showForm && (
         <div className="space-y-2">
           {addresses.map((a) => (
-            <label
-              key={a.id}
-              className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm ${
-                selectedId === a.id ? 'border-blue-600 bg-blue-950/30' : 'border-gray-800'
-              }`}
-            >
-              <input
-                type="radio"
-                name="address"
-                checked={selectedId === a.id}
-                onChange={() => onSelect(a.id)}
-                className="mt-1"
-              />
+            <label key={a.id} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm ${selectedId === a.id ? 'border-blue-600 bg-blue-950/30' : 'border-gray-800'}`}>
+              <input type="radio" name="address" checked={selectedId === a.id} onChange={() => onSelect(a.id)} className="mt-1" />
               <span className="text-gray-300">
-                {a.first_name} {a.last_name}<br />
-                {a.address1}, {a.postal_code} {a.city}, {a.country}
+                {a.first_name} {a.last_name}<br />{a.address1}, {a.postal_code} {a.city}, {a.country}
               </span>
             </label>
           ))}
-          <button
-            type="button"
-            onClick={() => setShowForm(true)}
-            className="mt-2 text-sm text-blue-400 hover:underline"
-          >
+          <button type="button" onClick={() => setShowForm(true)} className="text-sm text-blue-400 hover:underline">
             + Ajouter une nouvelle adresse
           </button>
         </div>
       )}
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleCreate} className="space-y-3">
           {error && <p className="text-sm text-red-400">{error}</p>}
           <div className="grid grid-cols-2 gap-3">
             <input name="first_name" placeholder="Prénom" required value={form.first_name} onChange={handleChange}
@@ -105,27 +73,29 @@ function AddressPicker({ addresses, selectedId, onSelect, onCreated }) {
             <input name="city" placeholder="Ville" required value={form.city} onChange={handleChange}
               className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none" />
           </div>
-          <input name="country" placeholder="Pays" required value={form.country} onChange={handleChange}
-            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none" />
+          <select name="country" value={form.country} onChange={handleChange}
+            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none">
+            <option value="France">France</option>
+            <option value="Belgique">Belgique</option>
+            <option value="Suisse">Suisse</option>
+            <option value="Luxembourg">Luxembourg</option>
+          </select>
           <div className="flex gap-2">
-            <button type="submit" disabled={saving}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500">
-              {saving ? 'Enregistrement...' : "Enregistrer l'adresse"}
-            </button>
-            {addresses.length > 0 && (
-              <button type="button" onClick={() => setShowForm(false)}
-                className="rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800">
-                Annuler
-              </button>
-            )}
+            <Button type="submit" size="sm" loading={saving}>Enregistrer l'adresse</Button>
+            {addresses.length > 0 && <Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}>Annuler</Button>}
           </div>
         </form>
       )}
+
+      <div className="flex justify-end pt-2">
+        <Button onClick={onNext} disabled={!selectedId} size="lg">Continuer →</Button>
+      </div>
     </div>
   );
-}
+};
 
-function PaymentForm({ orderId, onSuccess }) {
+/* ── Étape 2 : Paiement (vrai Stripe) ── */
+const PaymentForm = ({ onSuccess, onBack }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
@@ -134,23 +104,18 @@ function PaymentForm({ orderId, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!stripe || !elements) return;
-
     setSubmitting(true);
     setError('');
 
-    const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      redirect: 'if_required'
-    });
+    const { error: confirmError, paymentIntent } = await stripe.confirmPayment({ elements, redirect: 'if_required' });
 
     if (confirmError) {
       setError(confirmError.message);
       setSubmitting(false);
       return;
     }
-
-    if (paymentIntent && paymentIntent.status === 'succeeded') {
-      onSuccess(orderId);
+    if (paymentIntent?.status === 'succeeded') {
+      onSuccess();
     } else {
       setError('Le paiement est en cours de traitement.');
       setSubmitting(false);
@@ -159,50 +124,61 @@ function PaymentForm({ orderId, onSuccess }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="rounded-lg border border-green-800/40 bg-green-950/20 px-4 py-2 text-sm text-green-400">
+        🔒 Paiement sécurisé par Stripe – vos données bancaires ne transitent jamais par nos serveurs.
+      </div>
       <PaymentElement />
       {error && <p className="text-sm text-red-400">{error}</p>}
-      <button
-        type="submit"
-        disabled={!stripe || submitting}
-        className="w-full rounded-lg bg-blue-600 py-3 font-medium text-white transition hover:bg-blue-500 disabled:opacity-50"
-      >
-        {submitting ? 'Paiement en cours...' : 'Payer maintenant'}
-      </button>
-      <p className="text-center text-xs text-gray-500">
-        Paiement sécurisé par Stripe. Vos données bancaires ne transitent jamais par nos serveurs.
-      </p>
+      <div className="flex justify-between pt-2">
+        <Button type="button" variant="ghost" size="lg" onClick={onBack}>← Retour</Button>
+        <Button type="submit" size="lg" loading={submitting} disabled={!stripe}>Payer maintenant</Button>
+      </div>
     </form>
   );
-}
+};
 
-export default function Checkout() {
-  const { items, total, clearCart } = useContext(CartContext);
-  const { user } = useContext(AuthContext);
+/* ── Étape 3 : Confirmation ── */
+const StepConfirmation = ({ orderId }) => {
+  const navigate = useNavigate();
+  return (
+    <div className="py-12 text-center">
+      <div className="text-5xl">✅</div>
+      <h1 className="mt-4 text-2xl font-bold text-white">Commande confirmée !</h1>
+      <p className="mt-2 text-gray-400">Un e-mail de confirmation vous a été envoyé. Bienvenue chez Cyna !</p>
+      <div className="mt-8 flex justify-center gap-3">
+        <Button variant="primary" size="lg" onClick={() => navigate(`/compte?commande=${orderId}`)}>Voir ma commande</Button>
+        <Button variant="outline" size="lg" onClick={() => navigate('/')}>Retour à l'accueil</Button>
+      </div>
+    </div>
+  );
+};
+
+/* ════════════════════════════════════════
+   Page Checkout principale
+════════════════════════════════════════ */
+const Checkout = () => {
+  const { cart, cartTotal, clearCart } = useContext(CartContext);
   const navigate = useNavigate();
 
+  const [step, setStep] = useState(0);
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [publishableKey, setPublishableKey] = useState(null);
   const [clientSecret, setClientSecret] = useState(null);
   const [orderId, setOrderId] = useState(null);
-  const [loadingIntent, setLoadingIntent] = useState(false);
+  const [preparingPayment, setPreparingPayment] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (items.length === 0) navigate('/catalogue');
-  }, [items, navigate]);
+    if (cart.length === 0 && step !== 2) navigate('/catalogue');
+  }, [cart, step, navigate]);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/payments/config`)
-      .then((r) => r.json())
-      .then((d) => setPublishableKey(d.publishable_key));
-
-    fetch(`${API_URL}/api/addresses`, { credentials: 'include' })
-      .then((r) => r.json())
-      .then((data) => {
-        setAddresses(data);
-        if (data.length > 0) setSelectedAddressId(data[0].id);
-      });
+    paymentService.getConfig().then((d) => setPublishableKey(d.publishable_key));
+    addressService.list().then((data) => {
+      setAddresses(data);
+      if (data.length > 0) setSelectedAddressId(data[0].id);
+    });
   }, []);
 
   const handleAddressCreated = (address) => {
@@ -210,91 +186,88 @@ export default function Checkout() {
     setSelectedAddressId(address.id);
   };
 
-  const startPayment = async () => {
-    setLoadingIntent(true);
+  const goToPayment = async () => {
+    setPreparingPayment(true);
     setError('');
     try {
-      const res = await fetch(`${API_URL}/api/payments/create-payment-intent`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          items: items.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
-          billing_address_id: selectedAddressId
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+      const data = await paymentService.createPaymentIntent(
+        cart.map((i) => ({ product_id: i.id, quantity: i.quantity })),
+        selectedAddressId
+      );
       setClientSecret(data.client_secret);
       setOrderId(data.order_id);
+      setStep(1);
     } catch (err) {
       setError(err.message);
     } finally {
-      setLoadingIntent(false);
+      setPreparingPayment(false);
     }
   };
 
   const handleSuccess = () => {
     clearCart();
-    navigate(`/compte?commande=${orderId}`);
+    setStep(2);
   };
 
-  if (!user) return null;
-
   return (
-    <div className="min-h-screen bg-gray-950 px-4 py-12 text-gray-100">
-      <div className="mx-auto grid max-w-4xl grid-cols-1 gap-8 lg:grid-cols-2">
-        <div className="space-y-6">
-          <h1 className="text-2xl font-bold text-white">Paiement</h1>
+    <div className="mx-auto max-w-3xl px-4 py-10">
+      {step < 2 && (
+        <div className="mb-10 flex items-center justify-center gap-4">
+          {STEPS.slice(0, 2).map((s, i) => (
+            <div key={s} className="flex items-center gap-2">
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${i === step ? 'bg-blue-600 text-white' : i < step ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-500'}`}>
+                {i < step ? '✓' : i + 1}
+              </div>
+              <span className={`text-sm ${i === step ? 'text-white' : 'text-gray-500'}`}>{s}</span>
+              {i < 1 && <div className="h-px w-8 bg-gray-800" />}
+            </div>
+          ))}
+        </div>
+      )}
 
-          {/* RÉCAPITULATIF PANIER */}
-          <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-            <h2 className="mb-4 text-lg font-semibold text-white">Votre commande</h2>
-            <ul className="divide-y divide-gray-800 text-sm">
-              {items.map((i) => (
-                <li key={i.product_id} className="flex justify-between py-2">
-                  <span className="text-gray-300">{i.name} × {i.quantity}</span>
-                  <span className="text-gray-100">{i.price_monthly * i.quantity} €</span>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-4 flex justify-between border-t border-gray-800 pt-4 font-semibold text-white">
-              <span>Total / mois</span>
-              <span>{total} €</span>
+      <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
+        {step < 2 && cart.length > 0 && (
+          <div className="mb-6 rounded-lg border border-gray-800 bg-gray-950 p-4 text-sm">
+            {cart.map((i) => (
+              <div key={i.id} className="flex justify-between py-1 text-gray-300">
+                <span>{i.name} × {i.quantity}</span><span>{i.price_monthly * i.quantity} €</span>
+              </div>
+            ))}
+            <div className="mt-2 flex justify-between border-t border-gray-800 pt-2 font-semibold text-white">
+              <span>Total / mois</span><span>{cartTotal} €</span>
             </div>
           </div>
+        )}
 
-          <AddressPicker
-            addresses={addresses}
-            selectedId={selectedAddressId}
-            onSelect={setSelectedAddressId}
-            onCreated={handleAddressCreated}
-          />
-        </div>
+        {error && <p className="mb-4 text-sm text-red-400">{error}</p>}
 
-        <div className="rounded-xl border border-gray-800 bg-gray-900 p-6 h-fit">
-          <h2 className="mb-4 text-lg font-semibold text-white">Paiement par carte</h2>
+        {step === 0 && (
+          <>
+            <h2 className="mb-4 text-lg font-semibold text-white">Adresse de facturation</h2>
+            <StepAddress
+              addresses={addresses}
+              selectedId={selectedAddressId}
+              onSelect={setSelectedAddressId}
+              onCreated={handleAddressCreated}
+              onNext={goToPayment}
+            />
+            {preparingPayment && <p className="mt-4 text-sm text-gray-500">Préparation du paiement...</p>}
+          </>
+        )}
 
-          {error && <p className="mb-4 text-sm text-red-400">{error}</p>}
-
-          {!clientSecret ? (
-            <button
-              onClick={startPayment}
-              disabled={!selectedAddressId || loadingIntent || !publishableKey}
-              className="w-full rounded-lg bg-blue-600 py-3 font-medium text-white transition hover:bg-blue-500 disabled:opacity-50"
-            >
-              {loadingIntent ? 'Préparation du paiement...' : 'Continuer vers le paiement'}
-            </button>
-          ) : (
-            <Elements
-              stripe={getStripePromise(publishableKey)}
-              options={{ clientSecret, appearance: { theme: 'night' } }}
-            >
-              <PaymentForm orderId={orderId} onSuccess={handleSuccess} />
+        {step === 1 && clientSecret && publishableKey && (
+          <>
+            <h2 className="mb-4 text-lg font-semibold text-white">Paiement</h2>
+            <Elements stripe={getStripePromise(publishableKey)} options={{ clientSecret, appearance: { theme: 'night' } }}>
+              <PaymentForm onSuccess={handleSuccess} onBack={() => setStep(0)} />
             </Elements>
-          )}
-        </div>
+          </>
+        )}
+
+        {step === 2 && <StepConfirmation orderId={orderId} />}
       </div>
     </div>
   );
-}
+};
+
+export default Checkout;

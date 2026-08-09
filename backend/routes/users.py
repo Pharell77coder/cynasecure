@@ -132,6 +132,64 @@ def me():
     return jsonify({'user': user.to_dict()}), 200
 
 
+# --- 3quater. MODIFIER SES INFORMATIONS (nom / email) ---
+@users_bp.route('/api/users/me', methods=['PUT'])
+@login_required
+def update_me():
+    user = User.query.get(session['user_id'])
+    data = request.get_json() or {}
+
+    new_username = data.get('username')
+    new_email = data.get('email')
+
+    if new_username and new_username != user.username:
+        if User.query.filter_by(username=new_username).first():
+            return jsonify({'message': 'Ce nom d\'utilisateur est déjà pris.'}), 409
+        user.username = new_username
+
+    if new_email and new_email != user.email:
+        if User.query.filter_by(email=new_email).first():
+            return jsonify({'message': 'Cet email est déjà utilisé.'}), 409
+        user.email = new_email
+        # Changer d'email doit repasser par une vérification, comme à l'inscription.
+        user.is_verified = 0
+        user.confirmation_token = secrets.token_hex(32)
+        verify_url = f"http://localhost:5173/confirmation-email/{user.confirmation_token}"
+        msg = Message("Confirmez votre nouvelle adresse email", recipients=[new_email])
+        msg.body = f"Cliquez sur ce lien pour valider votre nouvel email : {verify_url}"
+        mail.send(msg)
+
+    try:
+        db.session.commit()
+        return jsonify({'message': 'Profil mis à jour !', 'user': user.to_dict()}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Erreur serveur', 'error': str(e)}), 500
+
+
+# --- 3quinquies. CHANGER SON MOT DE PASSE (depuis le compte, en étant connecté) ---
+@users_bp.route('/api/users/me/password', methods=['PUT'])
+@login_required
+def change_password():
+    user = User.query.get(session['user_id'])
+    data = request.get_json() or {}
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+
+    if not current_password or not new_password:
+        return jsonify({'message': 'Mot de passe actuel et nouveau mot de passe requis.'}), 400
+
+    if not check_password_hash(user.password, current_password):
+        return jsonify({'message': 'Mot de passe actuel incorrect.'}), 401
+
+    if len(new_password) < 8:
+        return jsonify({'message': 'Le nouveau mot de passe doit contenir au moins 8 caractères.'}), 400
+
+    user.password = generate_password_hash(new_password, method='pbkdf2:sha256')
+    db.session.commit()
+    return jsonify({'message': 'Mot de passe modifié !'}), 200
+
+
 # --- 4. MOT DE PASSE OUBLIÉ ---
 @users_bp.route('/api/users/forgot-password', methods=['POST'])
 def forgot_password():

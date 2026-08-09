@@ -1,54 +1,49 @@
 import { createContext, useState, useEffect } from 'react';
+import { authService } from '../services/api';
 
 export const AuthContext = createContext(null);
 
-const API_URL = 'http://localhost:5000';
-
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Au chargement de l'app, on demande au back si une session est active.
+  // Restaure la session au démarrage en interrogeant le back (cookie httpOnly, pas de token en JS).
   useEffect(() => {
-    fetch(`${API_URL}/api/users/me`, { credentials: 'include' })
-      .then(async (res) => {
-        if (!res.ok) {
-          setUser(null);
-          return;
-        }
-        const data = await res.json();
-        setUser(data.user);
-      })
+    authService.me()
+      .then((data) => setUser(data.user))
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);
 
   const login = async (email, password) => {
-    const res = await fetch(`${API_URL}/api/users/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message);
+    const data = await authService.login(email, password);
     setUser(data.user);
     return data.user;
   };
 
+  const register = async (name, email, password) => {
+    return authService.register(name, email, password);
+  };
+
   const logout = async () => {
-    await fetch(`${API_URL}/api/users/logout`, {
-      method: 'POST',
-      credentials: 'include'
-    });
+    await authService.logout();
     setUser(null);
   };
 
-  const isAdmin = user?.role === 'admin';
+  const updateProfile = async (updates) => {
+    const data = await authService.updateProfile(updates);
+    setUser(data.user);
+    return data.user;
+  };
+
+  const changePassword = (currentPassword, newPassword) =>
+    authService.changePassword(currentPassword, newPassword);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isAdmin }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, register, logout, updateProfile, changePassword }}
+    >
       {children}
     </AuthContext.Provider>
   );
-}
+};

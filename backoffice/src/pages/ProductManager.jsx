@@ -11,6 +11,7 @@ export default function ProductManager() {
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
+    description: '',
     price_monthly: '',
     available: true,
     category_id: ''
@@ -51,6 +52,7 @@ export default function ProductManager() {
     setEditingId(product.id);
     setFormData({
       name: product.name,
+      description: product.description || '',
       price_monthly: product.price_monthly,
       available: product.available,
       category_id: product.category_id
@@ -59,7 +61,7 @@ export default function ProductManager() {
 
   const resetForm = () => {
     setEditingId(null);
-    setFormData({ name: '', price_monthly: '', available: true, category_id: '' });
+    setFormData({ name: '', description: '', price_monthly: '', available: true, category_id: '' });
   };
 
   const handleSubmit = async (e) => {
@@ -130,6 +132,15 @@ export default function ProductManager() {
                 <input
                   type="text" name="name" required value={formData.name} onChange={handleChange}
                   placeholder="ex: Cyna SOC Essential"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Description</label>
+                <textarea
+                  name="description" rows={3} value={formData.description} onChange={handleChange}
+                  placeholder="Présentation courte du service..."
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
