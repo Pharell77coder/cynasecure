@@ -1,4 +1,8 @@
-flask 
-flask-sqlalchemy 
-pymysql 
-flask-cors
+Flask==3.0.3
+Flask-Cors==4.0.1
+Flask-Mail==0.10.0
+Flask-SQLAlchemy==3.1.1
+PyMySQL==1.1.1
+Werkzeug==3.0.4
+stripe==10.12.0
+python-dotenv==1.0.1
