@@ -1,12 +1,12 @@
-import { useState, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import {
   View, Text, TextInput, ScrollView, TouchableOpacity,
-  StyleSheet, KeyboardAvoidingView, Platform, Alert,
+  StyleSheet, KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import { useStripe } from '@stripe/stripe-react-native';
 import { CartContext } from '../context/CartContext';
-import { AuthContext } from '../context/AuthContext';
+import { addressService, paymentService } from '../services/api';
 import Button from '../components/Button';
 import { colors, spacing, typography, radius } from '../theme';
 
@@ -19,136 +19,234 @@ const Field = ({ label, ...props }) => (
   </View>
 );
 
-/* ── Stepper ── */
 const Stepper = ({ current }) => (
   <View style={styles.stepper}>
-    {STEPS.map((s, i) => (
+    {STEPS.slice(0, 2).map((s, i) => (
       <View key={i} style={styles.stepItem}>
         <View style={[styles.stepDot, i <= current && styles.stepDotActive, i < current && styles.stepDotDone]}>
-          <Text style={[styles.stepDotText, i <= current && styles.stepDotTextActive]}>
-            {i < current ? '✓' : i + 1}
-          </Text>
+          <Text style={[styles.stepDotText, i <= current && styles.stepDotTextActive]}>{i < current ? '✓' : i + 1}</Text>
         </View>
         <Text style={[styles.stepLabel, i === current && styles.stepLabelActive]}>{s}</Text>
-        {i < STEPS.length - 1 && <View style={[styles.stepLine, i < current && styles.stepLineDone]} />}
+        {i < 1 && <View style={[styles.stepLine, i < current && styles.stepLineDone]} />}
       </View>
     ))}
   </View>
 );
 
-const CheckoutScreen = () => {
-  const [step, setStep]       = useState(0);
-  const [address, setAddress] = useState({});
-  const [payment, setPayment] = useState({});
-  const [loading, setLoading] = useState(false);
-  const { cart, cartTotal, clearCart } = useContext(CartContext);
-  const { user } = useContext(AuthContext);
-  const navigation = useNavigation();
+/* ── Étape 0 : Adresse ── */
+const StepAddress = ({ addresses, selectedId, onSelect, onCreated, onNext, loading }) => {
+  const [showForm, setShowForm] = useState(addresses.length === 0);
+  const [form, setForm] = useState({ first_name: '', last_name: '', address1: '', city: '', postal_code: '', country: 'France' });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleConfirm = async () => {
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 1500));
-    setLoading(false);
-    clearCart();
-    Alert.alert(
-      '✅ Commande confirmée !',
-      'Un e-mail de confirmation vous a été envoyé. Vos services sont maintenant actifs.',
-      [{ text: 'Retour à l\'accueil', onPress: () => navigation.navigate('HomeTab') }]
-    );
+  const handleChange = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+
+  const handleCreate = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      const data = await addressService.create(form);
+      onCreated(data.address);
+      setShowForm(false);
+    } catch (err) {
+      setError(err.message || 'Erreur lors de la création de l\'adresse.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <View>
+      {addresses.length > 0 && !showForm && (
+        <View style={{ gap: spacing[2] }}>
+          {addresses.map((a) => (
+            <TouchableOpacity
+              key={a.id}
+              style={[styles.addressCard, selectedId === a.id && styles.addressCardActive]}
+              onPress={() => onSelect(a.id)}
+            >
+              <View style={[styles.radio, selectedId === a.id && styles.radioActive]} />
+              <Text style={styles.addressText}>
+                {a.first_name} {a.last_name}{'\n'}{a.address1}, {a.postal_code} {a.city}, {a.country}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity onPress={() => setShowForm(true)}>
+            <Text style={styles.link}>+ Ajouter une nouvelle adresse</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {showForm && (
+        <View style={{ gap: spacing[1] }}>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          <View style={styles.row2}>
+            <View style={{ flex: 1 }}><Field label="Prénom" value={form.first_name} onChangeText={(v) => handleChange('first_name', v)} placeholder="Jean" /></View>
+            <View style={{ flex: 1 }}><Field label="Nom" value={form.last_name} onChangeText={(v) => handleChange('last_name', v)} placeholder="Dupont" /></View>
+          </View>
+          <Field label="Adresse" value={form.address1} onChangeText={(v) => handleChange('address1', v)} placeholder="10 rue de la Paix" />
+          <View style={styles.row2}>
+            <View style={{ flex: 1 }}><Field label="Code postal" value={form.postal_code} onChangeText={(v) => handleChange('postal_code', v)} keyboardType="number-pad" placeholder="75001" /></View>
+            <View style={{ flex: 1 }}><Field label="Ville" value={form.city} onChangeText={(v) => handleChange('city', v)} placeholder="Paris" /></View>
+          </View>
+          <Field label="Pays" value={form.country} onChangeText={(v) => handleChange('country', v)} placeholder="France" />
+
+          <View style={{ flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] }}>
+            <Button onPress={handleCreate} size="md" loading={saving}>Enregistrer l'adresse</Button>
+            {addresses.length > 0 && <Button onPress={() => setShowForm(false)} variant="ghost" size="md">Annuler</Button>}
+          </View>
+        </View>
+      )}
+
+      <Button onPress={onNext} variant="primary" size="lg" fullWidth disabled={!selectedId} loading={loading} style={{ marginTop: spacing[5] }}>
+        Continuer →
+      </Button>
+    </View>
+  );
+};
+
+/* ── Étape 2 : Confirmation ── */
+const StepConfirmation = ({ orderId }) => {
+  const navigation = useNavigation();
+  return (
+    <View style={{ alignItems: 'center', paddingVertical: spacing[10] }}>
+      <Text style={{ fontSize: 60 }}>✅</Text>
+      <Text style={styles.confirmTitle}>Commande confirmée !</Text>
+      <Text style={styles.confirmText}>Un e-mail de confirmation vous a été envoyé. Bienvenue chez Cyna !</Text>
+      <Button onPress={() => navigation.navigate('AccountTab', { screen: 'Orders' })} variant="primary" size="lg" fullWidth style={{ marginTop: spacing[6] }}>
+        Voir ma commande
+      </Button>
+      <Button onPress={() => navigation.navigate('HomeTab')} variant="outline" size="lg" fullWidth style={{ marginTop: spacing[3] }}>
+        Retour à l'accueil
+      </Button>
+    </View>
+  );
+};
+
+/* ════════════════════════════════════════
+   Écran principal
+════════════════════════════════════════ */
+const CheckoutScreen = () => {
+  const { cart, cartTotal, clearCart } = useContext(CartContext);
+  const navigation = useNavigation();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+
+  const [step, setStep] = useState(0);
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [orderId, setOrderId] = useState(null);
+  const [preparingPayment, setPreparingPayment] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (cart.length === 0 && step !== 2) navigation.navigate('CatalogueTab');
+  }, [cart, step]);
+
+  useEffect(() => {
+    addressService.list()
+      .then((data) => {
+        setAddresses(data);
+        if (data.length > 0) setSelectedAddressId(data[0].id);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleAddressCreated = (address) => {
+    setAddresses((prev) => [...prev, address]);
+    setSelectedAddressId(address.id);
+  };
+
+  /* Crée le PaymentIntent côté serveur, puis initialise + affiche
+     la feuille de paiement Stripe native (PCI-compliant, aucune donnée
+     bancaire ne transite par notre app). */
+  const goToPayment = async () => {
+    setPreparingPayment(true);
+    setError('');
+    try {
+      const items = cart.map((i) => ({ product_id: i.id, quantity: i.quantity }));
+      const data = await paymentService.createPaymentIntent(items, selectedAddressId);
+      setOrderId(data.order_id);
+
+      const { error: initError } = await initPaymentSheet({
+        merchantDisplayName: 'Cyna',
+        paymentIntentClientSecret: data.client_secret,
+        allowsDelayedPaymentMethods: false,
+        returnURL: 'cyna://stripe-redirect',
+      });
+      if (initError) throw new Error(initError.message);
+
+      setStep(1);
+      setProcessingPayment(true);
+      const { error: presentError } = await presentPaymentSheet();
+      setProcessingPayment(false);
+
+      if (presentError) {
+        if (presentError.code !== 'Canceled') {
+          setError(presentError.message);
+        }
+        return;
+      }
+
+      clearCart();
+      setStep(2);
+    } catch (err) {
+      // err.message = message générique ("Erreur Stripe"), err.error = détail exact
+      // renvoyé par payments.py (str(e) de l'exception Stripe) — bien plus utile pour debug.
+      const detail = err.error ? `${err.message} : ${err.error}` : err.message;
+      setError(detail || 'Erreur lors de la préparation du paiement.');
+    } finally {
+      setPreparingPayment(false);
+    }
   };
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: spacing[8] }}>
+        {step < 2 && <Stepper current={step} />}
 
-        <Stepper current={step} />
-
-        {/* ── Étape 0 : Adresse ── */}
-        {step === 0 && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Adresse de facturation</Text>
-            <View style={styles.row2}>
-              <View style={{ flex: 1 }}>
-                <Field label="Prénom" value={address.firstName || ''} onChangeText={v => setAddress({ ...address, firstName: v })} placeholder="Jean" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Field label="Nom" value={address.lastName || ''} onChangeText={v => setAddress({ ...address, lastName: v })} placeholder="Dupont" />
-              </View>
-            </View>
-            <Field label="Adresse" value={address.address1 || ''} onChangeText={v => setAddress({ ...address, address1: v })} placeholder="10 rue de la Paix" />
-            <View style={styles.row2}>
-              <View style={{ flex: 1 }}>
-                <Field label="Code postal" value={address.postalCode || ''} onChangeText={v => setAddress({ ...address, postalCode: v })} keyboardType="number-pad" placeholder="75001" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Field label="Ville" value={address.city || ''} onChangeText={v => setAddress({ ...address, city: v })} placeholder="Paris" />
+        <View style={styles.card}>
+          {step < 2 && cart.length > 0 && (
+            <View style={styles.recapBox}>
+              {cart.map((i) => (
+                <View key={i.id} style={styles.recapLine}>
+                  <Text style={styles.recapLabel}>{i.name} × {i.quantity}</Text>
+                  <Text style={styles.recapValue}>{i.price_monthly * i.quantity} €</Text>
+                </View>
+              ))}
+              <View style={[styles.recapLine, { borderBottomWidth: 0, paddingTop: spacing[2] }]}>
+                <Text style={styles.recapTotalLabel}>Total / mois</Text>
+                <Text style={styles.recapTotalValue}>{cartTotal} €</Text>
               </View>
             </View>
-            <Field label="Téléphone" value={address.phone || ''} onChangeText={v => setAddress({ ...address, phone: v })} keyboardType="phone-pad" placeholder="+33 6 12 34 56 78" />
-            <Button onPress={() => setStep(1)} variant="primary" size="lg" fullWidth style={{ marginTop: spacing[4] }}>
-              Continuer →
-            </Button>
-          </View>
-        )}
+          )}
 
-        {/* ── Étape 1 : Paiement ── */}
-        {step === 1 && (
-          <View style={styles.card}>
-            <View style={styles.secureBadge}>
-              <Text style={styles.secureBadgeText}>🔒 Paiement sécurisé SSL via Stripe</Text>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          {step === 0 && (
+            <>
+              <Text style={styles.cardTitle}>Adresse de facturation</Text>
+              <StepAddress
+                addresses={addresses}
+                selectedId={selectedAddressId}
+                onSelect={setSelectedAddressId}
+                onCreated={handleAddressCreated}
+                onNext={goToPayment}
+                loading={preparingPayment}
+              />
+            </>
+          )}
+
+          {step === 1 && processingPayment && (
+            <View style={{ alignItems: 'center', padding: spacing[8] }}>
+              <ActivityIndicator color={colors.primary} size="large" />
+              <Text style={{ marginTop: spacing[4], color: colors.textMuted }}>Ouverture du paiement sécurisé Stripe…</Text>
             </View>
-            <Text style={styles.cardTitle}>Informations de paiement</Text>
-            <Field label="Nom sur la carte" value={payment.cardName || ''} onChangeText={v => setPayment({ ...payment, cardName: v })} placeholder="JEAN DUPONT" autoCapitalize="characters" />
-            <Field label="Numéro de carte" value={payment.cardNumber || ''} onChangeText={v => setPayment({ ...payment, cardNumber: v })} keyboardType="number-pad" placeholder="1234 5678 9012 3456" maxLength={19} />
-            <View style={styles.row2}>
-              <View style={{ flex: 1 }}>
-                <Field label="Expiration" value={payment.expiry || ''} onChangeText={v => setPayment({ ...payment, expiry: v })} placeholder="MM/AA" maxLength={5} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Field label="CVV" value={payment.cvv || ''} onChangeText={v => setPayment({ ...payment, cvv: v })} keyboardType="number-pad" placeholder="•••" maxLength={4} secureTextEntry />
-              </View>
-            </View>
-            <View style={styles.navRow}>
-              <Button onPress={() => setStep(0)} variant="ghost" size="md">← Retour</Button>
-              <Button onPress={() => setStep(2)} variant="primary" size="md">Récapitulatif →</Button>
-            </View>
-          </View>
-        )}
+          )}
 
-        {/* ── Étape 2 : Confirmation ── */}
-        {step === 2 && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Récapitulatif</Text>
-
-            {/* Services */}
-            <Text style={styles.recapSection}>Services commandés</Text>
-            {cart.map(item => (
-              <View key={`${item.id}-${item.subscriptionType}`} style={styles.recapLine}>
-                <Text style={styles.recapLabel}>{item.name} × {item.quantity}</Text>
-                <Text style={styles.recapValue}>{item.price * item.quantity} € / mois</Text>
-              </View>
-            ))}
-            <View style={styles.recapTotal}>
-              <Text style={styles.recapTotalLabel}>Total TTC</Text>
-              <Text style={styles.recapTotalValue}>{Math.round(cartTotal * 1.2)} € / mois</Text>
-            </View>
-
-            {/* Adresse */}
-            <Text style={styles.recapSection}>Adresse de facturation</Text>
-            <Text style={styles.recapInfo}>{address.firstName} {address.lastName}</Text>
-            <Text style={styles.recapInfo}>{address.address1}</Text>
-            <Text style={styles.recapInfo}>{address.postalCode} {address.city}</Text>
-
-            {/* Paiement */}
-            <Text style={styles.recapSection}>Paiement</Text>
-            <Text style={styles.recapInfo}>•••• •••• •••• {(payment.cardNumber || '').replace(/\s/g, '').slice(-4) || '****'}</Text>
-
-            <View style={styles.navRow}>
-              <Button onPress={() => setStep(1)} variant="ghost" size="md">← Modifier</Button>
-              <Button onPress={handleConfirm} variant="primary" size="md" loading={loading}>✓ Confirmer</Button>
-            </View>
-          </View>
-        )}
+          {step === 2 && <StepConfirmation orderId={orderId} />}
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -159,10 +257,10 @@ const styles = StyleSheet.create({
 
   stepper: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: spacing[5] },
   stepItem: { flexDirection: 'row', alignItems: 'center' },
-  stepDot:  { width: 32, height: 32, borderRadius: radius.full, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  stepDot: { width: 32, height: 32, borderRadius: radius.full, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   stepDotActive: { backgroundColor: colors.primary },
-  stepDotDone:   { backgroundColor: colors.success },
-  stepDotText:   { fontSize: typography.sm, fontWeight: '700', color: colors.textMuted },
+  stepDotDone: { backgroundColor: colors.success },
+  stepDotText: { fontSize: typography.sm, fontWeight: '700', color: colors.textMuted },
   stepDotTextActive: { color: 'white' },
   stepLabel: { fontSize: typography.xs, color: colors.textMuted, marginHorizontal: spacing[2], fontWeight: '500' },
   stepLabelActive: { color: colors.primary, fontWeight: '700' },
@@ -170,30 +268,31 @@ const styles = StyleSheet.create({
   stepLineDone: { backgroundColor: colors.success },
 
   card: { margin: spacing[4], backgroundColor: colors.bgWhite, borderRadius: radius.xl, padding: spacing[5] },
-  cardTitle: { fontSize: typography.xl, fontWeight: '800', color: colors.primary, marginBottom: spacing[5] },
+  cardTitle: { fontSize: typography.xl, fontWeight: '800', color: colors.primary, marginBottom: spacing[4] },
 
-  row2:  { flexDirection: 'row', gap: spacing[3] },
-  field: { marginBottom: spacing[4] },
+  recapBox: { backgroundColor: colors.bgLight, borderRadius: radius.md, padding: spacing[3], marginBottom: spacing[4] },
+  recapLine: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing[1], borderBottomWidth: 1, borderColor: colors.border },
+  recapLabel: { fontSize: typography.sm, color: colors.textMuted, flex: 1 },
+  recapValue: { fontSize: typography.sm, color: colors.textMuted },
+  recapTotalLabel: { fontSize: typography.base, fontWeight: '800', color: colors.primary },
+  recapTotalValue: { fontSize: typography.base, fontWeight: '900', color: colors.primary },
+
+  row2: { flexDirection: 'row', gap: spacing[3] },
+  field: { marginBottom: spacing[3] },
   label: { fontSize: typography.sm, fontWeight: '600', color: colors.textPrimary, marginBottom: spacing[1] },
-  input: {
-    borderWidth: 2, borderColor: colors.border, borderRadius: radius.md,
-    padding: spacing[3], fontSize: typography.base, color: colors.textPrimary,
-    backgroundColor: colors.bgLight,
-  },
+  input: { borderWidth: 2, borderColor: colors.border, borderRadius: radius.md, padding: spacing[3], fontSize: typography.base, color: colors.textPrimary, backgroundColor: colors.bgLight },
 
-  secureBadge: { backgroundColor: '#D1FAE5', borderRadius: radius.md, padding: spacing[3], marginBottom: spacing[4] },
-  secureBadgeText: { color: '#065F46', fontSize: typography.sm, fontWeight: '600' },
+  addressCard: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[3], borderWidth: 2, borderColor: colors.border, borderRadius: radius.md, padding: spacing[3] },
+  addressCardActive: { borderColor: colors.primary, backgroundColor: colors.bgLight },
+  radio: { width: 18, height: 18, borderRadius: radius.full, borderWidth: 2, borderColor: colors.border, marginTop: 2 },
+  radioActive: { borderColor: colors.primary, backgroundColor: colors.primary },
+  addressText: { fontSize: typography.sm, color: colors.textPrimary, flex: 1, lineHeight: 20 },
+  link: { fontSize: typography.sm, color: colors.secondary, fontWeight: '700' },
 
-  navRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing[5] },
+  errorText: { fontSize: typography.sm, color: colors.danger, marginBottom: spacing[3] },
 
-  recapSection: { fontSize: typography.sm, fontWeight: '700', color: colors.textMuted, marginTop: spacing[4], marginBottom: spacing[2], textTransform: 'uppercase', letterSpacing: 0.5 },
-  recapLine: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing[2], borderBottomWidth: 1, borderColor: colors.border },
-  recapLabel:{ fontSize: typography.sm, color: colors.textMuted },
-  recapValue:{ fontSize: typography.sm, color: colors.textMuted },
-  recapTotal:{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: spacing[3] },
-  recapTotalLabel: { fontSize: typography.lg, fontWeight: '800', color: colors.primary },
-  recapTotalValue: { fontSize: typography.lg, fontWeight: '900', color: colors.primary },
-  recapInfo: { fontSize: typography.sm, color: colors.textMuted, lineHeight: 20 },
+  confirmTitle: { fontSize: typography['2xl'], fontWeight: '900', color: colors.primary, marginTop: spacing[4] },
+  confirmText: { fontSize: typography.base, color: colors.textMuted, textAlign: 'center', marginTop: spacing[2], paddingHorizontal: spacing[6] },
 });
 
 export default CheckoutScreen;

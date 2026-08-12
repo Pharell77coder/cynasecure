@@ -4,14 +4,26 @@ import ProductCard from '../components/ProductCard.jsx';
 import Button from '../components/Button.jsx';
 import { catalogService } from '../services/api.js';
 
-const relevanceScore = (product, q) => {
-  const name = product.name.toLowerCase();
-  const desc = (product.description || '').toLowerCase();
-  const term = q.toLowerCase();
-  if (name === term) return 4;
-  if (name.startsWith(term)) return 3;
-  if (name.includes(term)) return 2;
-  if (desc.includes(term)) return 1;
+// Normalise les accents pour que "securite" trouve "sécurité"
+const normalize = (str) =>
+  (str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+// Concatène tout le texte "recherchable" d'un produit : nom, description, catégorie
+const searchableText = (product, category) =>
+  normalize([product.name, product.description, category?.name, category?.slug].filter(Boolean).join(' '));
+
+const relevanceScore = (product, category, q) => {
+  const name = normalize(product.name);
+  const text = searchableText(product, category);
+  const term = normalize(q);
+  if (name === term) return 5;
+  if (name.startsWith(term)) return 4;
+  if (name.includes(term)) return 3;
+  if (normalize(category?.name).includes(term)) return 2;
+  if (text.includes(term)) return 1;
   return 0;
 };
 
@@ -36,14 +48,14 @@ const Search = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  const categoryBySlug = Object.fromEntries(categories.map((c) => [c.id, c]));
+  const categoryById = Object.fromEntries(categories.map((c) => [c.id, c]));
 
   const runSearch = useCallback(() => {
     let filtered = [...allProducts];
 
     if (query.trim()) {
-      const q = query.trim().toLowerCase();
-      filtered = filtered.filter((p) => p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q));
+      const q = query.trim();
+      filtered = filtered.filter((p) => searchableText(p, categoryById[p.category_id]).includes(normalize(q)));
     }
     if (cat) {
       const catObj = categories.find((c) => c.slug === cat);
@@ -58,7 +70,7 @@ const Search = () => {
       switch (sortBy) {
         case 'price': diff = a.price_monthly - b.price_monthly; break;
         case 'avail': diff = (b.available ? 1 : 0) - (a.available ? 1 : 0); break;
-        default: diff = relevanceScore(b, query) - relevanceScore(a, query); break;
+        default: diff = relevanceScore(b, categoryById[b.category_id], query) - relevanceScore(a, categoryById[a.category_id], query); break;
       }
       if (sortOrder === 'asc') diff = -diff;
       if (a.available !== b.available) return a.available ? -1 : 1;
@@ -168,7 +180,7 @@ const Search = () => {
 
             {!loading && results.length > 0 && (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                {results.map((p) => <ProductCard key={p.id} product={p} categoryIcon={categoryBySlug[p.category_id]?.icon} variant="grid" />)}
+                {results.map((p) => <ProductCard key={p.id} product={p} categoryIcon={categoryById[p.category_id]?.icon} variant="grid" />)}
               </div>
             )}
 

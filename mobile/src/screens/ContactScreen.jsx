@@ -1,22 +1,38 @@
 import { useState, useRef } from 'react';
 import {
   View, Text, TextInput, ScrollView, TouchableOpacity,
-  FlatList, KeyboardAvoidingView, Platform, StyleSheet, Alert,
+  KeyboardAvoidingView, Platform, StyleSheet, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Button from '../components/Button';
+import { contactService } from '../services/api';
 import { colors, spacing, typography, radius, shadow } from '../theme';
 
 const FAQ = [
-  { q: 'Comment gérer mon abonnement ?',   a: 'Rendez-vous dans "Mon compte" > abonnements pour renouveler, modifier ou résilier vos services.' },
-  { q: 'Quels modes de paiement ?',        a: 'Nous acceptons Visa, Mastercard et American Express via Stripe (PCI-DSS).' },
-  { q: 'Comment résilier ?',               a: 'Depuis "Mon compte" > abonnements. L\'accès reste actif jusqu\'à fin de période.' },
-  { q: 'Qu\'est-ce que le SOC ?',          a: 'Notre SOC surveille votre SI 24/7. Nos experts détectent et répondent aux incidents de sécurité.' },
-  { q: 'Différence EDR et XDR ?',          a: 'L\'EDR protège vos endpoints. Le XDR corrèle les menaces sur endpoint, réseau et cloud.' },
+  { q: 'Comment gérer mon abonnement ?', a: 'Rendez-vous dans "Mon compte" > commandes pour consulter vos services actifs.' },
+  { q: 'Quels modes de paiement ?', a: 'Nous acceptons Visa, Mastercard et American Express via Stripe (PCI-DSS).' },
+  { q: "Qu'est-ce que le SOC ?", a: 'Notre SOC surveille votre SI 24/7. Nos experts détectent et répondent aux incidents.' },
+  { q: 'Différence EDR et XDR ?', a: "L'EDR protège vos endpoints. Le XDR corrèle les menaces sur endpoint, réseau et cloud." },
 ];
 
-/* ── Bulle de chat ── */
+const CHATBOT_RESPONSES = {
+  abonnement: 'Rendez-vous dans "Mon compte" > commandes pour consulter vos services Cyna.',
+  paiement: 'Nous acceptons Visa, Mastercard et American Express via Stripe (PCI-DSS).',
+  soc: 'Notre SOC surveille votre SI 24/7. Nos experts détectent et répondent aux incidents en temps réel.',
+  edr: 'Notre EDR protège vos endpoints par IA comportementale.',
+  xdr: 'Notre XDR corrèle les menaces sur endpoint, réseau et cloud.',
+  bonjour: "Bonjour ! Posez-moi vos questions sur nos services SOC, EDR, XDR ou votre compte.",
+  merci: 'De rien ! N\'hésitez pas si vous avez d\'autres questions. 😊',
+};
+
+const Field = ({ label, ...props }) => (
+  <View style={styles.field}>
+    <Text style={styles.label}>{label}</Text>
+    <TextInput style={styles.input} placeholderTextColor={colors.textMuted} {...props} />
+  </View>
+);
+
 const Bubble = ({ msg }) => (
   <View style={[styles.bubble, msg.isBot ? styles.bubbleBot : styles.bubbleUser]}>
     {msg.isBot && <Text style={styles.bubbleBotIcon}>🤖</Text>}
@@ -26,60 +42,57 @@ const Bubble = ({ msg }) => (
   </View>
 );
 
-/* ════════════════════════════════════════
-   Page Contact
-════════════════════════════════════════ */
 const ContactScreen = () => {
-  const [tab, setTab]       = useState('form'); // 'form' | 'chatbot'
-  const [email, setEmail]   = useState('');
+  const [tab, setTab] = useState('form');
+  const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
 
   const [messages, setMessages] = useState([
-    { id: 1, text: 'Bonjour ! Je suis l\'assistant Cyna. Comment puis-je vous aider ?', isBot: true },
+    { id: 1, text: "Bonjour ! Je suis l'assistant Cyna. Comment puis-je vous aider ?", isBot: true },
   ]);
   const [chatInput, setChatInput] = useState('');
   const chatRef = useRef(null);
 
   const handleSend = async () => {
     if (!email || !subject || !message) {
-      Alert.alert('Champs manquants', 'Veuillez remplir tous les champs.'); return;
+      Alert.alert('Champs manquants', 'Veuillez remplir tous les champs.');
+      return;
+    }
+    if (message.length < 10) {
+      Alert.alert('Message trop court', 'Le message doit faire au moins 10 caractères.');
+      return;
     }
     setSending(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setSending(false);
-    Alert.alert('Message envoyé !', 'Nous vous répondrons sous 24h.', [
-      { text: 'OK', onPress: () => { setEmail(''); setSubject(''); setMessage(''); } },
-    ]);
+    try {
+      await contactService.send(email, subject, message);
+      Alert.alert('Message envoyé !', 'Nous vous répondrons sous 24h.', [
+        { text: 'OK', onPress: () => { setEmail(''); setSubject(''); setMessage(''); } },
+      ]);
+    } catch (err) {
+      Alert.alert('Erreur', err.message || "L'envoi du message a échoué.");
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleChatSend = () => {
     if (!chatInput.trim()) return;
-    const userMsg = { id: Date.now(), text: chatInput, isBot: false };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev) => [...prev, { id: Date.now(), text: chatInput, isBot: false }]);
     const q = chatInput.toLowerCase();
     setChatInput('');
 
     setTimeout(() => {
       let reply = null;
-      for (const faq of FAQ) {
-        if (q.includes(faq.q.toLowerCase().split(' ').slice(0, 2).join(' ')) ||
-            faq.q.toLowerCase().split(' ').some(w => w.length > 4 && q.includes(w))) {
-          reply = faq.a;
-          break;
-        }
+      for (const [keyword, response] of Object.entries(CHATBOT_RESPONSES)) {
+        if (q.includes(keyword)) { reply = response; break; }
       }
-      if (!reply && (q.includes('bonjour') || q.includes('salut'))) {
-        reply = 'Bonjour ! Posez-moi vos questions sur nos services SOC, EDR, XDR ou votre compte.';
-      }
-
-      const botMsg = {
+      setMessages((prev) => [...prev, {
         id: Date.now() + 1,
         text: reply || 'Je ne peux pas répondre à cette question. Utilisez le formulaire de contact pour joindre notre équipe.',
         isBot: true,
-      };
-      setMessages(prev => [...prev, botMsg]);
+      }]);
       setTimeout(() => chatRef.current?.scrollToEnd({ animated: true }), 100);
     }, 600);
   };
@@ -88,13 +101,11 @@ const ContactScreen = () => {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
 
-        {/* Header */}
         <LinearGradient colors={['#0D0B3B', '#1E1B74']} style={styles.header}>
           <Text style={styles.headerTitle}>Contact & Support</Text>
           <Text style={styles.headerSub}>Nous sommes là pour vous aider</Text>
         </LinearGradient>
 
-        {/* Tabs */}
         <View style={styles.tabs}>
           <TouchableOpacity style={[styles.tab, tab === 'form' && styles.tabActive]} onPress={() => setTab('form')}>
             <Text style={[styles.tabText, tab === 'form' && styles.tabTextActive]}>📧 Formulaire</Text>
@@ -104,11 +115,9 @@ const ContactScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* ── Formulaire ── */}
         {tab === 'form' && (
           <ScrollView style={styles.form} contentContainerStyle={{ paddingBottom: spacing[8] }}>
-            <Field label="Adresse e-mail *" value={email} onChangeText={setEmail}
-              keyboardType="email-address" autoCapitalize="none" placeholder="vous@entreprise.com" />
+            <Field label="Adresse e-mail *" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" placeholder="vous@entreprise.com" />
             <Field label="Sujet *" value={subject} onChangeText={setSubject} placeholder="Problème technique, question…" />
             <View style={styles.field}>
               <Text style={styles.label}>Message *</Text>
@@ -127,18 +136,16 @@ const ContactScreen = () => {
               Envoyer le message
             </Button>
 
-            {/* FAQ rapide */}
-            <Text style={[styles.faqTitle]}>Questions fréquentes</Text>
-            {FAQ.slice(0, 3).map((item, i) => (
-              <TouchableOpacity key={i} style={styles.faqItem} onPress={() => { setTab('chatbot'); }}>
+            <Text style={styles.faqTitle}>Questions fréquentes</Text>
+            {FAQ.map((item, i) => (
+              <View key={i} style={styles.faqItem}>
                 <Text style={styles.faqQ}>{item.q}</Text>
-                <Text style={styles.faqArrow}>›</Text>
-              </TouchableOpacity>
+                <Text style={styles.faqA}>{item.a}</Text>
+              </View>
             ))}
           </ScrollView>
         )}
 
-        {/* ── Chatbot ── */}
         {tab === 'chatbot' && (
           <>
             <ScrollView
@@ -148,9 +155,8 @@ const ContactScreen = () => {
               showsVerticalScrollIndicator={false}
               onContentSizeChange={() => chatRef.current?.scrollToEnd({ animated: true })}
             >
-              {messages.map(msg => <Bubble key={msg.id} msg={msg} />)}
+              {messages.map((msg) => <Bubble key={msg.id} msg={msg} />)}
             </ScrollView>
-
             <View style={styles.chatInputRow}>
               <TextInput
                 style={styles.chatInput}
@@ -169,72 +175,50 @@ const ContactScreen = () => {
             </View>
           </>
         )}
-
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
-const Field = ({ label, ...props }) => (
-  <View style={styles.field}>
-    <Text style={styles.label}>{label}</Text>
-    <TextInput style={styles.input} placeholderTextColor={colors.textMuted} {...props} />
-  </View>
-);
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgLight },
-
-  header:    { padding: spacing[6], paddingBottom: spacing[5] },
+  header: { padding: spacing[6], paddingBottom: spacing[5] },
   headerTitle: { fontSize: typography['2xl'], fontWeight: '900', color: 'white', letterSpacing: -0.3 },
-  headerSub:   { fontSize: typography.sm, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
+  headerSub: { fontSize: typography.sm, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
 
   tabs: { flexDirection: 'row', backgroundColor: colors.bgWhite, borderBottomWidth: 1, borderColor: colors.border },
   tab: { flex: 1, paddingVertical: spacing[3], alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
   tabActive: { borderBottomColor: colors.primary },
-  tabText:   { fontSize: typography.base, fontWeight: '600', color: colors.textMuted },
+  tabText: { fontSize: typography.base, fontWeight: '600', color: colors.textMuted },
   tabTextActive: { color: colors.primary },
 
-  form:  { flex: 1, padding: spacing[4] },
+  form: { flex: 1, padding: spacing[4] },
   field: { marginBottom: spacing[4] },
   label: { fontSize: typography.sm, fontWeight: '600', color: colors.textPrimary, marginBottom: spacing[1] },
-  input: {
-    borderWidth: 2, borderColor: colors.border,
-    borderRadius: radius.md, padding: spacing[3],
-    fontSize: typography.base, color: colors.textPrimary,
-    backgroundColor: colors.bgWhite,
-  },
+  input: { borderWidth: 2, borderColor: colors.border, borderRadius: radius.md, padding: spacing[3], fontSize: typography.base, color: colors.textPrimary, backgroundColor: colors.bgWhite },
   textarea: { minHeight: 120, textAlignVertical: 'top' },
 
   faqTitle: { fontSize: typography.lg, fontWeight: '800', color: colors.primary, marginTop: spacing[6], marginBottom: spacing[3] },
-  faqItem:  { flexDirection: 'row', alignItems: 'center', padding: spacing[4], backgroundColor: colors.bgWhite, borderRadius: radius.md, marginBottom: spacing[2], ...shadow.sm },
-  faqQ:     { flex: 1, fontSize: typography.sm, fontWeight: '600', color: colors.textPrimary },
-  faqArrow: { fontSize: 20, color: colors.textMuted },
+  faqItem: { padding: spacing[4], backgroundColor: colors.bgWhite, borderRadius: radius.md, marginBottom: spacing[2], ...shadow.sm },
+  faqQ: { fontSize: typography.sm, fontWeight: '700', color: colors.textPrimary, marginBottom: 4 },
+  faqA: { fontSize: typography.sm, color: colors.textMuted, lineHeight: 18 },
 
   chat: { flex: 1, backgroundColor: colors.bgLight },
-  bubble:         { flexDirection: 'row', marginBottom: spacing[3], alignItems: 'flex-end', gap: spacing[2] },
-  bubbleBot:      { justifyContent: 'flex-start' },
-  bubbleUser:     { justifyContent: 'flex-end' },
-  bubbleBotIcon:  { fontSize: 24, marginBottom: 4 },
-  bubbleContent:  { maxWidth: '75%', borderRadius: radius.lg, padding: spacing[3] },
-  bubbleContentBot:  { backgroundColor: colors.bgWhite, borderBottomLeftRadius: radius.sm, ...shadow.sm },
+  bubble: { flexDirection: 'row', marginBottom: spacing[3], alignItems: 'flex-end', gap: spacing[2] },
+  bubbleBot: { justifyContent: 'flex-start' },
+  bubbleUser: { justifyContent: 'flex-end' },
+  bubbleBotIcon: { fontSize: 24, marginBottom: 4 },
+  bubbleContent: { maxWidth: '75%', borderRadius: radius.lg, padding: spacing[3] },
+  bubbleContentBot: { backgroundColor: colors.bgWhite, borderBottomLeftRadius: radius.sm, ...shadow.sm },
   bubbleContentUser: { backgroundColor: colors.primary, borderBottomRightRadius: radius.sm },
-  bubbleText:     { fontSize: typography.base, color: colors.textPrimary, lineHeight: 20 },
-  bubbleTextBot:  { color: colors.textPrimary },
+  bubbleText: { fontSize: typography.base, color: colors.textPrimary, lineHeight: 20 },
+  bubbleTextBot: { color: colors.textPrimary },
 
-  chatInputRow: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing[2],
-    padding: spacing[3], backgroundColor: colors.bgWhite,
-    borderTopWidth: 1, borderColor: colors.border,
-  },
-  chatInput: {
-    flex: 1, backgroundColor: colors.bgLight,
-    borderRadius: radius.full, paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3], fontSize: typography.base, color: colors.textPrimary,
-  },
-  chatSendBtn:      { },
+  chatInputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2], padding: spacing[3], backgroundColor: colors.bgWhite, borderTopWidth: 1, borderColor: colors.border },
+  chatInput: { flex: 1, backgroundColor: colors.bgLight, borderRadius: radius.full, paddingHorizontal: spacing[4], paddingVertical: spacing[3], fontSize: typography.base, color: colors.textPrimary },
+  chatSendBtn: {},
   chatSendGradient: { width: 44, height: 44, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
-  chatSendIcon:     { fontSize: typography.xl, fontWeight: '900', color: 'white' },
+  chatSendIcon: { fontSize: typography.xl, fontWeight: '900', color: 'white' },
 });
 
 export default ContactScreen;

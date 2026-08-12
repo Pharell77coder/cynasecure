@@ -1,97 +1,135 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
-const API_URL = 'http://localhost:8001/api';
+/* ════════════════════════════════════════
+   Config réseau
+   - Android émulateur : localhost de la machine hôte = 10.0.2.2
+   - iOS simulateur     : localhost fonctionne directement
+   - Téléphone physique : remplace par l'IP LAN de ta machine
+     (ex. '192.168.1.23'), localhost ne marchera jamais.
+════════════════════════════════════════ */
+const HOST = Platform.select({
+  android: '10.0.2.2',
+  default: 'localhost',
+});
+
+// ⚠️ À adapter si tu testes sur un vrai téléphone
+export const API_URL = `http://${HOST}:5000`;
+
+const COOKIE_KEY = 'cyna_session_cookie';
 
 const api = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
+  withCredentials: true, // pas d'effet sur natif, utile si build Expo Web
 });
 
-/* ── Injection automatique du JWT ── */
+/* ── Rejoue le cookie de session Flask sur chaque requête ──
+   Flask utilise `session['user_id']` (cookie httpOnly), pas de JWT.
+   React Native n'a pas de "jar" de cookies automatique fiable comme
+   un navigateur : on capture le Set-Cookie renvoyé au login/register
+   et on le renvoie nous-mêmes en header Cookie sur les requêtes
+   suivantes, en le persistant dans SecureStore. */
 api.interceptors.request.use(async (config) => {
-  const token = await SecureStore.getItemAsync('cyna_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  const cookie = await SecureStore.getItemAsync(COOKIE_KEY);
+  if (cookie) config.headers.Cookie = cookie;
   return config;
 });
 
-/* ── Gestion globale des erreurs ── */
 api.interceptors.response.use(
-  (response) => response.data,
+  async (response) => {
+    const setCookie = response.headers['set-cookie'] || response.headers['Set-Cookie'];
+    if (setCookie) {
+      const raw = Array.isArray(setCookie) ? setCookie.join('; ') : setCookie;
+      const sessionPair = raw.split(';')[0]; // ex: "session=eyJ..."
+      if (sessionPair) await SecureStore.setItemAsync(COOKIE_KEY, sessionPair);
+    }
+    return response.data;
+  },
   async (error) => {
     if (error.response?.status === 401) {
-      await SecureStore.deleteItemAsync('cyna_token');
-      await SecureStore.deleteItemAsync('cyna_user');
+      await SecureStore.deleteItemAsync(COOKIE_KEY);
     }
-    return Promise.reject(error.response?.data || error);
+    if (!error.response) {
+      return Promise.reject({ message: 'Impossible de contacter le serveur. Vérifiez votre connexion.' });
+    }
+    return Promise.reject(error.response.data || { message: 'Erreur serveur.' });
   }
 );
 
+export const clearSessionCookie = () => SecureStore.deleteItemAsync(COOKIE_KEY);
+
 /* ════════════════════════════════════════
-   Auth
+   Auth — routes réelles de routes/users.py
 ════════════════════════════════════════ */
 export const authService = {
-  login:           (email, password) => api.post('/auth/login', { email, password }),
-  register:        (name, email, password) => api.post('/auth/register', { name, email, password }),
-  forgotPassword:  (email) => api.post('/auth/forgot-password', { email }),
-  resetPassword:   (token, password) => api.post('/auth/reset-password', { token, password }),
-  confirmEmail:    (token) => api.get(`/auth/confirm/${token}`),
-  me:              () => api.get('/auth/me'),
+  register:       (name, email, password) => api.post('/api/users/register', { name, email, password }),
+  verifyEmail:    (token) => api.get(`/api/users/verify/${token}`),
+  login:          (email, password) => api.post('/api/users/login', { email, password }),
+  logout:         () => api.post('/api/users/logout'),
+  me:             () => api.get('/api/users/me'),
+  updateProfile:  (updates) => api.put('/api/users/me', updates),
+  changePassword: (current_password, new_password) =>
+    api.put('/api/users/me/password', { current_password, new_password }),
+  forgotPassword: (email) => api.post('/api/users/forgot-password', { email }),
+  resetPassword:  (token, password) => api.post('/api/users/reset-password', { token, password }),
 };
 
 /* ════════════════════════════════════════
-   Produits
+   Catalogue — routes/products.py, routes/categories.py
 ════════════════════════════════════════ */
-export const productService = {
-  getAll:      (params = {}) => api.get('/products', { params }),
-  getById:     (id) => api.get(`/products/${id}`),
-  search:      (params = {}) => api.get('/products/search', { params }),
-  getFeatured: () => api.get('/products/featured'),
-  getSimilar:  (id) => api.get(`/products/${id}/similar`),
+export const catalogService = {
+  getCategories: () => api.get('/api/categories'),
+  getProducts:   () => api.get('/api/products'),
+  getProduct:    (id) => api.get(`/api/products/${id}`),
 };
 
 /* ════════════════════════════════════════
-   Catégories
+   Adresses — routes/addresses.py
 ════════════════════════════════════════ */
-export const categoryService = {
-  getAll:  () => api.get('/categories'),
-  getById: (slug) => api.get(`/categories/${slug}`),
+export const addressService = {
+  list:   () => api.get('/api/addresses'),
+  get:    (id) => api.get(`/api/addresses/${id}`),
+  create: (data) => api.post('/api/addresses', data),
+  update: (id, data) => api.put(`/api/addresses/${id}`, data),
+  remove: (id) => api.delete(`/api/addresses/${id}`),
 };
 
 /* ════════════════════════════════════════
-   Commandes
+   Commandes — routes/orders.py
 ════════════════════════════════════════ */
 export const orderService = {
-  create:     (data) => api.post('/orders', data),
-  getAll:     (params = {}) => api.get('/orders', { params }),
-  getById:    (id) => api.get(`/orders/${id}`),
-  confirm:    (id, data) => api.post(`/orders/${id}/confirm`, data),
-  getInvoice: (id) => api.get(`/orders/${id}/invoice`),
+  list: () => api.get('/api/orders'),
+  get:  (id) => api.get(`/api/orders/${id}`),
 };
 
 /* ════════════════════════════════════════
-   Compte utilisateur
+   Moyens de paiement — routes/payment_methods.py
+   (jamais créés/modifiés à la main : uniquement via le webhook Stripe)
 ════════════════════════════════════════ */
-export const userService = {
-  getProfile:      () => api.get('/user/profile'),
-  updateProfile:   (data) => api.put('/user/profile', data),
-  changePassword:  (data) => api.post('/user/change-password', data),
-  getAddresses:    () => api.get('/user/addresses'),
-  addAddress:      (data) => api.post('/user/addresses', data),
-  deleteAddress:   (id) => api.delete(`/user/addresses/${id}`),
-  getSubscriptions: () => api.get('/user/subscriptions'),
-  cancelSubscription: (id) => api.delete(`/user/subscriptions/${id}`),
+export const paymentMethodService = {
+  list:       () => api.get('/api/payment-methods'),
+  remove:     (id) => api.delete(`/api/payment-methods/${id}`),
+  setDefault: (id) => api.put(`/api/payment-methods/${id}/default`),
 };
 
 /* ════════════════════════════════════════
-   Contact
+   Paiement Stripe — routes/payments.py
+════════════════════════════════════════ */
+export const paymentService = {
+  getConfig:           () => api.get('/api/payments/config'),
+  createPaymentIntent: (items, billing_address_id) =>
+    api.post('/api/payments/create-payment-intent', { items, billing_address_id }),
+  createSetupIntent:   () => api.post('/api/payments/create-setup-intent'),
+};
+
+/* ════════════════════════════════════════
+   Contact — routes/contact.py
 ════════════════════════════════════════ */
 export const contactService = {
-  send:    (data) => api.post('/contact', data),
-  chatbot: (message, history = []) => api.post('/chatbot', { message, history }),
+  send: (email, subject, message) => api.post('/api/contact', { email, subject, message }),
 };
 
 export default api;

@@ -10,10 +10,10 @@ import { colors, radius, spacing, typography } from '../theme';
 const Button = ({
   children,
   variant = 'primary',
-  size    = 'md',
+  size = 'md',
   fullWidth = false,
-  disabled  = false,
-  loading   = false,
+  disabled = false,
+  loading = false,
   onPress,
   style,
 }) => {
@@ -35,18 +35,17 @@ const Button = ({
         >
           {loading
             ? <ActivityIndicator color="white" size="small" />
-            : <Text style={[styles.text, styles.textLight, { fontSize: sizeStyle.fontSize }]}>{children}</Text>
-          }
+            : <Text style={[styles.text, styles.textLight, { fontSize: sizeStyle.fontSize }]}>{children}</Text>}
         </LinearGradient>
       </TouchableOpacity>
     );
   }
 
   const variantStyles = {
-    secondary: { bg: colors.secondary,         text: 'white'            },
-    outline:   { bg: 'transparent',            text: colors.primary,    border: colors.primary },
-    ghost:     { bg: 'transparent',            text: colors.secondary   },
-    danger:    { bg: colors.danger,            text: 'white'            },
+    secondary: { bg: colors.secondary, text: 'white' },
+    outline:   { bg: 'transparent', text: colors.primary, border: colors.primary },
+    ghost:     { bg: 'transparent', text: colors.secondary },
+    danger:    { bg: colors.danger, text: 'white' },
   };
 
   const v = variantStyles[variant] || variantStyles.ghost;
@@ -68,8 +67,7 @@ const Button = ({
     >
       {loading
         ? <ActivityIndicator color={v.text} size="small" />
-        : <Text style={[styles.text, { color: v.text, fontSize: sizeStyle.fontSize }]}>{children}</Text>
-      }
+        : <Text style={[styles.text, { color: v.text, fontSize: sizeStyle.fontSize }]}>{children}</Text>}
     </TouchableOpacity>
   );
 };
@@ -81,15 +79,10 @@ const sizes = {
 };
 
 const styles = StyleSheet.create({
-  base: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  full:     { width: '100%' },
-  text:     { fontWeight: '700', letterSpacing: 0.2 },
-  textLight:{ color: 'white' },
+  base: { alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
+  full: { width: '100%' },
+  text: { fontWeight: '700', letterSpacing: 0.2 },
+  textLight: { color: 'white' },
   disabled: { opacity: 0.45 },
 });
 

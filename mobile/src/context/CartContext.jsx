@@ -3,83 +3,60 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const CartContext = createContext(null);
 
+const STORAGE_KEY = 'cyna_cart';
+
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const saved = await AsyncStorage.getItem('cyna_cart');
+        const saved = await AsyncStorage.getItem(STORAGE_KEY);
         if (saved) setCart(JSON.parse(saved));
-      } catch {}
+      } catch {
+        // panier vide par défaut
+      } finally {
+        setHydrated(true);
+      }
     })();
   }, []);
 
   useEffect(() => {
-    AsyncStorage.setItem('cyna_cart', JSON.stringify(cart)).catch(() => {});
-  }, [cart]);
+    if (hydrated) {
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(cart)).catch(() => {});
+    }
+  }, [cart, hydrated]);
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const cartTotal = cart.reduce((sum, item) => sum + item.price_monthly * item.quantity, 0);
 
-  const cartTotal = cart.reduce((sum, item) => {
-    const price = item.subscriptionType === 'annual' && item.priceAnnual
-      ? Math.round(item.priceAnnual / 12)
-      : item.price;
-    return sum + price * item.quantity;
-  }, 0);
-
-  const addToCart = (product, subscriptionType = 'monthly', quantity = 1) => {
-    setCart(prev => {
-      const key = `${product.id}-${subscriptionType}`;
-      const existing = prev.find(i => `${i.id}-${i.subscriptionType}` === key);
+  // product = { id, name, price_monthly } — même shape que le backend Product.to_dict()
+  const addToCart = (product, quantity = 1) => {
+    setCart((prev) => {
+      const existing = prev.find((i) => i.id === product.id);
       if (existing) {
-        return prev.map(i =>
-          `${i.id}-${i.subscriptionType}` === key
-            ? { ...i, quantity: i.quantity + quantity }
-            : i
-        );
+        return prev.map((i) => (i.id === product.id ? { ...i, quantity: i.quantity + quantity } : i));
       }
-      return [...prev, { ...product, subscriptionType, quantity }];
+      return [...prev, { id: product.id, name: product.name, price_monthly: product.price_monthly, quantity }];
     });
   };
 
-  const updateQuantity = (productId, subscriptionType, quantity) => {
-    if (quantity <= 0) { removeFromCart(productId, subscriptionType); return; }
-    setCart(prev =>
-      prev.map(item =>
-        item.id === productId && item.subscriptionType === subscriptionType
-          ? { ...item, quantity }
-          : item
-      )
-    );
+  const updateQuantity = (productId, quantity) => {
+    if (quantity <= 0) return removeFromCart(productId);
+    setCart((prev) => prev.map((i) => (i.id === productId ? { ...i, quantity } : i)));
   };
 
-  const updateSubscriptionType = (productId, oldType, newType) => {
-    setCart(prev =>
-      prev.map(item =>
-        item.id === productId && item.subscriptionType === oldType
-          ? { ...item, subscriptionType: newType }
-          : item
-      )
-    );
-  };
-
-  const removeFromCart = (productId, subscriptionType) => {
-    setCart(prev =>
-      prev.filter(item =>
-        !(item.id === productId && item.subscriptionType === subscriptionType)
-      )
-    );
+  const removeFromCart = (productId) => {
+    setCart((prev) => prev.filter((i) => i.id !== productId));
   };
 
   const clearCart = () => setCart([]);
 
   return (
-    <CartContext.Provider value={{
-      cart, cartCount, cartTotal,
-      addToCart, updateQuantity, updateSubscriptionType,
-      removeFromCart, clearCart,
-    }}>
+    <CartContext.Provider
+      value={{ cart, cartCount, cartTotal, addToCart, updateQuantity, removeFromCart, clearCart }}
+    >
       {children}
     </CartContext.Provider>
   );

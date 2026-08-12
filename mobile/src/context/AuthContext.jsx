@@ -1,52 +1,61 @@
 import { createContext, useState, useEffect, useContext } from 'react';
-import * as SecureStore from 'expo-secure-store';
-import { authService } from '../services/api';
+import { authService, clearSessionCookie } from '../services/api';
 
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser]       = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  /* Restaure la session au démarrage */
+  /* Restaure la session au démarrage en interrogeant le back
+     (cookie de session Flask rejoué automatiquement par api.js). */
   useEffect(() => {
-    (async () => {
-      try {
-        const stored = await SecureStore.getItemAsync('cyna_user');
-        const token  = await SecureStore.getItemAsync('cyna_token');
-        if (stored && token) {
-          setUser(JSON.parse(stored));
-        }
-      } catch {
-        // session invalide
-      } finally {
-        setLoading(false);
-      }
-    })();
+    authService.me()
+      .then((data) => setUser(data.user))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
   }, []);
 
   const login = async (email, password) => {
     const data = await authService.login(email, password);
-    const { token, user: userData } = data;
-
-    await SecureStore.setItemAsync('cyna_token', token);
-    await SecureStore.setItemAsync('cyna_user', JSON.stringify(userData));
-    setUser(userData);
-    return data;
+    setUser(data.user);
+    return data.user;
   };
 
+  const register = (name, email, password) => authService.register(name, email, password);
+
   const logout = async () => {
-    await SecureStore.deleteItemAsync('cyna_token');
-    await SecureStore.deleteItemAsync('cyna_user');
+    try {
+      await authService.logout();
+    } catch {
+      // même si l'appel échoue, on nettoie la session locale
+    }
+    await clearSessionCookie();
     setUser(null);
   };
 
-  const register = async (name, email, password) => {
-    return authService.register(name, email, password);
+  const updateProfile = async (updates) => {
+    const data = await authService.updateProfile(updates);
+    setUser(data.user);
+    return data.user;
   };
 
+  const changePassword = (currentPassword, newPassword) =>
+    authService.changePassword(currentPassword, newPassword);
+
+  const forgotPassword = (email) => authService.forgotPassword(email);
+  const resetPassword = (token, password) => authService.resetPassword(token, password);
+  const verifyEmail = (token) => authService.verifyEmail(token);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, register }}>
+    <AuthContext.Provider
+      value={{
+        user, loading,
+        login, register, logout,
+        updateProfile, changePassword,
+        forgotPassword, resetPassword, verifyEmail,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
