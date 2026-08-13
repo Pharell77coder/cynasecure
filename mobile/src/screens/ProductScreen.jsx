@@ -27,12 +27,15 @@ const ProductScreen = ({ route }) => {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  // billingPeriod : 'monthly' | 'annual' — identique au web (Product.jsx)
+  const [billingPeriod, setBillingPeriod] = useState('monthly');
   const [added, setAdded] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     setNotFound(false);
     setQuantity(1);
+    setBillingPeriod('monthly');
 
     Promise.all([catalogService.getProduct(id), catalogService.getCategories(), catalogService.getProducts()])
       .then(([p, cats, allProducts]) => {
@@ -66,8 +69,13 @@ const ProductScreen = ({ route }) => {
   const icon = CATEGORY_ICONS[category?.slug] || '🔒';
   const features = CATEGORY_FEATURES[category?.slug] || [];
 
+  // Même calcul que web/pages/Product.jsx : l'annuel = 10 mois prépayés (-17%),
+  // affiché ici en équivalent mensuel pour rester lisible sur mobile.
+  const annualMonthlyEquivalent = Math.round((product.price_monthly * 10) / 12);
+  const displayedPrice = billingPeriod === 'annual' ? annualMonthlyEquivalent : product.price_monthly;
+
   const handleAdd = () => {
-    addToCart({ id: product.id, name: product.name, price_monthly: product.price_monthly }, quantity);
+    addToCart({ id: product.id, name: product.name, price_monthly: product.price_monthly }, quantity, billingPeriod);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
     Alert.alert('Ajouté !', `${product.name} a été ajouté à votre panier.`, [
@@ -95,10 +103,31 @@ const ProductScreen = ({ route }) => {
             {product.description || `${product.name} fait partie de notre gamme ${category?.name || ''}, pensée pour protéger votre infrastructure au quotidien.`}
           </Text>
 
+          {/* Sélecteur mensuel / annuel, équivalent des boutons web */}
+          <View style={styles.periodToggle}>
+            <TouchableOpacity
+              style={[styles.periodBtn, billingPeriod === 'monthly' && styles.periodBtnActive]}
+              onPress={() => setBillingPeriod('monthly')}
+            >
+              <Text style={[styles.periodBtnText, billingPeriod === 'monthly' && styles.periodBtnTextActive]}>Mensuel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.periodBtn, billingPeriod === 'annual' && styles.periodBtnActive]}
+              onPress={() => setBillingPeriod('annual')}
+            >
+              <Text style={[styles.periodBtnText, billingPeriod === 'annual' && styles.periodBtnTextActive]}>
+                Annuel <Text style={styles.periodDiscount}>−17%</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.priceRow}>
-            <Text style={styles.priceAmount}>{product.price_monthly} €</Text>
+            <Text style={styles.priceAmount}>{displayedPrice} €</Text>
             <Text style={styles.pricePeriod}>/ mois</Text>
           </View>
+          {billingPeriod === 'annual' && (
+            <Text style={styles.annualNote}>soit {product.price_monthly * 10} € / an, facturé en une fois</Text>
+          )}
 
           <View style={styles.qtyWrap}>
             <Text style={styles.qtyLabel}>Utilisateurs / appareils</Text>
@@ -161,11 +190,19 @@ const styles = StyleSheet.create({
   name: { fontSize: typography['3xl'], fontWeight: '900', color: colors.primary, letterSpacing: -0.5, marginBottom: spacing[3] },
   description: { fontSize: typography.base, color: colors.textMuted, lineHeight: 22, marginBottom: spacing[5] },
 
-  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing[2], marginBottom: spacing[5] },
+  periodToggle: { flexDirection: 'row', borderWidth: 2, borderColor: colors.border, borderRadius: radius.md, alignSelf: 'flex-start', overflow: 'hidden', marginBottom: spacing[3] },
+  periodBtn: { paddingHorizontal: spacing[4], paddingVertical: spacing[2] },
+  periodBtnActive: { backgroundColor: colors.primary },
+  periodBtnText: { fontSize: typography.sm, fontWeight: '600', color: colors.textMuted },
+  periodBtnTextActive: { color: 'white' },
+  periodDiscount: { color: '#34D399', fontSize: typography.xs },
+
+  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing[2] },
   priceAmount: { fontSize: 40, fontWeight: '900', color: colors.primary, letterSpacing: -1 },
   pricePeriod: { fontSize: typography.lg, color: colors.textMuted },
+  annualNote: { fontSize: typography.sm, color: colors.textMuted, marginTop: spacing[1] },
 
-  qtyWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing[5] },
+  qtyWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing[5], marginBottom: spacing[5] },
   qtyLabel: { fontSize: typography.sm, fontWeight: '600', color: colors.textPrimary },
   qtyCtrl: { flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderColor: colors.border, borderRadius: radius.md, overflow: 'hidden' },
   qtyBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },

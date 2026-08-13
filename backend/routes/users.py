@@ -40,7 +40,7 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        verify_url = f"http://localhost:5173/verify-email?token={token}"
+        verify_url = f"http://localhost:5173/confirmation-email/{token}"
         msg = Message("Confirmez votre compte !", recipients=[email])
         msg.body = (
             f"Bonjour {name_from_react},\n\n"
@@ -249,7 +249,7 @@ def get_users():
     return jsonify([u.to_dict() for u in users]), 200
 
 
-# --- 7. ADMIN : CHANGER LE RÔLE D'UN UTILISATEUR ---
+# --- 7. ADMIN : CHANGER LE RÔLE D'UN UTILISATEUR (raccourci rapide, conservé pour compat) ---
 @users_bp.route('/api/admin/users/<int:id>/role', methods=['PUT'])
 @admin_required
 def update_user_role(id):
@@ -282,3 +282,84 @@ def delete_user(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': 'Erreur lors de la suppression', 'error': str(e)}), 500
+
+
+# ==========================================
+# 9. ADMIN : CRÉER UN UTILISATEUR DIRECTEMENT (back office)
+#    Créé déjà vérifié : pas besoin de repasser par l'email de confirmation
+#    puisque c'est un admin qui l'ajoute lui-même.
+# ==========================================
+@users_bp.route('/api/admin/users', methods=['POST'])
+@admin_required
+def admin_create_user():
+    data = request.get_json() or {}
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+    role = data.get('role', 'user')
+
+    if not username or not email or not password:
+        return jsonify({'message': 'Nom, email et mot de passe sont obligatoires.'}), 400
+    if role not in ('user', 'admin'):
+        return jsonify({'message': 'Rôle invalide (user ou admin).'}), 400
+    if len(password) < 8:
+        return jsonify({'message': 'Le mot de passe doit contenir au moins 8 caractères.'}), 400
+    if User.query.filter_by(email=email).first():
+        return jsonify({'message': 'Cet email est déjà pris.'}), 409
+    if User.query.filter_by(username=username).first():
+        return jsonify({'message': "Ce nom d'utilisateur est déjà pris."}), 409
+
+    user = User(
+        username=username,
+        email=email,
+        password=generate_password_hash(password, method='pbkdf2:sha256'),
+        role=role,
+        is_verified=1
+    )
+    try:
+        db.session.add(user)
+        db.session.commit()
+        return jsonify({'message': 'Utilisateur créé !', 'user': user.to_dict()}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Erreur serveur', 'error': str(e)}), 500
+
+
+# ==========================================
+# 10. ADMIN : MODIFIER UN UTILISATEUR (nom / email / rôle / mot de passe)
+# ==========================================
+@users_bp.route('/api/admin/users/<int:id>', methods=['PUT'])
+@admin_required
+def admin_update_user(id):
+    user = User.query.get(id)
+    if not user:
+        return jsonify({'message': 'Utilisateur non trouvé'}), 404
+
+    data = request.get_json() or {}
+
+    if 'username' in data and data['username'] and data['username'] != user.username:
+        if User.query.filter_by(username=data['username']).first():
+            return jsonify({'message': "Ce nom d'utilisateur est déjà pris."}), 409
+        user.username = data['username']
+
+    if 'email' in data and data['email'] and data['email'] != user.email:
+        if User.query.filter_by(email=data['email']).first():
+            return jsonify({'message': 'Cet email est déjà utilisé.'}), 409
+        user.email = data['email']
+
+    if 'role' in data:
+        if data['role'] not in ('user', 'admin'):
+            return jsonify({'message': 'Rôle invalide (user ou admin).'}), 400
+        user.role = data['role']
+
+    if data.get('password'):
+        if len(data['password']) < 8:
+            return jsonify({'message': 'Le mot de passe doit contenir au moins 8 caractères.'}), 400
+        user.password = generate_password_hash(data['password'], method='pbkdf2:sha256')
+
+    try:
+        db.session.commit()
+        return jsonify({'message': 'Utilisateur mis à jour !', 'user': user.to_dict()}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Erreur serveur', 'error': str(e)}), 500

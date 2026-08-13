@@ -1,4 +1,5 @@
 import re
+import json
 from flask import Blueprint, jsonify, request
 from database import db
 from models.product import Product
@@ -11,6 +12,22 @@ def slugify(text):
     text = text.lower().strip()
     text = re.sub(r'[^a-z0-9]+', '-', text)
     return text.strip('-')
+
+
+def normalize_images(value):
+    """Accepte soit une liste JS (JSON), soit une chaîne déjà JSON, et renvoie du JSON stringifié ou None."""
+    if value is None:
+        return None
+    if isinstance(value, list):
+        return json.dumps([v for v in value if v])
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+            if isinstance(parsed, list):
+                return json.dumps(parsed)
+        except (ValueError, TypeError):
+            pass
+    return None
 
 
 # ==========================================
@@ -57,8 +74,10 @@ def create_product():
     new_product = Product(
         name=data['name'],
         description=data.get('description'),
+        images=normalize_images(data.get('images')),
         slug=slug,
         price_monthly=data['price_monthly'],
+        price_annual=data.get('price_annual'),
         available=data.get('available', True),
         category_id=data['category_id']
     )
@@ -91,10 +110,14 @@ def update_product(id):
         product.name = data['name']
     if 'description' in data:
         product.description = data['description']
+    if 'images' in data:
+        product.images = normalize_images(data['images'])
     if 'slug' in data:
         product.slug = data['slug']
     if 'price_monthly' in data:
         product.price_monthly = data['price_monthly']
+    if 'price_annual' in data:
+        product.price_annual = data['price_annual']
     if 'available' in data:
         product.available = data['available']
     if 'category_id' in data:

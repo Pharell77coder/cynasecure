@@ -2,12 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard.jsx';
 import { catalogService } from '../services/api.js';
-
-const CATEGORY_DESCRIPTIONS = {
-  soc: 'Security Operations Center – Surveillance continue de votre SI, détection des incidents et réponse aux menaces en temps réel.',
-  edr: 'Endpoint Detection & Response – Protection avancée de vos postes de travail et serveurs contre les menaces modernes.',
-  xdr: "Extended Detection & Response – Corrélation des menaces sur l'ensemble de votre infrastructure hybride."
-};
+import { CATEGORY_DESCRIPTIONS } from '../constants/categories.js';
 
 const sortProducts = (products) =>
   [...products].sort((a, b) => {

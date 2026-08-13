@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard.jsx';
 import Button from '../components/Button.jsx';
 import { catalogService } from '../services/api.js';
+import { CATEGORY_DESCRIPTIONS } from '../constants/categories.js';
 
 // Normalise les accents pour que "securite" trouve "sécurité"
 const normalize = (str) =>
@@ -11,9 +12,21 @@ const normalize = (str) =>
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
-// Concatène tout le texte "recherchable" d'un produit : nom, description, catégorie
+// Concatène tout le texte "recherchable" d'un produit : nom, description propre,
+// nom/slug de catégorie, et description générique de la catégorie (fallback si le
+// produit n'a pas encore sa propre description remplie en base).
 const searchableText = (product, category) =>
-  normalize([product.name, product.description, category?.name, category?.slug].filter(Boolean).join(' '));
+  normalize(
+    [
+      product.name,
+      product.description,
+      category?.name,
+      category?.slug,
+      category ? CATEGORY_DESCRIPTIONS[category.slug] : null
+    ]
+      .filter(Boolean)
+      .join(' ')
+  );
 
 const relevanceScore = (product, category, q) => {
   const name = normalize(product.name);

@@ -87,9 +87,73 @@ def delete_address(id):
         return jsonify({'message': 'Erreur serveur', 'error': str(e)}), 500
 
 
-# --- ADMIN : VOIR TOUTES LES ADRESSES (back office) ---
+# ==========================================
+# ADMIN : CRUD COMPLET SUR TOUTES LES ADRESSES (back office)
+# ==========================================
 @addresses_bp.route('/api/admin/addresses', methods=['GET'])
 @admin_required
 def admin_get_addresses():
     addresses = Address.query.all()
     return jsonify([a.to_dict() for a in addresses]), 200
+
+
+@addresses_bp.route('/api/admin/addresses', methods=['POST'])
+@admin_required
+def admin_create_address():
+    data = request.get_json() or {}
+    for field in REQUIRED_FIELDS + ['user_id']:
+        if not data.get(field):
+            return jsonify({'message': f'Le champ "{field}" est obligatoire.'}), 400
+
+    address = Address(
+        first_name=data['first_name'],
+        last_name=data['last_name'],
+        address1=data['address1'],
+        city=data['city'],
+        postal_code=data['postal_code'],
+        country=data['country'],
+        user_id=data['user_id']
+    )
+    try:
+        db.session.add(address)
+        db.session.commit()
+        return jsonify({'message': 'Adresse créée !', 'address': address.to_dict()}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Erreur serveur', 'error': str(e)}), 500
+
+
+@addresses_bp.route('/api/admin/addresses/<int:id>', methods=['PUT'])
+@admin_required
+def admin_update_address(id):
+    address = Address.query.get(id)
+    if not address:
+        return jsonify({'message': 'Adresse non trouvée'}), 404
+
+    data = request.get_json() or {}
+    for field in REQUIRED_FIELDS + ['user_id']:
+        if field in data:
+            setattr(address, field, data[field])
+
+    try:
+        db.session.commit()
+        return jsonify({'message': 'Adresse mise à jour !', 'address': address.to_dict()}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Erreur serveur', 'error': str(e)}), 500
+
+
+@addresses_bp.route('/api/admin/addresses/<int:id>', methods=['DELETE'])
+@admin_required
+def admin_delete_address(id):
+    address = Address.query.get(id)
+    if not address:
+        return jsonify({'message': 'Adresse non trouvée'}), 404
+
+    try:
+        db.session.delete(address)
+        db.session.commit()
+        return jsonify({'message': 'Adresse supprimée !'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Erreur serveur', 'error': str(e)}), 500

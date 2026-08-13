@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
 
 const TABS = [
+  { to: '/', label: 'Tableau de bord', end: true },
   { to: '/produits', label: 'Produits' },
   { to: '/categories', label: 'Catégories' },
   { to: '/utilisateurs', label: 'Utilisateurs' },
@@ -25,6 +26,7 @@ export default function Layout() {
                 <NavLink
                   key={t.to}
                   to={t.to}
+                  end={t.end}
                   className={({ isActive }) =>
                     `whitespace-nowrap text-sm font-medium transition ${
                       isActive ? 'text-blue-400' : 'text-gray-400 hover:text-gray-200'

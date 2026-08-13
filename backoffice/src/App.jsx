@@ -4,11 +4,13 @@ import ProtectedRoute from './components/ProtectedRoute.jsx'
 import Layout from './components/Layout.jsx'
 
 import Login from './pages/Login.jsx'
+import Dashboard from './pages/Dashboard.jsx'
 import ProductManager from './pages/ProductManager.jsx'
 import CategoryManager from './pages/CategoryManager.jsx'
 import UserManager from './pages/UserManager.jsx'
 import OrderManager from './pages/OrderManager.jsx'
-import { AddressManager, PaymentMethodManager } from './pages/ReadOnlyManagers.jsx'
+import AddressManager from './pages/AddressManager.jsx'
+import { PaymentMethodManager } from './pages/ReadOnlyManagers.jsx'
 
 export default function App() {
   return (
@@ -18,7 +20,7 @@ export default function App() {
 
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
-            <Route index element={<Navigate to="/produits" replace />} />
+            <Route index element={<Dashboard />} />
             <Route path="produits" element={<ProductManager />} />
             <Route path="categories" element={<CategoryManager />} />
             <Route path="utilisateurs" element={<UserManager />} />

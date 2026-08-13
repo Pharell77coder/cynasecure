@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import {
   View, Text, TextInput, ScrollView, TouchableOpacity,
-  StyleSheet, KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
+  StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useStripe } from '@stripe/stripe-react-native';
@@ -128,7 +128,9 @@ const StepConfirmation = ({ orderId }) => {
    Écran principal
 ════════════════════════════════════════ */
 const CheckoutScreen = () => {
-  const { cart, cartTotal, clearCart } = useContext(CartContext);
+  // unitPriceFor : indispensable pour que le récap affiche le bon prix par ligne
+  // quand un article est en facturation annuelle (x10, -17%), pas juste price_monthly.
+  const { cart, cartTotal, unitPriceFor, clearCart } = useContext(CartContext);
   const navigation = useNavigation();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
@@ -158,14 +160,13 @@ const CheckoutScreen = () => {
     setSelectedAddressId(address.id);
   };
 
-  /* Crée le PaymentIntent côté serveur, puis initialise + affiche
-     la feuille de paiement Stripe native (PCI-compliant, aucune donnée
-     bancaire ne transite par notre app). */
   const goToPayment = async () => {
     setPreparingPayment(true);
     setError('');
     try {
-      const items = cart.map((i) => ({ product_id: i.id, quantity: i.quantity }));
+      // billing_period ajouté ici : sans lui, le backend calcule le PaymentIntent
+      // au tarif mensuel même pour les lignes souscrites en annuel (cf. Checkout.jsx web).
+      const items = cart.map((i) => ({ product_id: i.id, quantity: i.quantity, billing_period: i.billing_period }));
       const data = await paymentService.createPaymentIntent(items, selectedAddressId);
       setOrderId(data.order_id);
 
@@ -192,8 +193,6 @@ const CheckoutScreen = () => {
       clearCart();
       setStep(2);
     } catch (err) {
-      // err.message = message générique ("Erreur Stripe"), err.error = détail exact
-      // renvoyé par payments.py (str(e) de l'exception Stripe) — bien plus utile pour debug.
       const detail = err.error ? `${err.message} : ${err.error}` : err.message;
       setError(detail || 'Erreur lors de la préparation du paiement.');
     } finally {
@@ -210,13 +209,15 @@ const CheckoutScreen = () => {
           {step < 2 && cart.length > 0 && (
             <View style={styles.recapBox}>
               {cart.map((i) => (
-                <View key={i.id} style={styles.recapLine}>
-                  <Text style={styles.recapLabel}>{i.name} × {i.quantity}</Text>
-                  <Text style={styles.recapValue}>{i.price_monthly * i.quantity} €</Text>
+                <View key={`${i.id}-${i.billing_period}`} style={styles.recapLine}>
+                  <Text style={styles.recapLabel}>
+                    {i.name} × {i.quantity} ({i.billing_period === 'annual' ? 'annuel' : 'mensuel'})
+                  </Text>
+                  <Text style={styles.recapValue}>{unitPriceFor(i) * i.quantity} €</Text>
                 </View>
               ))}
               <View style={[styles.recapLine, { borderBottomWidth: 0, paddingTop: spacing[2] }]}>
-                <Text style={styles.recapTotalLabel}>Total / mois</Text>
+                <Text style={styles.recapTotalLabel}>Total</Text>
                 <Text style={styles.recapTotalValue}>{cartTotal} €</Text>
               </View>
             </View>

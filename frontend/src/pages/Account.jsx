@@ -145,7 +145,7 @@ const SubscriptionsSection = ({ highlightedOrder }) => {
               <span className={`rounded-full px-3 py-1 text-xs font-medium ${status.className}`}>{status.label}</span>
             </div>
             <p className="mt-2 text-sm text-gray-400">
-              {o.items.map((i) => `${i.product_name} × ${i.quantity}`).join(', ')}
+              {o.items.map((i) => `${i.product_name} × ${i.quantity} (${i.billing_period === 'annual' ? 'annuel' : 'mensuel'})`).join(', ')}
             </p>
             <p className="mt-1 font-semibold text-white">{o.total_amount} € / mois</p>
           </div>

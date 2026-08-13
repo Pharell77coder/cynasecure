@@ -110,7 +110,9 @@ const Orders = () => {
                           <div>
                             <h4 className="mb-2 text-sm font-semibold text-gray-400">Détail</h4>
                             {order.items.map((i) => (
-                              <p key={i.id} className="text-sm text-gray-300">{i.product_name} × {i.quantity} — {i.unit_price * i.quantity} €</p>
+                              <p key={i.id} className="text-sm text-gray-300">
+                                {i.product_name} × {i.quantity} ({i.billing_period === 'annual' ? 'annuel' : 'mensuel'}) — {i.unit_price * i.quantity} €
+                              </p>
                             ))}
                             <p className="mt-1 font-semibold text-white">Total : {order.total_amount} €</p>
                           </div>

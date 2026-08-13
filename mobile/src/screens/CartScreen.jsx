@@ -10,7 +10,9 @@ import { colors, spacing, typography, radius, shadow } from '../theme';
 const icon = (name) => (name?.includes('SOC') ? '🛡️' : name?.includes('EDR') ? '💻' : '🔍');
 
 const CartScreen = () => {
-  const { cart, cartTotal, updateQuantity, removeFromCart } = useContext(CartContext);
+  // unitPriceFor / updateBillingPeriod : mêmes fonctions que sur le web (CartContext.jsx),
+  // nécessaires pour gérer correctement le tarif annuel (x10, -17%) vs mensuel.
+  const { cart, cartTotal, unitPriceFor, updateQuantity, updateBillingPeriod, removeFromCart } = useContext(CartContext);
   const { user } = useContext(AuthContext);
   const navigation = useNavigation();
 
@@ -29,10 +31,12 @@ const CartScreen = () => {
     );
   }
 
+  // Retire un article : il faut préciser id + billing_period, sinon on peut supprimer
+  // la mauvaise ligne si le même produit existe en mensuel ET en annuel dans le panier.
   const handleRemove = (item) => {
     Alert.alert('Supprimer', `Retirer "${item.name}" du panier ?`, [
       { text: 'Annuler', style: 'cancel' },
-      { text: 'Supprimer', style: 'destructive', onPress: () => removeFromCart(item.id) },
+      { text: 'Supprimer', style: 'destructive', onPress: () => removeFromCart(item.id, item.billing_period) },
     ]);
   };
 
@@ -50,29 +54,53 @@ const CartScreen = () => {
 
       <FlatList
         data={cart}
-        keyExtractor={(item) => String(item.id)}
+        keyExtractor={(item) => `${item.id}-${item.billing_period}`}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => {
-          const lineTotal = item.price_monthly * item.quantity;
+          const unitPrice = unitPriceFor(item);
+          const lineTotal = unitPrice * item.quantity;
+          const isAnnual = item.billing_period === 'annual';
           return (
             <View style={styles.card}>
               <View style={styles.iconBox}><Text style={styles.iconText}>{icon(item.name)}</Text></View>
               <View style={styles.info}>
                 <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
-                <Text style={styles.itemSub}>{item.quantity} utilisateur{item.quantity > 1 ? 's' : ''}</Text>
+
+                {/* Sélecteur mensuel / annuel, équivalent du <select> web */}
+                <View style={styles.periodRow}>
+                  <TouchableOpacity
+                    style={[styles.periodChip, !isAnnual && styles.periodChipActive]}
+                    onPress={() => updateBillingPeriod(item.id, item.billing_period, 'monthly')}
+                  >
+                    <Text style={[styles.periodText, !isAnnual && styles.periodTextActive]}>Mensuel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.periodChip, isAnnual && styles.periodChipActive]}
+                    onPress={() => updateBillingPeriod(item.id, item.billing_period, 'annual')}
+                  >
+                    <Text style={[styles.periodText, isAnnual && styles.periodTextActive]}>Annuel (−17%)</Text>
+                  </TouchableOpacity>
+                </View>
+
                 <View style={styles.qtyRow}>
-                  <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQuantity(item.id, item.quantity - 1)}>
+                  <TouchableOpacity
+                    style={styles.qtyBtn}
+                    onPress={() => updateQuantity(item.id, item.billing_period, item.quantity - 1)}
+                  >
                     <Text style={styles.qtyBtnText}>−</Text>
                   </TouchableOpacity>
                   <Text style={styles.qtyVal}>{item.quantity}</Text>
-                  <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQuantity(item.id, item.quantity + 1)}>
+                  <TouchableOpacity
+                    style={styles.qtyBtn}
+                    onPress={() => updateQuantity(item.id, item.billing_period, item.quantity + 1)}
+                  >
                     <Text style={styles.qtyBtnText}>+</Text>
                   </TouchableOpacity>
                 </View>
               </View>
               <View style={styles.right}>
                 <Text style={styles.price}>{lineTotal} €</Text>
-                <Text style={styles.perMonth}>/ mois</Text>
+                <Text style={styles.perMonth}>{isAnnual ? '/ an' : '/ mois'}</Text>
                 <TouchableOpacity onPress={() => handleRemove(item)} style={styles.removeBtn}>
                   <Text style={styles.removeText}>✕</Text>
                 </TouchableOpacity>
@@ -82,9 +110,9 @@ const CartScreen = () => {
         }}
         ListFooterComponent={
           <View style={styles.summary}>
-            <View style={styles.summaryLine}><Text style={styles.summaryLabel}>Sous-total</Text><Text style={styles.summaryVal}>{cartTotal} € / mois</Text></View>
+            <View style={styles.summaryLine}><Text style={styles.summaryLabel}>Sous-total</Text><Text style={styles.summaryVal}>{cartTotal} €</Text></View>
             <View style={styles.summaryLine}><Text style={styles.summaryLabel}>TVA (20%)</Text><Text style={styles.summaryVal}>{Math.round(cartTotal * 0.2)} €</Text></View>
-            <View style={[styles.summaryLine, styles.totalLine]}><Text style={styles.totalLabel}>Total TTC</Text><Text style={styles.totalVal}>{Math.round(cartTotal * 1.2)} € / mois</Text></View>
+            <View style={[styles.summaryLine, styles.totalLine]}><Text style={styles.totalLabel}>Total TTC</Text><Text style={styles.totalVal}>{Math.round(cartTotal * 1.2)} €</Text></View>
 
             {!user && (
               <View style={styles.loginHint}>
@@ -121,7 +149,12 @@ const styles = StyleSheet.create({
 
   info: { flex: 1 },
   itemName: { fontSize: typography.base, fontWeight: '700', color: colors.textPrimary, marginBottom: 4 },
-  itemSub: { fontSize: typography.sm, color: colors.textMuted, marginBottom: spacing[2] },
+
+  periodRow: { flexDirection: 'row', gap: spacing[2], marginBottom: spacing[2] },
+  periodChip: { paddingHorizontal: spacing[2], paddingVertical: 4, borderRadius: radius.full, borderWidth: 1, borderColor: colors.border },
+  periodChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  periodText: { fontSize: typography.xs, fontWeight: '600', color: colors.textMuted },
+  periodTextActive: { color: 'white' },
 
   qtyRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   qtyBtn: { width: 28, height: 28, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },

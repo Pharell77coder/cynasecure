@@ -5,7 +5,7 @@ import { AuthContext } from '../context/AuthContext.jsx';
 import Button from '../components/Button.jsx';
 
 const Cart = () => {
-  const { cart, cartTotal, updateQuantity, removeFromCart } = useContext(CartContext);
+  const { cart, cartTotal, unitPriceFor, updateQuantity, updateBillingPeriod, removeFromCart } = useContext(CartContext);
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -28,45 +28,60 @@ const Cart = () => {
 
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">
-          {cart.map((item) => (
-            <div key={item.id} className="flex items-center gap-4 rounded-xl border border-gray-800 bg-gray-900 p-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gray-800 text-2xl">
-                {item.name.includes('SOC') ? '🛡️' : item.name.includes('EDR') ? '💻' : '🔍'}
-              </div>
+          {cart.map((item) => {
+            const unitPrice = unitPriceFor(item);
+            return (
+              <div key={`${item.id}-${item.billing_period}`} className="flex flex-col gap-4 rounded-xl border border-gray-800 bg-gray-900 p-4 sm:flex-row sm:items-center">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gray-800 text-2xl">
+                  {item.name.includes('SOC') ? '🛡️' : item.name.includes('EDR') ? '💻' : '🔍'}
+                </div>
 
-              <div className="flex-1">
-                <h3 className="font-semibold text-white">{item.name}</h3>
-                <div className="mt-2 flex items-center gap-3">
-                  <span className="text-sm text-gray-500">Utilisateurs</span>
-                  <div className="flex items-center gap-3 rounded-lg border border-gray-700 px-3 py-1">
-                    <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="text-gray-300 hover:text-white">−</button>
-                    <span className="text-white">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="text-gray-300 hover:text-white">+</button>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-white">{item.name}</h3>
+
+                  <div className="mt-2 flex flex-wrap items-center gap-3">
+                    <select
+                      value={item.billing_period}
+                      onChange={(e) => updateBillingPeriod(item.id, item.billing_period, e.target.value)}
+                      className="rounded-lg border border-gray-700 bg-gray-800 px-2 py-1 text-sm text-white focus:outline-none"
+                    >
+                      <option value="monthly">Mensuel</option>
+                      <option value="annual">Annuel (−17%)</option>
+                    </select>
+
+                    <div className="flex items-center gap-3 rounded-lg border border-gray-700 px-3 py-1">
+                      <span className="text-sm text-gray-500">Utilisateurs</span>
+                      <button onClick={() => updateQuantity(item.id, item.billing_period, item.quantity - 1)} className="text-gray-300 hover:text-white">−</button>
+                      <span className="text-white">{item.quantity}</span>
+                      <button onClick={() => updateQuantity(item.id, item.billing_period, item.quantity + 1)} className="text-gray-300 hover:text-white">+</button>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="text-right">
-                <p className="text-sm text-gray-500">{item.price_monthly} € / mois</p>
-                <p className="font-semibold text-white">{item.price_monthly * item.quantity} €</p>
-                <button onClick={() => removeFromCart(item.id)} className="mt-1 text-xs text-red-400 hover:underline" aria-label="Supprimer">
-                  Supprimer
-                </button>
+                <div className="text-right">
+                  <p className="text-sm text-gray-500">
+                    {item.billing_period === 'annual' ? `${unitPrice} € / an` : `${unitPrice} € / mois`}
+                  </p>
+                  <p className="font-semibold text-white">{unitPrice * item.quantity} €</p>
+                  <button onClick={() => removeFromCart(item.id, item.billing_period)} className="mt-1 text-xs text-red-400 hover:underline" aria-label="Supprimer">
+                    Supprimer
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <aside className="h-fit rounded-xl border border-gray-800 bg-gray-900 p-6">
           <h2 className="mb-4 text-lg font-semibold text-white">Récapitulatif</h2>
           <div className="flex justify-between text-sm text-gray-400">
-            <span>Sous-total</span><span>{cartTotal} € / mois</span>
+            <span>Sous-total</span><span>{cartTotal} €</span>
           </div>
           <div className="mt-2 flex justify-between text-sm text-gray-400">
             <span>TVA (20%)</span><span>{Math.round(cartTotal * 0.2)} €</span>
           </div>
           <div className="mt-4 flex justify-between border-t border-gray-800 pt-4 font-semibold text-white">
-            <span>Total TTC</span><span>{Math.round(cartTotal * 1.2)} € / mois</span>
+            <span>Total TTC</span><span>{Math.round(cartTotal * 1.2)} €</span>
           </div>
 
           {!user && (

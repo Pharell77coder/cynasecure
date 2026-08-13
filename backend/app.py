@@ -50,6 +50,7 @@ from routes.orders import orders_bp
 from routes.payment_methods import payment_methods_bp
 from routes.payments import payments_bp
 from routes.contact import contact_bp
+from routes.dashboard import dashboard_bp
 
 app.register_blueprint(users_bp)
 app.register_blueprint(products_bp)
@@ -59,6 +60,7 @@ app.register_blueprint(orders_bp)
 app.register_blueprint(payment_methods_bp)
 app.register_blueprint(payments_bp)
 app.register_blueprint(contact_bp)
+app.register_blueprint(dashboard_bp)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

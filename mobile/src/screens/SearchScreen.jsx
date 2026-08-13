@@ -5,16 +5,33 @@ import ProductCard from '../components/ProductCard';
 import { catalogService } from '../services/api';
 import { colors, spacing, typography, radius } from '../theme';
 
-const relevanceScore = (product, q) => {
-  const name = product.name.toLowerCase();
-  const desc = (product.description || '').toLowerCase();
-  const term = q.toLowerCase();
-  if (name === term) return 4;
-  if (name.startsWith(term)) return 3;
-  if (name.includes(term)) return 2;
-  if (desc.includes(term)) return 1;
+// Même normalisation que web/pages/Search.jsx : "securite" doit trouver "sécurité"
+const normalize = (str) =>
+  (str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+const searchableText = (product, category) =>
+  normalize([product.name, product.description, category?.name, category?.slug].filter(Boolean).join(' '));
+
+const relevanceScore = (product, category, q) => {
+  const name = normalize(product.name);
+  const text = searchableText(product, category);
+  const term = normalize(q);
+  if (name === term) return 5;
+  if (name.startsWith(term)) return 4;
+  if (name.includes(term)) return 3;
+  if (normalize(category?.name).includes(term)) return 2;
+  if (text.includes(term)) return 1;
   return 0;
 };
+
+const SORT_OPTIONS = [
+  { v: 'relevance', l: 'Pertinence' },
+  { v: 'price', l: 'Prix' },
+  { v: 'avail', l: 'Disponibilité' },
+];
 
 const SearchScreen = () => {
   const [allProducts, setAllProducts] = useState([]);
@@ -24,6 +41,10 @@ const SearchScreen = () => {
   const [query, setQuery] = useState('');
   const [catSlug, setCatSlug] = useState(null);
   const [onlyAvail, setOnlyAvail] = useState(false);
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [sortBy, setSortBy] = useState('relevance');
+  const [sortOrder, setSortOrder] = useState('desc');
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -41,23 +62,31 @@ const SearchScreen = () => {
     let filtered = [...allProducts];
 
     if (query.trim()) {
-      const q = query.trim().toLowerCase();
-      filtered = filtered.filter((p) => p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q));
+      const q = normalize(query.trim());
+      filtered = filtered.filter((p) => searchableText(p, categoryById[p.category_id]).includes(q));
     }
     if (catSlug) {
       const catObj = categories.find((c) => c.slug === catSlug);
       if (catObj) filtered = filtered.filter((p) => p.category_id === catObj.id);
     }
+    if (minPrice) filtered = filtered.filter((p) => p.price_monthly >= Number(minPrice));
+    if (maxPrice) filtered = filtered.filter((p) => p.price_monthly <= Number(maxPrice));
     if (onlyAvail) filtered = filtered.filter((p) => p.available);
 
     filtered.sort((a, b) => {
+      let diff = 0;
+      switch (sortBy) {
+        case 'price': diff = a.price_monthly - b.price_monthly; break;
+        case 'avail': diff = (b.available ? 1 : 0) - (a.available ? 1 : 0); break;
+        default: diff = relevanceScore(b, categoryById[b.category_id], query) - relevanceScore(a, categoryById[a.category_id], query); break;
+      }
+      if (sortOrder === 'asc') diff = -diff;
       if (a.available !== b.available) return a.available ? -1 : 1;
-      if (query.trim()) return relevanceScore(b, query) - relevanceScore(a, query);
-      return b.price_monthly - a.price_monthly;
+      return diff;
     });
 
     return filtered;
-  }, [query, catSlug, onlyAvail, allProducts, categories]);
+  }, [query, catSlug, onlyAvail, minPrice, maxPrice, sortBy, sortOrder, allProducts, categories]);
 
   const FILTERS = [{ slug: null, label: 'Tous' }, ...categories.map((c) => ({ slug: c.slug, label: `${c.icon} ${c.name}` }))];
 
@@ -95,6 +124,40 @@ const SearchScreen = () => {
         ))}
         <TouchableOpacity style={[styles.filterChip, onlyAvail && styles.filterChipActive]} onPress={() => setOnlyAvail(!onlyAvail)}>
           <Text style={[styles.filterText, onlyAvail && styles.filterTextActive]}>Dispo uniquement</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Filtre prix min/max, absent de la version précédente */}
+      <View style={styles.priceRow}>
+        <Text style={styles.priceLabel}>Prix / mois :</Text>
+        <TextInput
+          style={styles.priceInput}
+          placeholder="Min"
+          placeholderTextColor={colors.textMuted}
+          value={minPrice}
+          onChangeText={setMinPrice}
+          keyboardType="number-pad"
+        />
+        <Text style={styles.priceDash}>–</Text>
+        <TextInput
+          style={styles.priceInput}
+          placeholder="Max"
+          placeholderTextColor={colors.textMuted}
+          value={maxPrice}
+          onChangeText={setMaxPrice}
+          keyboardType="number-pad"
+        />
+      </View>
+
+      {/* Tri, absent de la version précédente */}
+      <View style={styles.sortRow}>
+        {SORT_OPTIONS.map(({ v, l }) => (
+          <TouchableOpacity key={v} style={[styles.sortChip, sortBy === v && styles.sortChipActive]} onPress={() => setSortBy(v)}>
+            <Text style={[styles.sortText, sortBy === v && styles.sortTextActive]}>{l}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity onPress={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')} style={styles.sortOrderBtn}>
+          <Text style={styles.sortOrderText}>{sortOrder === 'desc' ? '↓' : '↑'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -142,6 +205,19 @@ const styles = StyleSheet.create({
   filterChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   filterText: { fontSize: typography.sm, fontWeight: '600', color: colors.textMuted },
   filterTextActive: { color: 'white' },
+
+  priceRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing[4], gap: spacing[2], marginBottom: spacing[3] },
+  priceLabel: { fontSize: typography.sm, color: colors.textMuted, marginRight: spacing[1] },
+  priceInput: { flex: 1, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing[3], paddingVertical: spacing[2], fontSize: typography.sm, color: colors.textPrimary, backgroundColor: colors.bgWhite },
+  priceDash: { color: colors.textMuted },
+
+  sortRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing[4], gap: spacing[2], marginBottom: spacing[3] },
+  sortChip: { paddingHorizontal: spacing[3], paddingVertical: spacing[1.5], borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.bgWhite },
+  sortChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  sortText: { fontSize: typography.xs, fontWeight: '600', color: colors.textMuted },
+  sortTextActive: { color: 'white' },
+  sortOrderBtn: { paddingHorizontal: spacing[3], paddingVertical: spacing[1.5], borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.bgWhite },
+  sortOrderText: { fontSize: typography.sm, fontWeight: '700', color: colors.textPrimary },
 
   count: { fontSize: typography.sm, color: colors.textMuted, paddingHorizontal: spacing[4], marginBottom: spacing[2] },
 

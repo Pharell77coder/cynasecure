@@ -1,8 +1,10 @@
 import { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
 
 export default function Login() {
   const { login } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -14,6 +16,7 @@ export default function Login() {
     setError('');
     try {
       await login(email, password);
+      navigate('/admin', { replace: true }); // adapte le chemin à la route de ton dashboard
     } catch (err) {
       setError(err.message);
     } finally {

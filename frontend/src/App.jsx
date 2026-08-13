@@ -13,6 +13,9 @@ import Checkout from './pages/Checkout.jsx'
 import Account from './pages/Account.jsx'
 import Orders from './pages/Orders.jsx'
 import Contact from './pages/Contact.jsx'
+import About from './pages/About.jsx'
+import LegalNotice from './pages/LegalNotice.jsx'
+import Terms from './pages/Terms.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import ConfirmEmail from './pages/ConfirmEmail.jsx'
@@ -32,6 +35,9 @@ export default function App() {
             <Route path="/recherche" element={<Search />} />
             <Route path="/panier" element={<Cart />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/a-propos" element={<About />} />
+            <Route path="/mentions-legales" element={<LegalNotice />} />
+            <Route path="/cgu" element={<Terms />} />
             <Route path="/connexion" element={<Login />} />
             <Route path="/inscription" element={<Register />} />
             <Route path="/confirmation-email/:token" element={<ConfirmEmail />} />

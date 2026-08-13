@@ -6,7 +6,7 @@ import { CartContext } from '../context/CartContext.jsx';
 import { addressService, paymentService } from '../services/api.js';
 import Button from '../components/Button.jsx';
 
-const STEPS = ['Adresse', 'Paiement', 'Confirmation'];
+const STEPS = ['Adresse', 'Paiement', 'Récapitulatif', 'Confirmation'];
 
 let stripePromise = null;
 function getStripePromise(key) {
@@ -94,50 +94,110 @@ const StepAddress = ({ onNext, addresses, selectedId, onSelect, onCreated }) => 
   );
 };
 
-/* ── Étape 2 : Paiement (vrai Stripe) ── */
-const PaymentForm = ({ onSuccess, onBack }) => {
+/* ── Étapes 2 & 3 : Paiement puis Récapitulatif (même contexte Stripe, pas de double montage) ── */
+const PaymentAndReview = ({ address, cart, cartTotal, sub, setSub, onBack, onConfirmed }) => {
   const stripe = useStripe();
   const elements = useElements();
-  const [submitting, setSubmitting] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e) => {
+  // Étape "Paiement" → valide le formulaire de carte SANS débiter (elements.submit()).
+  const handleValidateCard = async (e) => {
     e.preventDefault();
     if (!stripe || !elements) return;
-    setSubmitting(true);
+    setValidating(true);
     setError('');
+    const { error: submitError } = await elements.submit();
+    if (submitError) {
+      setError(submitError.message);
+      setValidating(false);
+      return;
+    }
+    setValidating(false);
+    setSub('review');
+  };
 
+  // Étape "Récapitulatif" → débite réellement la carte déjà validée.
+  const handleConfirmPurchase = async () => {
+    setConfirming(true);
+    setError('');
     const { error: confirmError, paymentIntent } = await stripe.confirmPayment({ elements, redirect: 'if_required' });
-
     if (confirmError) {
       setError(confirmError.message);
-      setSubmitting(false);
+      setConfirming(false);
       return;
     }
     if (paymentIntent?.status === 'succeeded') {
-      onSuccess();
+      onConfirmed();
     } else {
       setError('Le paiement est en cours de traitement.');
-      setSubmitting(false);
+      setConfirming(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="rounded-lg border border-green-800/40 bg-green-950/20 px-4 py-2 text-sm text-green-400">
-        🔒 Paiement sécurisé par Stripe – vos données bancaires ne transitent jamais par nos serveurs.
-      </div>
-      <PaymentElement />
-      {error && <p className="text-sm text-red-400">{error}</p>}
-      <div className="flex justify-between pt-2">
-        <Button type="button" variant="ghost" size="lg" onClick={onBack}>← Retour</Button>
-        <Button type="submit" size="lg" loading={submitting} disabled={!stripe}>Payer maintenant</Button>
-      </div>
-    </form>
+    <div>
+      {/* Le PaymentElement reste TOUJOURS monté dans le DOM (même à l'étape récap) :
+          Stripe a besoin de son iframe pour pouvoir confirmer le paiement ensuite.
+          Le démonter est ce qui causait le bouton "Confirmer l'achat" bloqué en boucle. */}
+      <form onSubmit={handleValidateCard} className={sub === 'card' ? 'space-y-4' : 'hidden'}>
+        <div className="rounded-lg border border-green-800/40 bg-green-950/20 px-4 py-2 text-sm text-green-400">
+          🔒 Paiement sécurisé par Stripe – vos données bancaires ne transitent jamais par nos serveurs.
+        </div>
+        <PaymentElement />
+        {sub === 'card' && error && <p className="text-sm text-red-400">{error}</p>}
+        <div className="flex justify-between pt-2">
+          <Button type="button" variant="ghost" size="lg" onClick={onBack}>← Retour</Button>
+          <Button type="submit" size="lg" loading={validating} disabled={!stripe}>Voir le récapitulatif →</Button>
+        </div>
+      </form>
+
+      {sub === 'review' && (
+        <div className="space-y-6">
+          <div>
+            <h3 className="mb-2 text-sm font-semibold text-gray-400">Services commandés</h3>
+            <div className="space-y-1 rounded-lg border border-gray-800 p-3 text-sm">
+              {cart.map((i) => (
+                <div key={`${i.id}-${i.billing_period}`} className="flex justify-between text-gray-300">
+                  <span>{i.name} × {i.quantity} ({i.billing_period === 'annual' ? 'annuel' : 'mensuel'})</span>
+                </div>
+              ))}
+              <div className="mt-2 flex justify-between border-t border-gray-800 pt-2 font-semibold text-white">
+                <span>Total</span><span>{cartTotal} €</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="mb-2 text-sm font-semibold text-gray-400">Adresse de facturation</h3>
+            <div className="rounded-lg border border-gray-800 p-3 text-sm text-gray-300">
+              <p>{address.first_name} {address.last_name}</p>
+              <p>{address.address1}</p>
+              <p>{address.postal_code} {address.city}, {address.country}</p>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="mb-2 text-sm font-semibold text-gray-400">Paiement</h3>
+            <div className="rounded-lg border border-gray-800 p-3 text-sm text-gray-300">
+              Votre carte a été vérifiée et sera débitée de <strong className="text-white">{cartTotal} €</strong> à la confirmation.
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-red-400">{error}</p>}
+
+          <div className="flex justify-between pt-2">
+            <Button type="button" variant="ghost" size="lg" onClick={() => setSub('card')}>← Modifier</Button>
+            <Button size="lg" loading={confirming} onClick={handleConfirmPurchase}>✓ Confirmer l'achat</Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
-/* ── Étape 3 : Confirmation ── */
+/* ── Étape 4 : Confirmation ── */
 const StepConfirmation = ({ orderId }) => {
   const navigate = useNavigate();
   return (
@@ -160,17 +220,18 @@ const Checkout = () => {
   const { cart, cartTotal, clearCart } = useContext(CartContext);
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(0); // 0 adresse, 1 paiement+récap (interne), 3 confirmation
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [publishableKey, setPublishableKey] = useState(null);
   const [clientSecret, setClientSecret] = useState(null);
   const [orderId, setOrderId] = useState(null);
   const [preparingPayment, setPreparingPayment] = useState(false);
+  const [reviewSub, setReviewSub] = useState('card'); // 'card' | 'review', pour le step Paiement/Récapitulatif combiné
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (cart.length === 0 && step !== 2) navigate('/catalogue');
+    if (cart.length === 0 && step !== 3) navigate('/catalogue');
   }, [cart, step, navigate]);
 
   useEffect(() => {
@@ -186,16 +247,19 @@ const Checkout = () => {
     setSelectedAddressId(address.id);
   };
 
+  const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
+
   const goToPayment = async () => {
     setPreparingPayment(true);
     setError('');
     try {
       const data = await paymentService.createPaymentIntent(
-        cart.map((i) => ({ product_id: i.id, quantity: i.quantity })),
+        cart.map((i) => ({ product_id: i.id, quantity: i.quantity, billing_period: i.billing_period })),
         selectedAddressId
       );
       setClientSecret(data.client_secret);
       setOrderId(data.order_id);
+      setReviewSub('card');
       setStep(1);
     } catch (err) {
       setError(err.message);
@@ -204,41 +268,30 @@ const Checkout = () => {
     }
   };
 
-  const handleSuccess = () => {
+  const handleConfirmed = () => {
     clearCart();
-    setStep(2);
+    setStep(3);
   };
+
+  const currentDisplayStep = step === 1 ? (reviewSub === 'review' ? 2 : 1) : step;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      {step < 2 && (
-        <div className="mb-10 flex items-center justify-center gap-4">
-          {STEPS.slice(0, 2).map((s, i) => (
+      {step < 3 && (
+        <div className="mb-10 flex flex-wrap items-center justify-center gap-3">
+          {STEPS.slice(0, 3).map((s, i) => (
             <div key={s} className="flex items-center gap-2">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${i === step ? 'bg-blue-600 text-white' : i < step ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-500'}`}>
-                {i < step ? '✓' : i + 1}
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${i === currentDisplayStep ? 'bg-blue-600 text-white' : i < currentDisplayStep ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-500'}`}>
+                {i < currentDisplayStep ? '✓' : i + 1}
               </div>
-              <span className={`text-sm ${i === step ? 'text-white' : 'text-gray-500'}`}>{s}</span>
-              {i < 1 && <div className="h-px w-8 bg-gray-800" />}
+              <span className={`text-sm ${i === currentDisplayStep ? 'text-white' : 'text-gray-500'}`}>{s}</span>
+              {i < 2 && <div className="h-px w-8 bg-gray-800" />}
             </div>
           ))}
         </div>
       )}
 
       <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-        {step < 2 && cart.length > 0 && (
-          <div className="mb-6 rounded-lg border border-gray-800 bg-gray-950 p-4 text-sm">
-            {cart.map((i) => (
-              <div key={i.id} className="flex justify-between py-1 text-gray-300">
-                <span>{i.name} × {i.quantity}</span><span>{i.price_monthly * i.quantity} €</span>
-              </div>
-            ))}
-            <div className="mt-2 flex justify-between border-t border-gray-800 pt-2 font-semibold text-white">
-              <span>Total / mois</span><span>{cartTotal} €</span>
-            </div>
-          </div>
-        )}
-
         {error && <p className="mb-4 text-sm text-red-400">{error}</p>}
 
         {step === 0 && (
@@ -256,15 +309,20 @@ const Checkout = () => {
         )}
 
         {step === 1 && clientSecret && publishableKey && (
-          <>
-            <h2 className="mb-4 text-lg font-semibold text-white">Paiement</h2>
-            <Elements stripe={getStripePromise(publishableKey)} options={{ clientSecret, appearance: { theme: 'night' } }}>
-              <PaymentForm onSuccess={handleSuccess} onBack={() => setStep(0)} />
-            </Elements>
-          </>
+          <Elements stripe={getStripePromise(publishableKey)} options={{ clientSecret, appearance: { theme: 'night' } }}>
+            <PaymentAndReview
+              address={selectedAddress || {}}
+              cart={cart}
+              cartTotal={cartTotal}
+              sub={reviewSub}
+              setSub={setReviewSub}
+              onBack={() => setStep(0)}
+              onConfirmed={handleConfirmed}
+            />
+          </Elements>
         )}
 
-        {step === 2 && <StepConfirmation orderId={orderId} />}
+        {step === 3 && <StepConfirmation orderId={orderId} />}
       </div>
     </div>
   );

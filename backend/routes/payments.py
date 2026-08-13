@@ -46,16 +46,19 @@ def create_payment_intent():
     user = User.query.get(session['user_id'])
 
     # On recalcule le montant côté serveur à partir des prix en base : on ne fait
-    # JAMAIS confiance à un montant envoyé par le client.
+    # JAMAIS confiance à un montant envoyé par le client. L'annuel = 10 mois prépayés
+    # en une fois (-17% par rapport à 12 mensualités), pas un abonnement récurrent Stripe.
     total_amount = 0
     order_items_data = []
     for item in items:
         product = Product.query.get(item.get('product_id'))
         quantity = int(item.get('quantity', 1))
+        billing_period = item.get('billing_period') if item.get('billing_period') in ('monthly', 'annual') else 'monthly'
         if not product or not product.available or quantity < 1:
             return jsonify({'message': f'Produit indisponible (id {item.get("product_id")}).'}), 400
-        total_amount += product.price_monthly * quantity
-        order_items_data.append((product, quantity))
+        unit_price = (product.price_annual if product.price_annual is not None else product.price_monthly * 10) if billing_period == 'annual' else product.price_monthly
+        total_amount += unit_price * quantity
+        order_items_data.append((product, quantity, billing_period, unit_price))
 
     try:
         customer_id = _get_or_create_stripe_customer(user)
@@ -69,10 +72,11 @@ def create_payment_intent():
         db.session.add(order)
         db.session.flush()  # récupère order.id avant le commit
 
-        for product, quantity in order_items_data:
+        for product, quantity, billing_period, unit_price in order_items_data:
             db.session.add(OrderItem(
                 quantity=quantity,
-                unit_price=product.price_monthly,
+                unit_price=unit_price,
+                billing_period=billing_period,
                 order_id=order.id,
                 product_id=product.id
             ))
