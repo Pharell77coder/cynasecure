@@ -1,0 +1,27 @@
+# Sert à tester en local que les images "de prod" fonctionnent avant de déployer.
+# N'est PAS utilisé par Render ou Vercel : eux buildent chaque service séparément
+# (Render lit backend/Dockerfile, Vercel build frontend/ et backoffice/ lui-même).
+#
+# Usage : docker compose -f docker-compose.prod.yml up --build
+
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.production
+    ports:
+      - "5000:5000"
+    # Pas de volume : on veut tester l'image telle quelle, sans montage du code local
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+
+  backoffice:
+    build: ./backoffice
+    restart: unless-stopped
+    ports:
+      - "8082:80"

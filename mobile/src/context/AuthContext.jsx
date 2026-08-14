@@ -1,5 +1,5 @@
-import { createContext, useState, useEffect, useContext } from 'react';
-import { authService, clearSessionCookie } from '../services/api';
+import { createContext, useState, useEffect } from 'react';
+import { authService } from '../services/api';
 
 export const AuthContext = createContext(null);
 
@@ -7,8 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  /* Restaure la session au démarrage en interrogeant le back
-     (cookie de session Flask rejoué automatiquement par api.js). */
+  // Restaure la session au démarrage en interrogeant le back (cookie httpOnly, pas de token en JS).
   useEffect(() => {
     authService.me()
       .then((data) => setUser(data.user))
@@ -22,15 +21,12 @@ export const AuthProvider = ({ children }) => {
     return data.user;
   };
 
-  const register = (name, email, password) => authService.register(name, email, password);
+  const register = async (name, email, password) => {
+    return authService.register(name, email, password);
+  };
 
   const logout = async () => {
-    try {
-      await authService.logout();
-    } catch {
-      // même si l'appel échoue, on nettoie la session locale
-    }
-    await clearSessionCookie();
+    await authService.logout();
     setUser(null);
   };
 
@@ -43,22 +39,35 @@ export const AuthProvider = ({ children }) => {
   const changePassword = (currentPassword, newPassword) =>
     authService.changePassword(currentPassword, newPassword);
 
+  // Ajouté pour AuthScreens.jsx (mobile) : le web appelait authService.forgotPassword
+  // directement depuis Login.jsx, mais AuthScreens.jsx passe par le contexte.
   const forgotPassword = (email) => authService.forgotPassword(email);
+
+  // Ajouté pour AuthScreens.jsx (mobile), idem : web appelait authService.resetPassword
+  // directement depuis ResetPassword.jsx.
   const resetPassword = (token, password) => authService.resetPassword(token, password);
-  const verifyEmail = (token) => authService.verifyEmail(token);
+
+  // Ajouté pour AuthScreens.jsx (mobile). Attention au nom : api.js expose
+  // `confirmEmail`, pas `verifyEmail` — AuthScreens.jsx appelle verifyEmail(token),
+  // donc on garde ce nom ici côté contexte et on le fait pointer vers confirmEmail.
+  const verifyEmail = (token) => authService.confirmEmail(token);
 
   return (
     <AuthContext.Provider
       value={{
-        user, loading,
-        login, register, logout,
-        updateProfile, changePassword,
-        forgotPassword, resetPassword, verifyEmail,
+        user,
+        loading,
+        login,
+        register,
+        logout,
+        updateProfile,
+        changePassword,
+        forgotPassword,
+        resetPassword,
+        verifyEmail,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => useContext(AuthContext);
