@@ -1,145 +1,121 @@
 DROP DATABASE IF EXISTS cynasecure;
-CREATE DATABASE cynasecure CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE cynasecure;
 USE cynasecure;
 
-CREATE TABLE `user` (
-    `id` INT AUTO_INCREMENT NOT NULL,
-    `email` VARCHAR(180) NOT NULL,
-    `roles` JSON NOT NULL,
-    `password` VARCHAR(255) NOT NULL,
-    UNIQUE INDEX UNIQ_IDENTIFIER_EMAIL (`email`),
-    PRIMARY KEY(`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;
-
-CREATE TABLE `produit` (
-    `id` INT AUTO_INCREMENT NOT NULL,
-    `nom` VARCHAR(100) NOT NULL,
-    `description` TEXT NOT NULL,
-    `categorie` ENUM('antivirus', 'firewall', 'IDS/IPS', 'vpn', 'authentification', 'chiffrement', 'analyse_vulnerabilite', 'siem', 'edr', 'formation') NOT NULL,
-    `prix_ht` DECIMAL(10, 2) NOT NULL,
-    `tva` DECIMAL(5, 2) DEFAULT 20.00,
-    `stock` INT NOT NULL DEFAULT 0,
-    `reference` VARCHAR(50) NOT NULL UNIQUE,
-    `niveau_securite` ENUM('basique', 'standard', 'avance', 'expert') NOT NULL,
-    `licence_type` ENUM('mensuel', 'annuel', 'perpetuelle') NOT NULL,
-    `nb_utilisateurs_max` INT DEFAULT 1,
-    `est_actif` BOOLEAN DEFAULT TRUE,
-    `date_creation` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `date_mise_a_jour` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY(`id`),
-    INDEX idx_categorie (`categorie`),
-    INDEX idx_prix (`prix_ht`),
-    INDEX idx_reference (`reference`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;
-
-
-
-INSERT INTO `user` (`email`, `roles`, `password`) 
-VALUES (
-    'admin@cynasecure.com', 
-    '["ROLE_ADMIN"]', 
-    '$2y$13$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'
+CREATE TABLE `users` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `role` varchar(20) DEFAULT 'user',
+  `stripe_customer_id` varchar(255) DEFAULT NULL,
+  `confirmation_token` varchar(255) DEFAULT NULL,
+  `is_verified` tinyint NOT NULL DEFAULT '0',
+  `reset_password_token` varchar(255) DEFAULT NULL,
+  `reset_password_token_expires_at` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`),
+  UNIQUE KEY `email` (`email`)
 );
 
--- 100 Insertions de produits cybersécurité
-INSERT INTO `produit` (`nom`, `description`, `categorie`, `prix_ht`, `tva`, `stock`, `reference`, `niveau_securite`, `licence_type`, `nb_utilisateurs_max`) VALUES
-('SecureShield Pro', 'Antivirus nouvelle génération avec détection comportementale et IA', 'antivirus', 49.99, 20.00, 150, 'ANT-SSP-001', 'standard', 'annuel', 1),
-('SecureShield Basic', 'Antivirus essentiel pour particuliers', 'antivirus', 29.99, 20.00, 200, 'ANT-SSB-002', 'basique', 'annuel', 1),
-('SecureShield Enterprise', 'Suite complète antivirus pour entreprises', 'antivirus', 199.99, 20.00, 80, 'ANT-SSE-003', 'expert', 'annuel', 50),
-('SecureShield Mobile', 'Protection antivirus pour mobile', 'antivirus', 19.99, 20.00, 300, 'ANT-SSM-004', 'standard', 'mensuel', 1),
-('CyberGuard Firewall 1000', 'Firewall matériel entrée de gamme', 'firewall', 499.00, 20.00, 50, 'FW-CGF-005', 'basique', 'perpetuelle', 10),
-('CyberGuard Firewall 3000', 'Firewall pour PME', 'firewall', 1299.00, 20.00, 25, 'FW-CGF-006', 'standard', 'perpetuelle', 50),
-('CyberGuard Firewall 5000', 'Firewall haute disponibilité', 'firewall', 3499.00, 20.00, 10, 'FW-CGF-007', 'expert', 'perpetuelle', 200),
-('CyberGuard Virtual', 'Firewall virtualisé cloud', 'firewall', 89.99, 20.00, 100, 'FW-CGV-008', 'standard', 'mensuel', 0),
-('IntrusionHunter X3', 'Système de détection d\'intrusion réseau', 'IDS/IPS', 799.99, 20.00, 40, 'IDS-IHX-009', 'avance', 'annuel', 10),
-('IntrusionHunter Lite', 'IDS basique pour petits réseaux', 'IDS/IPS', 299.99, 20.00, 60, 'IDS-IHL-010', 'basique', 'annuel', 5),
-('IntrusionHunter Pro', 'IPS nouvelle génération', 'IDS/IPS', 1499.00, 20.00, 20, 'IDS-IHP-011', 'expert', 'annuel', 50),
-('VPN SecureTunnel', 'Solution VPN pour particuliers', 'vpn', 89.99, 20.00, 300, 'VPN-STU-012', 'standard', 'mensuel', 5),
-('VPN BusinessConnect', 'VPN pour professionnels', 'vpn', 299.99, 20.00, 150, 'VPN-VBC-013', 'avance', 'annuel', 20),
-('VPN CorporateMesh', 'VPN mesh pour grandes entreprises', 'vpn', 999.99, 20.00, 50, 'VPN-VCM-014', 'expert', 'annuel', 100),
-('VPN ZeroTrust', 'VPN avec architecture Zero Trust', 'vpn', 1499.00, 20.00, 30, 'VPN-VZT-015', 'expert', 'annuel', 200),
-('AuthMaster MFA', 'Authentification multi-facteurs', 'authentification', 299.99, 20.00, 80, 'AUTH-AMF-016', 'avance', 'annuel', 100),
-('AuthMaster Basic', 'MFA par SMS et email', 'authentification', 99.99, 20.00, 120, 'AUTH-AMB-017', 'basique', 'annuel', 25),
-('AuthMaster Biometric', 'Authentification biométrique', 'authentification', 499.99, 20.00, 40, 'AUTH-AMB-018', 'expert', 'perpetuelle', 50),
-('AuthMaster Token', 'Solution hardware token', 'authentification', 49.99, 20.00, 200, 'AUTH-AMT-019', 'standard', 'perpetuelle', 1),
-('CryptoDrive', 'Chiffrement de disque AES-256', 'chiffrement', 149.99, 20.00, 120, 'CRYP-CD-020', 'standard', 'perpetuelle', 1),
-('CryptoMail', 'Chiffrement emails PGP', 'chiffrement', 79.99, 20.00, 90, 'CRYP-CM-021', 'standard', 'annuel', 5),
-('CryptoCloud', 'Chiffrement cloud hybride', 'chiffrement', 399.99, 20.00, 60, 'CRYP-CC-022', 'avance', 'annuel', 25),
-('CryptoDatabase', 'Chiffrement bases de données', 'chiffrement', 899.99, 20.00, 35, 'CRYP-CDB-023', 'expert', 'annuel', 0),
-('VulnScan Enterprise', 'Scanner vulnérabilités avec CVE', 'analyse_vulnerabilite', 549.99, 20.00, 35, 'VULN-VSE-024', 'expert', 'annuel', 20),
-('VulnScan Express', 'Scanner rapide web', 'analyse_vulnerabilite', 199.99, 20.00, 55, 'VULN-VSE-025', 'basique', 'mensuel', 5),
-('VulnScan Network', 'Scanner réseau complet', 'analyse_vulnerabilite', 799.99, 20.00, 30, 'VULN-VSN-026', 'avance', 'annuel', 50),
-('VulnScan API', 'Scanner sécurité API', 'analyse_vulnerabilite', 449.99, 20.00, 40, 'VULN-VSA-027', 'avance', 'annuel', 15),
-('LogWatch SIEM', 'SIEM pour logs centralisés', 'siem', 2499.00, 20.00, 15, 'SIEM-LWS-028', 'expert', 'annuel', 200),
-('LogWatch Starter', 'SIEM pour PME', 'siem', 499.00, 20.00, 25, 'SIEM-LWS-029', 'standard', 'annuel', 25),
-('LogWatch Cloud', 'SIEM as a Service', 'siem', 199.99, 20.00, 50, 'SIEM-LWC-030', 'avance', 'mensuel', 0),
-('LogWatch AI', 'SIEM avec analyse IA', 'siem', 3999.00, 20.00, 8, 'SIEM-LWAI-031', 'expert', 'annuel', 500),
-('EndpointDefender EDR', 'Protection endpoints avancée', 'edr', 599.99, 20.00, 60, 'EDR-EDE-032', 'avance', 'annuel', 15),
-('EndpointDefender Basic', 'EDR pour petites structures', 'edr', 199.99, 20.00, 90, 'EDR-EDB-033', 'standard', 'annuel', 5),
-('EndpointDefender Pro', 'EDR avec réponse automatique', 'edr', 1299.00, 20.00, 35, 'EDR-EDP-034', 'expert', 'annuel', 100),
-('EndpointDefender Linux', 'EDR spécialisé Linux', 'edr', 399.99, 20.00, 45, 'EDR-EDL-035', 'avance', 'annuel', 25),
-('CyberEdu Starter', 'Formation initiation cybersécurité', 'formation', 999.99, 20.00, 10, 'FORM-CES-036', 'basique', 'perpetuelle', 30),
-('CyberEdu Advanced', 'Formation techniques avancées', 'formation', 1999.99, 20.00, 8, 'FORM-CEA-037', 'avance', 'perpetuelle', 20),
-('CyberEdu Pentest', 'Formation pentesting', 'formation', 2499.99, 20.00, 5, 'FORM-CEP-038', 'expert', 'perpetuelle', 15),
-('CyberEdu Compliance', 'Formation RGPD et conformité', 'formation', 1499.99, 20.00, 12, 'FORM-CEC-039', 'standard', 'annuel', 25),
-('SecureWAF Pro', 'Web Application Firewall', 'firewall', 899.99, 20.00, 30, 'FW-SWP-040', 'avance', 'annuel', 0),
-('SecureWAF Cloud', 'WAF cloud managé', 'firewall', 299.99, 20.00, 50, 'FW-SWC-041', 'standard', 'mensuel', 0),
-('AntiRansom Shield', 'Protection anti-ransomware', 'antivirus', 79.99, 20.00, 120, 'ANT-ARS-042', 'avance', 'annuel', 1),
-('AntiRansom Business', 'Anti-ransomware entreprise', 'antivirus', 299.99, 20.00, 60, 'ANT-ARB-043', 'expert', 'annuel', 50),
-('DLP Guardian', 'Data Loss Prevention', 'chiffrement', 1599.00, 20.00, 25, 'CRYP-DLPG-044', 'expert', 'annuel', 100),
-('DLP Express', 'DLP pour PME', 'chiffrement', 599.99, 20.00, 35, 'CRYP-DLPE-045', 'avance', 'annuel', 25),
-('PasswordVault Pro', 'Gestionnaire mots de passe', 'authentification', 49.99, 20.00, 200, 'AUTH-PVP-046', 'standard', 'annuel', 1),
-('PasswordVault Team', 'Gestionnaire équipe', 'authentification', 199.99, 20.00, 100, 'AUTH-PVT-047', 'avance', 'annuel', 10),
-('PasswordVault Enterprise', 'Mots de passe entreprise', 'authentification', 599.99, 20.00, 50, 'AUTH-PVE-048', 'expert', 'annuel', 100),
-('VulnScan Container', 'Scan sécurité containers', 'analyse_vulnerabilite', 699.99, 20.00, 30, 'VULN-VSC-049', 'avance', 'annuel', 0),
-('VulnScan IoT', 'Scanner IoT spécifique', 'analyse_vulnerabilite', 899.99, 20.00, 20, 'VULN-VSI-050', 'expert', 'annuel', 10),
-('Honeypot Pro', 'Système leurre avancé', 'IDS/IPS', 499.99, 20.00, 25, 'IDS-HPP-051', 'avance', 'annuel', 0),
-('Honeypot Basic', 'Honeypot simple', 'IDS/IPS', 149.99, 20.00, 40, 'IDS-HPB-052', 'standard', 'annuel', 5),
-('ThreatIntel Platform', 'Plateforme renseignement menaces', 'siem', 4999.00, 20.00, 5, 'SIEM-TIP-053', 'expert', 'annuel', 0),
-('ThreatIntel Feed', 'Flux IOC en temps réel', 'siem', 199.99, 20.00, 100, 'SIEM-TIF-054', 'avance', 'mensuel', 0),
-('SOAR Automate', 'Orchestration sécurité', 'siem', 2999.00, 20.00, 10, 'SIEM-SOA-055', 'expert', 'annuel', 50),
-('Sandbox Analyzer', 'Analyse comportementale', 'edr', 799.99, 20.00, 25, 'EDR-SBA-056', 'expert', 'annuel', 20),
-('NetworkMonitor Pro', 'Surveillance réseau', 'IDS/IPS', 449.99, 20.00, 40, 'IDS-NMP-057', 'avance', 'annuel', 50),
-('NetworkMonitor Basic', 'Monitor réseau simple', 'IDS/IPS', 149.99, 20.00, 60, 'IDS-NMB-058', 'basique', 'annuel', 10),
-('SecureDNS Shield', 'Filtrage DNS sécurisé', 'firewall', 99.99, 20.00, 100, 'FW-SDS-059', 'standard', 'annuel', 25),
-('SecureDNS Enterprise', 'DNS firewall entreprise', 'firewall', 399.99, 20.00, 50, 'FW-SDE-060', 'avance', 'annuel', 200),
-('EmailSecurity Pro', 'Sécurité email antiphishing', 'antivirus', 149.99, 20.00, 80, 'ANT-ESP-061', 'avance', 'annuel', 25),
-('EmailSecurity Basic', 'Filtrage email basique', 'antivirus', 49.99, 20.00, 120, 'ANT-ESB-062', 'standard', 'annuel', 10),
-('IdentityGuard Premium', 'Protection identité numérique', 'authentification', 199.99, 20.00, 90, 'AUTH-IGP-063', 'avance', 'annuel', 5),
-('IdentityGuard Family', 'Protection famille', 'authentification', 99.99, 20.00, 110, 'AUTH-IGF-064', 'standard', 'annuel', 5),
-('SecureBackup Crypto', 'Backup chiffré', 'chiffrement', 299.99, 20.00, 70, 'CRYP-SBC-065', 'avance', 'annuel', 10),
-('SecureBackup Business', 'Backup entreprise', 'chiffrement', 899.99, 20.00, 40, 'CRYP-SBB-066', 'expert', 'annuel', 50),
-('MobileSecure Suite', 'Sécurité mobile complète', 'antivirus', 39.99, 20.00, 250, 'ANT-MSS-067', 'standard', 'annuel', 1),
-('MobileSecure Business', 'MDM sécurité mobile', 'authentification', 499.99, 20.00, 60, 'AUTH-MSB-068', 'avance', 'annuel', 50),
-('CloudSecure Gateway', 'Passerelle sécurité cloud', 'firewall', 1599.00, 20.00, 20, 'FW-CSG-069', 'expert', 'annuel', 0),
-('CloudSecure CASB', 'Cloud Access Broker', 'chiffrement', 1999.00, 20.00, 15, 'CRYP-CSC-070', 'expert', 'annuel', 0),
-('PenTest Suite Pro', 'Suite outils pentest', 'analyse_vulnerabilite', 1299.00, 20.00, 25, 'VULN-PTS-071', 'expert', 'annuel', 5),
-('PenTest Suite Basic', 'Outils pentest essentiels', 'analyse_vulnerabilite', 399.99, 20.00, 40, 'VULN-PTB-072', 'avance', 'annuel', 3),
-('RedTeam Arsenal', 'Plateforme Red Team', 'analyse_vulnerabilite', 2999.00, 20.00, 10, 'VULN-RTA-073', 'expert', 'annuel', 10),
-('BlueTeam Defense', 'Suite défensive', 'edr', 1899.00, 20.00, 15, 'EDR-BTD-074', 'expert', 'annuel', 50),
-('Compliance Checker', 'Audit conformité auto', 'analyse_vulnerabilite', 699.99, 20.00, 30, 'VULN-CCK-075', 'standard', 'annuel', 10),
-('GDPR Secure Pack', 'Pack conformité RGPD', 'chiffrement', 999.99, 20.00, 20, 'CRYP-GSP-076', 'avance', 'annuel', 25),
-('PCI DSS Scanner', 'Scanner conformité paiement', 'analyse_vulnerabilite', 849.99, 20.00, 25, 'VULN-PCI-077', 'avance', 'annuel', 15),
-('HIPAA Compliance', 'Conformité santé', 'chiffrement', 1299.00, 20.00, 18, 'CRYP-HC-078', 'expert', 'annuel', 20),
-('ISO27001 Toolkit', 'Boîte à outils ISO', 'formation', 1799.99, 20.00, 8, 'FORM-ISOT-079', 'avance', 'perpetuelle', 15),
-('ZeroTrust Framework', 'Architecture Zero Trust', 'firewall', 2499.00, 20.00, 12, 'FW-ZTF-080', 'expert', 'annuel', 0),
-('MicroSegmentation Pro', 'Micro-segmentation réseau', 'firewall', 2999.00, 20.00, 10, 'FW-MSP-081', 'expert', 'annuel', 0),
-('SSO Universal', 'Single Sign-On universel', 'authentification', 399.99, 20.00, 50, 'AUTH-SSO-082', 'avance', 'annuel', 100),
-('SSO Basic', 'SSO pour PME', 'authentification', 149.99, 20.00, 80, 'AUTH-SSOB-083', 'standard', 'annuel', 25),
-('IAM Platform', 'Identity Access Management', 'authentification', 3499.00, 20.00, 10, 'AUTH-IAMP-084', 'expert', 'annuel', 500),
-('PAM Solution', 'Privileged Access Management', 'authentification', 4999.00, 20.00, 5, 'AUTH-PAMS-085', 'expert', 'annuel', 200),
-('Vulnerability Fixer', 'Correction auto vulnérabilités', 'analyse_vulnerabilite', 999.99, 20.00, 20, 'VULN-VFX-086', 'avance', 'annuel', 15),
-('Patch Manager Pro', 'Gestionnaire correctifs', 'analyse_vulnerabilite', 549.99, 20.00, 35, 'VULN-PMP-087', 'avance', 'annuel', 50),
-('Asset Discovery', 'Découverte actifs réseau', 'IDS/IPS', 299.99, 20.00, 45, 'IDS-ASD-088', 'standard', 'annuel', 25),
-('Threat Hunting', 'Chasse aux menaces', 'siem', 1499.00, 20.00, 15, 'SIEM-TH-089', 'expert', 'annuel', 10),
-('Forensics Toolkit', 'Investigation numérique', 'analyse_vulnerabilite', 899.99, 20.00, 20, 'VULN-FTK-090', 'expert', 'perpetuelle', 5),
-('Memory Forensics', 'Analyse mémoire RAM', 'analyse_vulnerabilite', 649.99, 20.00, 25, 'VULN-MFR-091', 'avance', 'annuel', 3),
-('Network Forensics', 'Analyse trafic réseau', 'IDS/IPS', 799.99, 20.00, 22, 'IDS-NFR-092', 'avance', 'annuel', 10),
-('Secure Config Scanner', 'Scanner configuration', 'analyse_vulnerabilite', 399.99, 20.00, 40, 'VULN-SCS-093', 'standard', 'annuel', 20),
-('Docker Secure', 'Sécurité containers', 'antivirus', 299.99, 20.00, 50, 'ANT-DSC-094', 'avance', 'annuel', 0),
-('K8s Security Shield', 'Sécurité Kubernetes', 'antivirus', 499.99, 20.00, 30, 'ANT-KSS-095', 'avance', 'annuel', 0),
-('DevSecOps Pipeline', 'Intégration sécurité CI/CD', 'analyse_vulnerabilite', 1299.00, 20.00, 18, 'VULN-DSO-096', 'expert', 'annuel', 0),
-('SAST Pro', 'Analyse code statique', 'analyse_vulnerabilite', 899.99, 20.00, 25, 'VULN-SAST-097', 'avance', 'annuel', 20),
-('DAST Scanner', 'Analyse dynamique', 'analyse_vulnerabilite', 999.99, 20.00, 22, 'VULN-DAST-098', 'avance', 'annuel', 15),
-('SCA Tool', 'Analyse dépendances', 'analyse_vulnerabilite', 699.99, 20.00, 30, 'VULN-SCA-099', 'avance', 'annuel', 25),
-('API Security Gateway', 'Passerelle sécurité API', 'firewall', 1199.00, 20.00, 20, 'FW-ASG-100', 'expert', 'annuel', 0);
+CREATE TABLE `categories` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `slug` varchar(20) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `icon` varchar(8) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `slug` (`slug`),
+  UNIQUE KEY `name` (`name`)
+);
+
+CREATE TABLE `products` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `description` text DEFAULT NULL,
+  `images` text DEFAULT NULL COMMENT 'Liste JSON des URLs d''images (ex: ["url1","url2"])',
+  `slug` varchar(100) NOT NULL,
+  `price_monthly` int NOT NULL,
+  `price_annual` int DEFAULT NULL COMMENT 'Prix annuel en euros, NULL si pas d''offre annuelle',
+  `available` tinyint NOT NULL DEFAULT '1',
+  `category_id` int NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`),
+  UNIQUE KEY `slug` (`slug`),
+  KEY `IDX_products_category_id` (`category_id`),
+  CONSTRAINT `FK_products_category_id` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`)
+);
+
+CREATE TABLE `addresses` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `first_name` varchar(100) NOT NULL,
+  `last_name` varchar(100) NOT NULL,
+  `address1` varchar(255) NOT NULL,
+  `city` varchar(100) NOT NULL,
+  `postal_code` varchar(20) NOT NULL,
+  `country` varchar(100) NOT NULL,
+  `user_id` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `IDX_addresses_user_id` (`user_id`),
+  CONSTRAINT `FK_addresses_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+);
+
+CREATE TABLE `orders` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `status` varchar(50) NOT NULL,
+  `total_amount` int NOT NULL,
+  `created_at` datetime NOT NULL,
+  `user_id` int NOT NULL,
+  `billing_address_id` int DEFAULT NULL,
+  `stripe_payment_intent_id` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `IDX_orders_user_id` (`user_id`),
+  KEY `IDX_orders_billing_address_id` (`billing_address_id`),
+  CONSTRAINT `FK_orders_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `FK_orders_billing_address_id` FOREIGN KEY (`billing_address_id`) REFERENCES `addresses` (`id`)
+);
+
+CREATE TABLE `order_items` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `quantity` int NOT NULL,
+  `unit_price` int NOT NULL,
+  `billing_period` varchar(10) DEFAULT 'monthly' COMMENT 'monthly ou annual',
+  `order_id` int NOT NULL,
+  `product_id` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `IDX_order_items_order_id` (`order_id`),
+  KEY `IDX_order_items_product_id` (`product_id`),
+  CONSTRAINT `FK_order_items_order_id` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`),
+  CONSTRAINT `FK_order_items_product_id` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`)
+);
+
+CREATE TABLE `payment_methods` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `brand` varchar(30) DEFAULT NULL,
+  `last4` varchar(4) DEFAULT NULL,
+  `is_default` tinyint NOT NULL DEFAULT '0',
+  `stripe_payment_method_id` varchar(255) DEFAULT NULL,
+  `user_id` int NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UQ_payment_methods_stripe_id` (`stripe_payment_method_id`),
+  KEY `IDX_payment_methods_user_id` (`user_id`),
+  CONSTRAINT `FK_payment_methods_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+);
+
+ALTER TABLE orders 
+MODIFY COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+
+INSERT INTO `categories` (`id`, `slug`, `name`, `icon`) VALUES
+(1, 'soc', 'SOC', '🛡️'),
+(2, 'edr', 'EDR', '💻'),
+(3, 'xdr', 'XDR', '🔍');
+
+INSERT INTO `products` (`id`, `name`, `slug`, `price_monthly`, `available`, `category_id`, `description`, `images`) VALUES
+(1, 'Cyna SOC Essential', 'cyna-soc-essential', 299, 1, 1,'Cyna SOC Essential fait partie de notre gamme SOC, pensée pour protéger votre infrastructure au quotidien.', '["/assets/CynaSOCEssential.png"]'),
+(2, 'Cyna SOC Advanced', 'cyna-soc-advanced', 499, 1, 1,'Cyna SOC Advanced est conçu pour les entreprises qui nécessitent une protection avancée contre les menaces cyber.', '["/assets/CynaSOCAdvanced.png", "/assets/CynaSOCAdvanced2.png"]'),
+(3, 'Cyna SOC Enterprise', 'cyna-soc-enterprise', 899, 0, 1,'Cyna SOC Enterprise offre une solution complète de gestion des risques pour les grandes entreprises.', '["/assets/CynaSOCEnterprise.png"]'),
+(4, 'Cyna EDR Pro', 'cyna-edr-pro', 199, 1, 2,'Cyna EDR Pro fournit une détection et une réponse aux menaces en temps réel.', '["/assets/CynaEDRPro.png", "/assets/CynaEDRPro2.png"]'),
+(5, 'Cyna EDR Business', 'cyna-edr-business', 349, 1, 2,'Cyna EDR Business est la solution idéale pour les petites et moyennes entreprises.', '["/assets/CynaEDRBusiness.png"]'),
+(6, 'Cyna XDR Enterprise', 'cyna-xdr-enterprise', 599, 1, 3,'Cyna XDR Enterprise combine les fonctionnalités de SOC et EDR pour une protection complète.', '["/assets/CynaXDREnterprise.png"]'),
+(7, 'Cyna XDR Ultimate', 'cyna-xdr-ultimate', 999, 0, 3,'Cyna XDR Ultimate est la solution la plus avancée pour les entreprises exigeantes.', '["/assets/CynaXDRUltimate.png"]');

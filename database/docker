@@ -1,0 +1,2 @@
+docker compose exec db psql -U cyna -d cynasecure
+docker compose exec db psql -U cyna -d cynasecure -c "UPDATE users SET role = CASE WHEN role = 'admin' THEN 'user' ELSE 'admin' END WHERE id = 1;"

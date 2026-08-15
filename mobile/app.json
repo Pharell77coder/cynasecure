@@ -1,32 +1,46 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "Cyna",
+    "slug": "cyna-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#1E1B74"
     },
+    "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "fr.cyna.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Cyna utilise la caméra pour scanner des documents.",
+        "NSPhotoLibraryUsageDescription": "Cyna accède aux photos pour les pièces jointes."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#1E1B74"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "package": "fr.cyna.mobile",
+      "permissions": ["NOTIFICATIONS", "VIBRATE"]
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "scheme": "cynasecure",
-    "plugins": ["expo-router"]
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#7B3FE4",
+          "sounds": []
+        }
+      ]
+    ],
+    "extra": {
+      "apiUrl": "http://localhost:8000/api"
+    }
   }
 }
