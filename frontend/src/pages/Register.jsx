@@ -7,7 +7,8 @@ const validatePassword = (pwd) => [
   { ok: pwd.length >= 8, label: '8 caractères minimum' },
   { ok: /[A-Z]/.test(pwd), label: 'Une majuscule' },
   { ok: /[a-z]/.test(pwd), label: 'Une minuscule' },
-  { ok: /[0-9]/.test(pwd), label: 'Un chiffre' }
+  { ok: /[0-9]/.test(pwd), label: 'Un chiffre' },
+  { ok: /[^A-Za-z0-9]/.test(pwd), label: 'Un caractère spécial' }
 ];
 
 const Register = () => {

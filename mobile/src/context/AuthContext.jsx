@@ -7,7 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Restaure la session au démarrage en interrogeant le back (cookie httpOnly, pas de token en JS).
+  // Restaure la session au démarrage en interrogeant le back via le token stocké (AsyncStorage côté api.js).
   useEffect(() => {
     authService.me()
       .then((data) => setUser(data.user))
@@ -39,33 +39,9 @@ export const AuthProvider = ({ children }) => {
   const changePassword = (currentPassword, newPassword) =>
     authService.changePassword(currentPassword, newPassword);
 
-  // Ajouté pour AuthScreens.jsx (mobile) : le web appelait authService.forgotPassword
-  // directement depuis Login.jsx, mais AuthScreens.jsx passe par le contexte.
-  const forgotPassword = (email) => authService.forgotPassword(email);
-
-  // Ajouté pour AuthScreens.jsx (mobile), idem : web appelait authService.resetPassword
-  // directement depuis ResetPassword.jsx.
-  const resetPassword = (token, password) => authService.resetPassword(token, password);
-
-  // Ajouté pour AuthScreens.jsx (mobile). Attention au nom : api.js expose
-  // `confirmEmail`, pas `verifyEmail` — AuthScreens.jsx appelle verifyEmail(token),
-  // donc on garde ce nom ici côté contexte et on le fait pointer vers confirmEmail.
-  const verifyEmail = (token) => authService.confirmEmail(token);
-
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        login,
-        register,
-        logout,
-        updateProfile,
-        changePassword,
-        forgotPassword,
-        resetPassword,
-        verifyEmail,
-      }}
+      value={{ user, loading, login, register, logout, updateProfile, changePassword }}
     >
       {children}
     </AuthContext.Provider>

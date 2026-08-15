@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import Button from './Button';
-
-const CATEGORY_ICONS = { soc: '🛡️', edr: '💻', xdr: '🔍' };
+import { CATEGORY_ICONS } from '../constants/categories';
 
 /**
  * Carte produit SaaS (accueil, catalogue, recherche).

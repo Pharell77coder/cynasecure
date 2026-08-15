@@ -5,38 +5,45 @@ from flask import Flask
 from flask_cors import CORS
 from database import db, mail
 
-load_dotenv()  # charge backend/.env automatiquement (clés Stripe, SECRET_KEY...)
+load_dotenv()  # charge backend/.env automatiquement
 
 app = Flask(__name__)
 
-# 1. Clé secrète pour signer les cookies de session (⚠️ à définir en variable d'env en prod)
+# 1. Clé secrète
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-# En prod (HTTPS + domaines différents) : SESSION_COOKIE_SAMESITE='None' + SESSION_COOKIE_SECURE=True
+# En prod (HTTPS, front sur un autre domaine : Vercel) il faut SAMESITE=None + SECURE=True
+app.config['SESSION_COOKIE_SAMESITE'] = os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax')
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('SESSION_COOKIE_SECURE', 'False') == 'True'
 
-# 2. Autoriser les deux front React (Vite) à faire des requêtes AVEC cookies de session
-#    5173 = site public, 5174 = back office (projet séparé)
-CORS(app, supports_credentials=True, origins=['http://localhost:5173', 'http://localhost:5174'])
+# 2. CORS : liste d'origines lue depuis .env, séparées par des virgules
+cors_origins = os.environ.get(
+    'CORS_ORIGINS',
+    'http://localhost:5173,http://localhost:5174'
+).split(',')
+CORS(app, supports_credentials=True, origins=cors_origins)
 
-# 3. Configuration MySQL
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/cynasecure'
+# 3. Base de données : Postgres (Neon / Supabase / etc.), lue depuis .env
+#    Format attendu : postgresql+psycopg2://user:password@host:port/dbname
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+    'DATABASE_URL',
+    'postgresql+psycopg2://cyna:cyna@localhost:5432/cynasecure'
+)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# 4. Configuration Maildev
-app.config['MAIL_SERVER'] = 'localhost'
-app.config['MAIL_PORT'] = 1025
-app.config['MAIL_USERNAME'] = None
-app.config['MAIL_PASSWORD'] = None
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_DEFAULT_SENDER'] = 'noreply@cyna.com'
+# 4. Mail : Gmail SMTP (remplace Maildev)
+#    MAIL_PASSWORD doit être un "mot de passe d'application" Google, pas le mot de passe du compte.
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True') == 'True'
+app.config['MAIL_USE_SSL'] = os.environ.get('MAIL_USE_SSL', 'False') == 'True'
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@cyna.com')
 
-# 5. Configuration Stripe (clés lues depuis l'environnement, jamais en dur dans le code)
-#    export STRIPE_SECRET_KEY=sk_test_...
-#    export STRIPE_PUBLISHABLE_KEY=pk_test_...
-#    export STRIPE_WEBHOOK_SECRET=whsec_...   (donné par `stripe listen` en local)
+# 5. Stripe : les clés sont lues depuis l'environnement dans routes/payments.py
+#    (STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET dans .env)
 
 mail.init_app(app)
 db.init_app(app)
@@ -63,4 +70,8 @@ app.register_blueprint(contact_bp)
 app.register_blueprint(dashboard_bp)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(
+        debug=os.environ.get('FLASK_DEBUG', '0') == '1',
+        host='0.0.0.0',
+        port=int(os.environ.get('PORT', 5000))
+    )

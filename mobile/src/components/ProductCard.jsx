@@ -1,75 +1,67 @@
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { TouchableOpacity, View, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { colors, spacing, radius, typography, shadow } from '../theme';
-
-const CATEGORY_ICONS = { soc: '🛡️', edr: '💻', xdr: '🔍' };
+import Button from './Button';
+import { CATEGORY_ICONS } from '../constants/categories';
 
 /**
- * Carte produit — même shape que Product.to_dict() côté Flask :
- * { id, name, description, slug, price_monthly, available, category_id }
- * @param {string} categoryIcon - emoji déjà résolu par l'écran parent
+ * Carte produit SaaS (accueil, catalogue, recherche).
+ * @param {object} product - { id, name, price_monthly, available, category_id, categorySlug }
+ * @param {string} categoryIcon - icône déjà résolue (évite de refaire le lookup à chaque carte)
+ * @param {string} variant - 'grid' | 'list'
  */
-const ProductCard = ({ product, categoryIcon }) => {
+export default function ProductCard({ product, categoryIcon, variant = 'grid' }) {
   const navigation = useNavigation();
   const { id, name, price_monthly, available = true } = product;
   const icon = categoryIcon || CATEGORY_ICONS[product.categorySlug] || '🔒';
+  const isList = variant === 'list';
+
+  const goToProduct = () =>
+    navigation.navigate('CatalogueTab', { screen: 'Product', params: { id } });
 
   return (
     <TouchableOpacity
-      onPress={() => navigation.navigate('Product', { id })}
-      activeOpacity={0.85}
-      style={[styles.card, !available && styles.cardUnavailable]}
+      onPress={goToProduct}
+      activeOpacity={0.8}
+      className={`rounded-xl border border-gray-800 bg-gray-900 ${
+        isList ? 'flex-row items-center gap-4 p-4' : 'flex-col p-6'
+      } ${!available ? 'opacity-60' : ''}`}
     >
-      <LinearGradient colors={['#0D0B3B', '#1E1B74']} style={styles.imageBox}>
-        <Text style={styles.icon}>{icon}</Text>
+      <View
+        className={`items-center justify-center rounded-lg bg-gray-800 ${
+          isList ? 'h-16 w-16' : 'mb-4 h-20 w-20 self-start'
+        }`}
+      >
+        <Text className="text-3xl">{icon}</Text>
+      </View>
+
+      <View className="flex-1">
+        <Text className="font-semibold text-white">{name}</Text>
+
         {!available && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>Indisponible</Text>
+          <View className="mt-1 self-start rounded border border-red-800/40 bg-red-950/50 px-2 py-0.5">
+            <Text className="text-xs text-red-400">Stock épuisé</Text>
           </View>
         )}
-      </LinearGradient>
 
-      <View style={styles.body}>
-        <Text style={styles.name} numberOfLines={2}>{name}</Text>
-        {available ? (
-          <View style={styles.priceRow}>
-            <Text style={styles.price}>{price_monthly} €</Text>
-            <Text style={styles.period}>/ mois</Text>
+        <View className="mt-2">
+          {available ? (
+            <Text>
+              <Text className="text-xl font-bold text-white">{price_monthly} €</Text>
+              <Text className="text-sm text-gray-500"> / mois</Text>
+            </Text>
+          ) : (
+            <Text className="text-sm text-gray-500">Indisponible</Text>
+          )}
+        </View>
+
+        {isList && (
+          <View className="mt-3">
+            <Button variant="primary" size="sm" onPress={goToProduct}>
+              Voir le service
+            </Button>
           </View>
-        ) : (
-          <Text style={styles.unavailable}>Indisponible</Text>
         )}
       </View>
     </TouchableOpacity>
   );
-};
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.bgWhite,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadow.sm,
-    marginBottom: spacing[3],
-  },
-  cardUnavailable: { opacity: 0.6 },
-  imageBox: { height: 110, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  icon: { fontSize: 40 },
-  badge: {
-    position: 'absolute', top: spacing[2], right: spacing[2],
-    backgroundColor: colors.danger, borderRadius: radius.full,
-    paddingHorizontal: spacing[2], paddingVertical: 2,
-  },
-  badgeText: { color: 'white', fontSize: typography.xs, fontWeight: '700' },
-  body: { padding: spacing[3] },
-  name: { fontSize: typography.base, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing[1], lineHeight: 20 },
-  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
-  price: { fontSize: typography.xl, fontWeight: '900', color: colors.primary },
-  period: { fontSize: typography.sm, color: colors.textMuted },
-  unavailable: { fontSize: typography.sm, color: colors.danger, fontWeight: '600' },
-});
-
-export default ProductCard;
+}
