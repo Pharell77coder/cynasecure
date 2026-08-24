@@ -4,3 +4,4 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd frontend; npm 
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd backoffice; npm run dev"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd backend; python app.py"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd mobile; npx expo run:android"
+U?uGb_5yu6fxShJ
